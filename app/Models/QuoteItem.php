@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+#[Fillable([
+    'quote_id',
+    'service_id',
+    'description',
+    'quantity',
+    'unit_price',
+    'line_total',
+])]
+class QuoteItem extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'decimal:2',
+            'unit_price' => 'decimal:2',
+            'line_total' => 'decimal:2',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (QuoteItem $item): void {
+            $item->line_total = (float) $item->quantity * (float) $item->unit_price;
+        });
+
+        static::saved(function (QuoteItem $item): void {
+            $item->quote?->recalculateTotals();
+        });
+
+        static::deleted(function (QuoteItem $item): void {
+            $item->quote?->recalculateTotals();
+        });
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+}
