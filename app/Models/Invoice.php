@@ -45,6 +45,11 @@ class Invoice extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
@@ -79,7 +84,7 @@ class Invoice extends Model
             $status = 'paid';
         } elseif ($paidTotal > 0.0 && $balanceDue > 0.0) {
             $status = 'partially_paid';
-        } elseif ($balanceDue > 0.0 && $this->due_date !== null && $this->due_date->isPast()) {
+        } elseif ($balanceDue > 0.0 && $this->due_date !== null && now()->greaterThan($this->due_date)) {
             $status = 'overdue';
         }
 

@@ -420,6 +420,39 @@
     font-weight: 800;
 }
 
+.fi-wi-stats-overview-stat {
+    position: relative;
+    overflow: hidden;
+}
+
+.fi-wi-stats-overview-stat::after {
+    content: '';
+    position: absolute;
+    top: -2rem;
+    right: -2rem;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(141, 245, 228, 0.2) 0%, rgba(141, 245, 228, 0) 70%);
+    pointer-events: none;
+}
+
+.fi-wi-stats-overview-stat-value {
+    font-weight: 900;
+    letter-spacing: -0.03em;
+}
+
+.fi-ta-record>td,
+.fi-ta-row>td {
+    vertical-align: middle;
+}
+
+.fi-ta-record>td:first-child,
+.fi-ta-row>td:first-child {
+    font-weight: 800;
+    color: var(--ledger-primary);
+}
+
 .fi-ta-ctn {
     overflow: hidden;
 }
