@@ -561,3 +561,217 @@
 .ledger-summary-card .fi-select-input option {
     color: #f8fbff !important;
 }
+
+/* Premium dark mode */
+.dark {
+    --ledger-primary: #dce9ff;
+    --ledger-primary-container: #86a0cd;
+    --ledger-surface: #06101d;
+    --ledger-surface-low: #0b1627;
+    --ledger-surface-card: rgba(11, 22, 39, 0.92);
+    --ledger-muted: #b8c5d9;
+    --ledger-outline: rgba(148, 163, 184, 0.12);
+    --ledger-shadow: 0 20px 48px rgba(0, 0, 0, 0.38);
+}
+
+.dark .fi-body,
+.dark .fi-layout,
+.dark .fi-simple-layout {
+    background: radial-gradient(circle at top right, rgba(67, 175, 159, 0.12), transparent 0 22rem), linear-gradient(180deg, #06101d 0%, #0b1627 100%);
+    color: #edf4ff;
+}
+
+.dark .fi-sidebar {
+    background: rgba(7, 15, 27, 0.94);
+    box-shadow: inset -1px 0 0 rgba(148, 163, 184, 0.08);
+}
+
+.dark .fi-topbar {
+    background: rgba(7, 15, 27, 0.72);
+    backdrop-filter: blur(20px);
+}
+
+.dark .fi-sidebar-item-btn,
+.dark .fi-topbar-item-btn,
+.dark .fi-pagination-item-button,
+.dark .fi-tabs-item {
+    color: #d8e3f3;
+}
+
+.dark .fi-sidebar-item-btn:hover,
+.dark .fi-topbar-item-btn:hover {
+    background: rgba(148, 163, 184, 0.08);
+}
+
+.dark .fi-sidebar-item.fi-active>.fi-sidebar-item-btn,
+.dark .fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn {
+    background: linear-gradient(135deg, rgba(141, 245, 228, 0.18) 0%, rgba(134, 160, 205, 0.14) 100%);
+    color: #f8fbff;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.dark .fi-page-header,
+.dark .fi-section:not(.ledger-summary-card),
+.dark .fi-ta-ctn,
+.dark .fi-wi-stats-overview-stat,
+.dark .fi-simple-main,
+.dark .architectural-card,
+.dark .board-project-card {
+    background: linear-gradient(180deg, rgba(12, 23, 40, 0.96) 0%, rgba(9, 18, 31, 0.96) 100%) !important;
+    border: 1px solid rgba(148, 163, 184, 0.08) !important;
+    box-shadow: var(--ledger-shadow) !important;
+}
+
+.dark .fi-page-header::after,
+.dark .fi-wi-stats-overview-stat::after {
+    background: radial-gradient(circle, rgba(141, 245, 228, 0.18) 0%, rgba(141, 245, 228, 0) 70%);
+}
+
+.dark .fi-page-header-heading,
+.dark .fi-section-header-heading,
+.dark .fi-simple-main .fi-simple-header-heading,
+.dark .fi-ta-header-cell-label,
+.dark .fi-ta-record>td:first-child,
+.dark .fi-ta-row>td:first-child {
+    color: #f8fbff !important;
+}
+
+.dark .fi-page-subheading,
+.dark .fi-breadcrumbs,
+.dark .fi-breadcrumbs-item-label,
+.dark .fi-section-header-description,
+.dark .fi-fo-field-wrp-label,
+.dark .fi-input-wrp-label,
+.dark .fi-simple-main .fi-simple-header-subheading,
+.dark .fi-simple-main .fi-fo-field-wrp-label,
+.dark .fi-simple-main .fi-checkbox-label,
+.dark .fi-simple-main .fi-link,
+.dark .fi-simple-main .fi-label,
+.dark .fi-fo-field-wrp-helper-text,
+.dark .fi-input-wrp-prefix,
+.dark .fi-input-wrp-suffix,
+.dark .fi-input-wrp-icon {
+    color: #b8c5d9 !important;
+}
+
+.dark .fi-input,
+.dark .fi-select-input,
+.dark .fi-textarea,
+.dark .fi-input-wrp,
+.dark .fi-fo-file-upload {
+    background: rgba(15, 27, 44, 0.92) !important;
+    border-color: rgba(148, 163, 184, 0.14) !important;
+    color: #f8fbff !important;
+}
+
+.dark .fi-input::placeholder,
+.dark .fi-select-input::placeholder,
+.dark .fi-textarea::placeholder,
+.dark .fi-input-wrp input::placeholder,
+.dark .fi-input-wrp textarea::placeholder {
+    color: #8fa3bf !important;
+}
+
+.dark .fi-input:focus,
+.dark .fi-select-input:focus,
+.dark .fi-textarea:focus {
+    border-color: rgba(141, 245, 228, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(141, 245, 228, 0.12) !important;
+}
+
+.dark .fi-ta-table thead tr,
+.dark .fi-ta-header-ctn {
+    background: rgba(15, 27, 44, 0.92);
+}
+
+.dark .fi-ta-row:hover,
+.dark .fi-ta-record:hover {
+    background: rgba(148, 163, 184, 0.05);
+}
+
+.dark .fi-dropdown-panel,
+.dark .fi-modal-window {
+    background: rgba(10, 19, 33, 0.98) !important;
+    color: #edf4ff !important;
+    border: 1px solid rgba(148, 163, 184, 0.08) !important;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42);
+}
+
+.dark .fi-dropdown-panel *,
+.dark .fi-modal-window * {
+    color: #edf4ff;
+}
+
+.dark .fi-fo-repeater .fi-fo-repeater-item,
+.dark .fi-fo-repeater .fi-fo-repeater-item-header,
+.dark .fi-fo-radio.fi-inline>.fi-fo-radio-label,
+.dark .fi-fo-repeater .fi-fo-repeater-add,
+.dark .fi-fo-repeater .fi-fo-repeater-add-between-items {
+    background: rgba(15, 27, 44, 0.88) !important;
+    color: #edf4ff !important;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.dark .fi-fo-radio.fi-inline>.fi-fo-radio-label:has(.fi-radio-input:checked) {
+    background: linear-gradient(135deg, rgba(67, 175, 159, 0.22) 0%, rgba(12, 23, 40, 0.96) 100%) !important;
+}
+
+.dark .board-shell {
+    background: linear-gradient(180deg, rgba(9, 18, 31, 0.96) 0%, rgba(12, 23, 40, 0.96) 100%);
+}
+
+.dark .glass-panel {
+    background: rgba(12, 23, 40, 0.76);
+}
+
+.dark .team-avatar {
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #06101d;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+}
+
+.dark .text-\[\#002045\],
+.dark .text-\[\#0b1c30\] {
+    color: #f8fbff !important;
+}
+
+.dark .text-\[\#43474e\],
+.dark .text-\[\#57657a\],
+.dark .text-\[\#74777f\],
+.dark .text-\[\#86a0cd\] {
+    color: #b8c5d9 !important;
+}
+
+.dark .bg-\[\#eff4ff\],
+.dark .bg-\[\#eff4ff\]\/45,
+.dark .bg-\[\#eff4ff\]\/55,
+.dark .bg-\[\#eff4ff\]\/60,
+.dark .bg-\[\#eff4ff\]\/65,
+.dark .bg-\[\#eff4ff\]\/70,
+.dark .bg-\[\#dce9ff\],
+.dark .bg-\[\#d6e3ff\],
+.dark .bg-\[\#e5eeff\],
+.dark .bg-white {
+    background: rgba(15, 27, 44, 0.92) !important;
+}
+
+.dark .border-\[\#eff4ff\] {
+    border-color: rgba(148, 163, 184, 0.08) !important;
+}
+
+.dark .fi-btn-color-primary {
+    background: linear-gradient(135deg, #0d3b66 0%, #145374 45%, #43af9f 100%);
+}
+
+.dark .ledger-summary-card,
+.dark .fi-section.ledger-summary-card,
+.dark .fi-section.ledger-summary-card>.fi-section-header,
+.dark .fi-section.ledger-summary-card>.fi-section-content-ctn,
+.dark .fi-section.ledger-summary-card>.fi-section-content-ctn>.fi-section-content,
+.dark .metric-hero {
+    background: linear-gradient(135deg, #071a31 0%, #0d3b66 55%, #145374 100%) !important;
+}
+
+.dark .fi-simple-main {
+    background: linear-gradient(180deg, rgba(10, 19, 33, 0.98) 0%, rgba(12, 23, 40, 0.98) 100%) !important;
+}
