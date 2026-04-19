@@ -2,11 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Payments\PaymentResource;
+use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Project;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -34,7 +37,47 @@ class ApprovalCenter extends Page
         return [
             Action::make('approveLowRisk')
                 ->label('Valider les cas simples')
-                ->action(fn() => Notification::make()->title('Les validations à faible risque ont été préparées.')->success()->send()),
+                ->action(function (): void {
+                    $user = auth()->user();
+                    $approved = 0;
+
+                    if (!$user) {
+                        Notification::make()->title('Aucun utilisateur authentifié pour valider les éléments.')->danger()->send();
+
+                        return;
+                    }
+
+                    if (Schema::hasTable('expenses')) {
+                        Expense::query()
+                            ->where('approval_status', 'pending')
+                            ->where('amount', '<=', 250000)
+                            ->latest()
+                            ->take(10)
+                            ->get()
+                            ->each(function (Expense $expense) use ($user, &$approved): void {
+                                $expense->approve($user, 'Validation rapide depuis le centre d’approbation.');
+                                $approved++;
+                            });
+                    }
+
+                    if (Schema::hasTable('projects')) {
+                        Project::query()
+                            ->where('approval_status', 'pending')
+                            ->whereIn('status', ['planned', 'on_hold'])
+                            ->latest()
+                            ->take(10)
+                            ->get()
+                            ->each(function (Project $project) use ($user, &$approved): void {
+                                $project->approve($user, 'Projet approuvé depuis le centre d’approbation.');
+                                $approved++;
+                            });
+                    }
+
+                    $notification = Notification::make()
+                        ->title($approved > 0 ? $approved . ' élément(s) ont été approuvés.' : 'Aucun élément à faible risque n’a été trouvé.');
+
+                    ($approved > 0 ? $notification->success() : $notification->warning())->send();
+                }),
             Action::make('exportQueue')
                 ->label('Exporter la file')
                 ->action(fn() => Notification::make()->title('L’export de la file de validation a été lancé.')->success()->send()),
@@ -72,9 +115,17 @@ class ApprovalCenter extends Page
             ? Payment::query()->where(fn($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))->count()
             : 0;
 
+        $pendingExpenses = Schema::hasTable('expenses')
+            ? Expense::query()->whereIn('approval_status', ['pending', 'review'])->count()
+            : 0;
+
+        $pendingProjects = Schema::hasTable('projects')
+            ? Project::query()->whereIn('approval_status', ['pending', 'review'])->count()
+            : 0;
+
         return [
             'volume' => $this->money($invoiceVolume),
-            'flagged' => $flagged,
+            'flagged' => $flagged + $pendingExpenses + $pendingProjects,
             'avg_time' => '4.2h',
             'capacity' => 75,
         ];
@@ -107,6 +158,51 @@ class ApprovalCenter extends Page
             $items = [...$items, ...$invoiceItems];
         }
 
+        if (Schema::hasTable('expenses')) {
+            $expenseItems = Expense::query()
+                ->whereIn('approval_status', ['pending', 'review'])
+                ->latest()
+                ->take(2)
+                ->get()
+                ->map(fn(Expense $expense): array => [
+                    'tone' => $expense->approval_status === 'review' ? 'danger' : 'info',
+                    'icon' => 'receipt_long',
+                    'subject' => $expense->title,
+                    'reference' => $expense->reference ?: ('EXP-' . str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
+                    'category' => 'Validation dépense',
+                    'amount' => $this->money((float) $expense->amount),
+                    'note' => $expense->approval_status === 'review' ? 'Contrôle complémentaire requis' : 'En attente de validation managériale',
+                    'cta' => 'Traiter',
+                    'url' => ExpenseResource::getUrl('edit', ['record' => $expense]),
+                ])
+                ->all();
+
+            $items = [...$items, ...$expenseItems];
+        }
+
+        if (Schema::hasTable('projects')) {
+            $projectItems = Project::query()
+                ->with('client')
+                ->whereIn('approval_status', ['pending', 'review'])
+                ->latest()
+                ->take(2)
+                ->get()
+                ->map(fn(Project $project): array => [
+                    'tone' => $project->approval_status === 'review' ? 'danger' : 'success',
+                    'icon' => 'folder_managed',
+                    'subject' => $project->name,
+                    'reference' => 'PRJ-' . str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
+                    'category' => 'Feu vert projet',
+                    'amount' => $project->client?->company_name ?: 'Projet interne',
+                    'note' => $project->approval_status === 'review' ? 'Le cadrage doit être révisé' : 'Projet prêt pour lancement',
+                    'cta' => 'Valider',
+                    'url' => ProjectResource::getUrl('edit', ['record' => $project]),
+                ])
+                ->all();
+
+            $items = [...$items, ...$projectItems];
+        }
+
         if (Schema::hasTable('payments')) {
             $paymentItems = Payment::query()
                 ->with(['client', 'invoice'])
@@ -119,10 +215,10 @@ class ApprovalCenter extends Page
                     'icon' => 'payments',
                     'subject' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Ledger transfer',
                     'reference' => $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
-                    'category' => 'Payment Exception',
+                    'category' => 'Exception paiement',
                     'amount' => $this->money((float) $payment->amount),
-                    'note' => 'Missing reference or invoice match needs override',
-                    'cta' => 'Resolve',
+                    'note' => 'Référence ou facture à rapprocher',
+                    'cta' => 'Résoudre',
                     'url' => PaymentResource::getUrl('edit', ['record' => $payment]),
                 ])
                 ->all();

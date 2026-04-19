@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'category',
@@ -15,6 +17,10 @@ use Illuminate\Database\Eloquent\Model;
     'vendor',
     'reference',
     'attachment_path',
+    'approval_status',
+    'approval_notes',
+    'approved_by',
+    'approved_at',
     'recorded_by',
 ])]
 class Expense extends Model
@@ -24,6 +30,79 @@ class Expense extends Model
         return [
             'amount' => 'decimal:2',
             'expense_date' => 'date',
+            'approved_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Expense $expense): void {
+            if ((float) $expense->amount <= 0) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Expense amount must be positive.',
+                ]);
+            }
+        });
+    }
+
+    public function recorder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function approve(User $user, ?string $notes = null): void
+    {
+        $this->forceFill([
+            'approval_status' => 'approved',
+            'approval_notes' => $notes,
+            'approved_by' => $user->getKey(),
+            'approved_at' => now(),
+        ])->save();
+
+        $this->logActivity('expense_approved', $user, $notes);
+    }
+
+    public function reject(User $user, ?string $notes = null): void
+    {
+        $this->forceFill([
+            'approval_status' => 'rejected',
+            'approval_notes' => $notes,
+            'approved_by' => $user->getKey(),
+            'approved_at' => now(),
+        ])->save();
+
+        $this->logActivity('expense_rejected', $user, $notes);
+    }
+
+    public function markForReview(User $user, ?string $notes = null): void
+    {
+        $this->forceFill([
+            'approval_status' => 'review',
+            'approval_notes' => $notes,
+            'approved_by' => $user->getKey(),
+            'approved_at' => now(),
+        ])->save();
+
+        $this->logActivity('expense_review_requested', $user, $notes);
+    }
+
+    protected function logActivity(string $action, User $user, ?string $notes = null): void
+    {
+        ActivityLog::create([
+            'user_id' => $user->getKey(),
+            'action' => $action,
+            'subject_type' => self::class,
+            'subject_id' => $this->getKey(),
+            'meta_json' => [
+                'title' => $this->title,
+                'approval_status' => $this->approval_status,
+                'notes' => $notes,
+            ],
+        ]);
     }
 }
