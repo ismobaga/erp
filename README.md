@@ -42,6 +42,22 @@ Internal-only ERP foundation for **CROMMIX MALI S.A.** built with:
 
 ## Quick start
 
+### Start PostgreSQL with Docker Compose
+
+```bash
+docker compose up -d
+```
+
+Default database credentials:
+
+- Host: `127.0.0.1`
+- Port: `5432`
+- Database: `erp`
+- Username: `postgres`
+- Password: `postgres`
+
+### Run the application
+
 ```bash
 composer install
 cp .env.example .env
