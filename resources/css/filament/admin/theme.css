@@ -1,0 +1,172 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*.php';
+@source '../../../../resources/views/filament/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+    --ledger-primary: #002045;
+    --ledger-primary-container: #1a365d;
+    --ledger-surface: #f8f9ff;
+    --ledger-surface-low: #eff4ff;
+    --ledger-surface-card: #ffffff;
+    --ledger-muted: #43474e;
+    --ledger-outline: rgba(116, 119, 127, 0.18);
+    --ledger-shadow: 0 8px 32px rgba(11, 28, 48, 0.06);
+}
+
+.fi-body,
+.fi-layout,
+.fi-simple-layout {
+    background: linear-gradient(180deg, var(--ledger-surface) 0%, var(--ledger-surface-low) 100%);
+    color: #0b1c30;
+}
+
+.fi-sidebar {
+    background: var(--ledger-surface-low);
+    border-inline-end: none;
+    box-shadow: inset -1px 0 0 rgba(196, 198, 207, 0.25);
+}
+
+.fi-sidebar-header,
+.fi-topbar,
+.fi-topbar-ctn {
+    border: none;
+}
+
+.fi-topbar {
+    background: rgba(248, 249, 255, 0.82);
+    backdrop-filter: blur(20px);
+    box-shadow: none;
+}
+
+.fi-sidebar-item-btn,
+.fi-topbar-item-btn,
+.fi-pagination-item-button,
+.fi-tabs-item,
+.fi-btn {
+    border-radius: 0.9rem;
+    transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.fi-sidebar-item-btn:hover,
+.fi-topbar-item-btn:hover {
+    transform: translateX(2px);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.fi-sidebar-item.fi-active>.fi-sidebar-item-btn,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items>.fi-sidebar-item-btn {
+    background: #ffffff;
+    color: var(--ledger-primary);
+    box-shadow: var(--ledger-shadow);
+}
+
+.fi-page,
+.fi-page-content,
+.fi-main {
+    gap: 1.25rem;
+}
+
+.fi-page-header-heading,
+.fi-section-header-heading {
+    color: var(--ledger-primary);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.fi-section-header-description,
+.fi-ta-header-cell-label,
+.fi-fo-field-wrp-label,
+.fi-input-wrp-label {
+    color: var(--ledger-muted);
+}
+
+.fi-section:not(.fi-section-not-contained),
+.fi-ta-ctn,
+.fi-wi-stats-overview-stat,
+.fi-simple-main {
+    border: none !important;
+    border-radius: 1rem;
+    background: var(--ledger-surface-card);
+    box-shadow: var(--ledger-shadow);
+}
+
+.fi-simple-main {
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(20px);
+}
+
+.fi-input,
+.fi-select-input,
+.fi-textarea,
+.fi-input-wrp,
+.fi-fo-file-upload {
+    border-color: rgba(196, 198, 207, 0.2) !important;
+    background: var(--ledger-surface-low) !important;
+    box-shadow: none !important;
+}
+
+.fi-input:focus,
+.fi-select-input:focus,
+.fi-textarea:focus {
+    border-color: rgba(0, 32, 69, 0.28) !important;
+    box-shadow: 0 0 0 3px rgba(0, 32, 69, 0.08) !important;
+}
+
+.fi-btn-color-primary {
+    background: linear-gradient(135deg, #002045 0%, #1a365d 100%);
+}
+
+.fi-badge {
+    border: none;
+    border-radius: 9999px;
+}
+
+.fi-ta-table thead tr,
+.fi-ta-header-ctn {
+    background: rgba(239, 244, 255, 0.85);
+}
+
+.fi-ta-header-cell-label {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--ledger-primary);
+}
+
+.fi-ta-row,
+.fi-ta-record {
+    border-bottom: none !important;
+}
+
+.fi-ta-row:hover,
+.fi-ta-record:hover {
+    background: rgba(239, 244, 255, 0.45);
+}
+
+.fi-dropdown-panel,
+.fi-modal-window {
+    border: none !important;
+    box-shadow: 0 12px 40px rgba(11, 28, 48, 0.08);
+    backdrop-filter: blur(20px);
+}
+
+.architectural-card {
+    border-radius: 1.25rem;
+    background: #ffffff;
+    padding: 1.5rem;
+    box-shadow: var(--ledger-shadow);
+}
+
+.ledger-row {
+    transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.ledger-row:hover {
+    transform: translateY(-1px);
+}
