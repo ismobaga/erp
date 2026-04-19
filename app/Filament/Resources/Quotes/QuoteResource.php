@@ -35,9 +35,11 @@ class QuoteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
 
     protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Devis';
 
     protected static ?string $recordTitleAttribute = 'quote_number';
 
@@ -47,19 +49,19 @@ class QuoteResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Entity information')
-                            ->description('Draft a professional service quote for client approval.')
+                        Section::make('Informations du devis')
+                            ->description('Préparez un devis professionnel à envoyer au client.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('quote_number')
-                                    ->label('Quote number')
+                                    ->label('Numéro du devis')
                                     ->default(fn(): string => static::generateQuoteNumber())
                                     ->readOnly()
                                     ->required(),
                                 Select::make('client_id')
-                                    ->label('Client account')
+                                    ->label('Client')
                                     ->relationship('client', 'company_name')
                                     ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
@@ -71,34 +73,34 @@ class QuoteResource extends Resource
                                 DatePicker::make('valid_until')
                                     ->default(now()->addDays(15)),
                             ]),
-                        Section::make('Quote lifecycle')
-                            ->description('Lifecycle state and internal review context.')
+                        Section::make('Cycle de vie du devis')
+                            ->description('Suivez l’état du devis et le contexte de validation interne.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Select::make('status')
                                     ->options([
-                                        'draft' => 'Draft',
-                                        'sent' => 'Sent to client',
-                                        'accepted' => 'Accepted',
-                                        'expired' => 'Expired',
+                                        'draft' => 'Brouillon',
+                                        'sent' => 'Envoyé au client',
+                                        'accepted' => 'Accepté',
+                                        'expired' => 'Expiré',
                                     ])
                                     ->default('draft')
                                     ->native(false)
                                     ->required(),
                                 Placeholder::make('lifecycle_hint')
-                                    ->label('Ledger notice')
-                                    ->content('Drafts remain internal until finalized and sent.'),
+                                    ->label('Note')
+                                    ->content('Les brouillons restent internes jusqu’à leur validation et envoi.'),
                             ]),
-                        Section::make('Service line items')
-                            ->description('Build the commercial scope with reusable services and pricing rows.')
+                        Section::make('Lignes de prestation')
+                            ->description('Construisez le périmètre commercial avec les services et leurs tarifs.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpanFull()
                             ->schema([
                                 Repeater::make('items')
                                     ->relationship()
                                     ->defaultItems(1)
-                                    ->addActionLabel('Add new row')
+                                    ->addActionLabel('Ajouter une ligne')
                                     ->schema([
                                         Select::make('service_id')
                                             ->label('Service')
@@ -143,36 +145,36 @@ class QuoteResource extends Resource
                                     ->columns(6)
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Terms & conditions')
+                        Section::make('Conditions')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 7])
                             ->schema([
                                 Textarea::make('notes')
-                                    ->label('Notes and conditions')
+                                    ->label('Notes et conditions')
                                     ->rows(6)
-                                    ->placeholder('Standard net 30 terms apply. Please review structural requirements before signing...'),
+                                    ->placeholder('Conditions de règlement, remarques techniques ou éléments contractuels...'),
                             ]),
-                        Section::make('Financial summary')
+                        Section::make('Résumé financier')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 5])
                             ->schema([
                                 TextInput::make('discount_total')
-                                    ->label('Discount total')
+                                    ->label('Remise totale')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)
                                     ->live(),
                                 TextInput::make('tax_total')
-                                    ->label('Tax total')
+                                    ->label('Taxes totales')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)
                                     ->live(),
                                 Placeholder::make('subtotal_preview')
-                                    ->label('Subtotal')
+                                    ->label('Sous-total')
                                     ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
                                 Placeholder::make('total_preview')
-                                    ->label('Grand total')
+                                    ->label('Total général')
                                     ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
                             ]),
                     ]),
@@ -188,7 +190,7 @@ class QuoteResource extends Resource
                     ->searchable(),
                 TextColumn::make('client_name')
                     ->label('Client')
-                    ->state(fn(Quote $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account')
+                    ->state(fn(Quote $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
                     ->searchable(),
                 TextColumn::make('issue_date')
                     ->date()
@@ -203,7 +205,7 @@ class QuoteResource extends Resource
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->since()
-                    ->label('Updated'),
+                    ->label('Mis à jour'),
             ])
             ->recordActions([
                 EditAction::make(),

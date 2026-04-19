@@ -14,7 +14,7 @@ class EditCompanySetting extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Update Company Settings';
+        return 'Modifier les paramètres société';
     }
 
     protected function getHeaderActions(): array
@@ -26,6 +26,6 @@ class EditCompanySetting extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save Changes');
+        return parent::getSaveFormAction()->label('Enregistrer les modifications');
     }
 }

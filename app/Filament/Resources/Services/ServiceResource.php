@@ -31,9 +31,11 @@ class ServiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
 
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Services';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -43,18 +45,18 @@ class ServiceResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Core identity')
-                            ->description('Define a new architectural service entry for the enterprise ledger and resource tracking system.')
+                        Section::make('Identité du service')
+                            ->description('Définissez une nouvelle prestation et son suivi dans le système ERP.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columns(['lg' => 2])
                             ->columnSpan(['lg' => 8])
                             ->schema([
                                 TextInput::make('code')
-                                    ->label('Service code')
+                                    ->label('Code service')
                                     ->placeholder('ARC-PLAN-2024')
                                     ->maxLength(255),
                                 TextInput::make('name')
-                                    ->label('Service name')
+                                    ->label('Nom du service')
                                     ->placeholder('Structural analysis')
                                     ->required()
                                     ->maxLength(255),
@@ -66,28 +68,28 @@ class ServiceResource extends Resource
                                     ->placeholder('Provide a detailed breakdown of the service scope, deliverables, and resource allocation requirements...')
                                     ->columnSpanFull(),
                                 TextInput::make('default_price')
-                                    ->label('Default base price')
+                                    ->label('Prix de base')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)
                                     ->minValue(0)
                                     ->required(),
                             ]),
-                        Section::make('Registry status')
-                            ->description('Operational visibility and compliance state.')
+                        Section::make('État du registre')
+                            ->description('Visibilité opérationnelle et état de conformité.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Toggle::make('is_active')
-                                    ->label('Active status')
-                                    ->helperText('Toggle visibility in global catalogs.')
+                                    ->label('Actif')
+                                    ->helperText('Affiche ou masque ce service dans les catalogues.')
                                     ->default(true),
                                 Placeholder::make('price_preview')
-                                    ->label('Pricing preview')
+                                    ->label('Aperçu du prix')
                                     ->content(fn(Get $get): string => 'FCFA ' . number_format((float) ($get('default_price') ?? 0), 2, '.', ' ')),
                                 Placeholder::make('audit_notice')
-                                    ->label('Audit note')
-                                    ->content('All service entries are subject to audit by the Regional Ledger Supervisor.'),
+                                    ->label('Note de contrôle')
+                                    ->content('Toutes les prestations peuvent être soumises à vérification interne.'),
                             ]),
                     ]),
             ])
@@ -106,15 +108,15 @@ class ServiceResource extends Resource
                 TextColumn::make('category')
                     ->searchable(),
                 TextColumn::make('default_price')
-                    ->label('Base price')
+                    ->label('Prix de base')
                     ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
                     ->sortable(),
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label('Actif')
                     ->boolean(),
                 TextColumn::make('updated_at')
                     ->since()
-                    ->label('Updated'),
+                    ->label('Mis à jour'),
             ])
             ->recordActions([
                 EditAction::make(),

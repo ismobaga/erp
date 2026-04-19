@@ -12,9 +12,9 @@ class PaymentTrackingStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Finance terminal status';
+    protected ?string $heading = 'État du terminal financier';
 
-    protected ?string $description = 'Restricted ledger view for ready-to-settle invoices and flagged payment reviews.';
+    protected ?string $description = 'Vue synthétique des paiements, rapprochements et points de contrôle.';
 
     protected function getStats(): array
     {
@@ -29,20 +29,20 @@ class PaymentTrackingStats extends StatsOverviewWidget
             $flagged = Payment::query()->where(fn($query) => $query->whereNull('reference')->orWhere('reference', ''))->count();
 
             return [
-                Stat::make('Total received', $this->money($totalReceived))
-                    ->description('Settled inflows across the ledger')
+                Stat::make('Total encaissé', $this->money($totalReceived))
+                    ->description('Entrées de trésorerie enregistrées')
                     ->color('primary')
                     ->chart([8, 9, 12, 14, 16, 18, 20]),
-                Stat::make('Pending reconciliation', number_format($pendingReconciliation))
-                    ->description('Transactions waiting for invoice matching')
+                Stat::make('Rapprochements en attente', number_format($pendingReconciliation))
+                    ->description('Transactions à affecter à une facture')
                     ->color('warning')
                     ->chart([10, 9, 8, 7, 6, 5, max(1, $pendingReconciliation)]),
-                Stat::make('Bank transfers', $this->money($bankTransfers))
-                    ->description('Institutional wire settlements')
+                Stat::make('Virements bancaires', $this->money($bankTransfers))
+                    ->description('Règlements reçus par virement')
                     ->color('success')
                     ->chart([4, 6, 7, 9, 11, 12, 14]),
-                Stat::make('Flagged items', number_format($flagged))
-                    ->description('Entries needing reconciliation attention')
+                Stat::make('Éléments signalés', number_format($flagged))
+                    ->description('Entrées demandant une vérification')
                     ->color('danger')
                     ->chart([5, 4, 4, 3, 2, 2, 1]),
             ];

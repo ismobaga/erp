@@ -15,7 +15,7 @@ class CreatePayment extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Record New Payment';
+        return 'Enregistrer un paiement';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -27,11 +27,11 @@ class CreatePayment extends CreateRecord
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Finalize Entry');
+        return parent::getCreateFormAction()->label('Valider');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Discard Draft');
+        return parent::getCancelFormAction()->label('Annuler');
     }
 }

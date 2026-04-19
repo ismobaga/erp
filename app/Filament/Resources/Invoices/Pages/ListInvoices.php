@@ -17,7 +17,7 @@ class ListInvoices extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Invoice Ledger';
+        return 'Registre des factures';
     }
 
     protected function getHeaderWidgets(): array
@@ -31,16 +31,16 @@ class ListInvoices extends ListRecords
     {
         return [
             Action::make('sendReminders')
-                ->label('Send reminders')
+                ->label('Envoyer les rappels')
                 ->action(function (): void {
                     $total = Invoice::query()->whereIn('status', ['sent', 'overdue', 'partially_paid'])->count();
 
                     Notification::make()
-                        ->title($total > 0 ? 'Reminder batch prepared for ' . $total . ' invoice(s).' : 'There are no invoices waiting for reminders.')
+                        ->title($total > 0 ? 'Lot de rappels préparé pour ' . $total . ' facture(s).' : 'Aucune facture n’attend actuellement de rappel.')
                         ->success()
                         ->send();
                 }),
-            CreateAction::make()->label('New invoice'),
+            CreateAction::make()->label('Nouvelle facture'),
         ];
     }
 }

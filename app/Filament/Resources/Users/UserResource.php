@@ -33,7 +33,7 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 11;
 
-    protected static ?string $navigationLabel = 'Staff Directory';
+    protected static ?string $navigationLabel = 'Équipe';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -43,29 +43,29 @@ class UserResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Staff identity')
-                            ->description('Manage your workforce, collaborators, and administrative contacts across the ERP ecosystem.')
+                        Section::make('Identité du personnel')
+                            ->description('Gérez votre équipe, vos collaborateurs et les accès administratifs dans tout l’ERP.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('name')
-                                    ->label('Full name')
+                                    ->label('Nom complet')
                                     ->required(),
                                 TextInput::make('email')
-                                    ->label('Email address')
+                                    ->label('Adresse e-mail')
                                     ->email()
                                     ->required()
                                     ->unique(ignoreRecord: true),
                                 TextInput::make('phone')
-                                    ->label('Phone number')
+                                    ->label('Téléphone')
                                     ->tel(),
                                 Select::make('status')
                                     ->options([
-                                        'active' => 'Active',
-                                        'away' => 'Away',
-                                        'offline' => 'Offline',
-                                        'restricted' => 'Restricted',
+                                        'active' => 'Actif',
+                                        'away' => 'Absent',
+                                        'offline' => 'Hors ligne',
+                                        'restricted' => 'Restreint',
                                     ])
                                     ->default('active')
                                     ->native(false)
@@ -77,8 +77,8 @@ class UserResource extends Resource
                                     ->searchable()
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Access controls')
-                            ->description('Credential and operational access management.')
+                        Section::make('Contrôles d’accès')
+                            ->description('Gestion des identifiants et des autorisations opérationnelles.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
@@ -99,27 +99,27 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Collaborator')
+                    ->label('Collaborateur')
                     ->description(fn(User $record): string => $record->email)
                     ->searchable(['name', 'email'])
                     ->sortable(),
                 TextColumn::make('access_tier')
-                    ->label('Access tier')
+                    ->label('Niveau d’accès')
                     ->state(fn(User $record): string => static::resolveAccessTier($record))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'Admin Access' => 'primary',
-                        'Restricted' => 'danger',
-                        'Contractor' => 'warning',
+                        'Accès admin' => 'primary',
+                        'Restreint' => 'danger',
+                        'Prestataire' => 'warning',
                         default => 'success',
                     }),
                 TextColumn::make('role_summary')
                     ->label('Permissions')
-                    ->state(fn(User $record): string => $record->getRoleNames()->join(', ') ?: 'Standard workspace')
+                    ->state(fn(User $record): string => $record->getRoleNames()->join(', ') ?: 'Espace standard')
                     ->wrap(),
                 TextColumn::make('phone')
-                    ->label('Operational contact')
-                    ->placeholder('No direct line'),
+                    ->label('Contact')
+                    ->placeholder('Aucune ligne directe'),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -129,16 +129,16 @@ class UserResource extends Resource
                         default => 'gray',
                     }),
                 TextColumn::make('last_login_at')
-                    ->label('Last active')
+                    ->label('Dernière activité')
                     ->since(),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'active' => 'Active',
-                        'away' => 'Away',
-                        'offline' => 'Offline',
-                        'restricted' => 'Restricted',
+                        'active' => 'Actif',
+                        'away' => 'Absent',
+                        'offline' => 'Hors ligne',
+                        'restricted' => 'Restreint',
                     ]),
                 SelectFilter::make('roles')
                     ->relationship('roles', 'name')
@@ -161,15 +161,15 @@ class UserResource extends Resource
         $roles = $record->getRoleNames()->map(fn(string $role): string => str($role)->lower()->toString());
 
         if ($record->status === 'restricted') {
-            return 'Restricted';
+            return 'Restreint';
         }
 
         if ($roles->contains(fn(string $role): bool => str_contains($role, 'admin'))) {
-            return 'Admin Access';
+            return 'Accès admin';
         }
 
         if ($roles->contains(fn(string $role): bool => str_contains($role, 'contract'))) {
-            return 'Contractor';
+            return 'Prestataire';
         }
 
         return 'Standard';

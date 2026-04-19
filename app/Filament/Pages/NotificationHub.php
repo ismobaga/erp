@@ -22,9 +22,9 @@ class NotificationHub extends Page
 
     protected static ?int $navigationSort = 8;
 
-    protected static ?string $navigationLabel = 'Alert Hub';
+    protected static ?string $navigationLabel = 'Centre d’alertes';
 
-    protected static ?string $title = 'Architectural Oversight';
+    protected static ?string $title = 'Supervision ERP';
 
     protected string $view = 'filament.pages.notification-hub';
 
@@ -32,11 +32,11 @@ class NotificationHub extends Page
     {
         return [
             Action::make('markAllRead')
-                ->label('Mark all read')
-                ->action(fn() => Notification::make()->title('All alerts were marked as reviewed for this session.')->success()->send()),
+                ->label('Tout marquer comme lu')
+                ->action(fn() => Notification::make()->title('Toutes les alertes ont été marquées comme relues.')->success()->send()),
             Action::make('exportSecurity')
-                ->label('Export security report')
-                ->action(fn() => Notification::make()->title('Security report export queued successfully.')->success()->send()),
+                ->label('Exporter le rapport de sécurité')
+                ->action(fn() => Notification::make()->title('Le rapport de sécurité a été ajouté à la file d’export.')->success()->send()),
         ];
     }
 

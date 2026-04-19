@@ -15,16 +15,16 @@ class CreateCompanySetting extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Initialize Company Settings';
+        return 'Initialiser les paramètres société';
     }
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Save Changes');
+        return parent::getCreateFormAction()->label('Enregistrer');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Discard Changes');
+        return parent::getCancelFormAction()->label('Annuler');
     }
 }

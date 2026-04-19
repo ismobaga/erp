@@ -15,7 +15,7 @@ class CreateInvoice extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Create New Invoice';
+        return 'Créer une facture';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -29,11 +29,11 @@ class CreateInvoice extends CreateRecord
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Finalize Invoice');
+        return parent::getCreateFormAction()->label('Valider la facture');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Discard Draft');
+        return parent::getCancelFormAction()->label('Annuler');
     }
 }

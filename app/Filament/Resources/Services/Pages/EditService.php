@@ -14,7 +14,7 @@ class EditService extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Update Service Record';
+        return 'Modifier le service';
     }
 
     protected function getHeaderActions(): array
@@ -27,6 +27,6 @@ class EditService extends EditRecord
     protected function getSaveFormAction(): Action
     {
         return parent::getSaveFormAction()
-            ->label('Save Service Changes');
+            ->label('Enregistrer les modifications');
     }
 }

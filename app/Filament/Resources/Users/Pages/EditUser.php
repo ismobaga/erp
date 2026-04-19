@@ -14,7 +14,7 @@ class EditUser extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Edit Staff Profile';
+        return 'Modifier le profil';
     }
 
     protected function getHeaderActions(): array
@@ -26,6 +26,6 @@ class EditUser extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Update Staff Record');
+        return parent::getSaveFormAction()->label('Mettre à jour la fiche');
     }
 }

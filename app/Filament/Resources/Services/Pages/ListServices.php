@@ -13,13 +13,13 @@ class ListServices extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Service Registry';
+        return 'Catalogue des services';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('New service'),
+            CreateAction::make()->label('Nouveau service'),
         ];
     }
 }

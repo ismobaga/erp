@@ -14,7 +14,7 @@ class EditQuote extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Revise Quote';
+        return 'Modifier le devis';
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -34,6 +34,6 @@ class EditQuote extends EditRecord
     protected function getSaveFormAction(): Action
     {
         return parent::getSaveFormAction()
-            ->label('Save Quote Updates');
+            ->label('Enregistrer les modifications');
     }
 }

@@ -34,7 +34,7 @@ class CompanySettingResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationLabel = 'Company Settings';
+    protected static ?string $navigationLabel = 'Paramètres société';
 
     protected static ?string $recordTitleAttribute = 'company_name';
 
@@ -49,33 +49,33 @@ class CompanySettingResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Legal identity')
-                            ->description('Manage the core organizational profile used across invoices, quotes, and compliance exports.')
+                        Section::make('Identité légale')
+                            ->description('Gérez le profil principal utilisé dans les factures, devis et exports administratifs.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('company_name')
-                                    ->label('Company name')
+                                    ->label('Nom de l’entreprise')
                                     ->required(),
                                 TextInput::make('legal_name')
-                                    ->label('Legal name'),
+                                    ->label('Raison sociale'),
                                 TextInput::make('tax_number')
-                                    ->label('Tax ID / NIF'),
+                                    ->label('NIF / Identifiant fiscal'),
                                 TextInput::make('website')
-                                    ->label('Website'),
+                                    ->label('Site web'),
                                 Textarea::make('address')
-                                    ->label('Registered address')
+                                    ->label('Adresse enregistrée')
                                     ->rows(4)
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Brand visuals')
-                            ->description('Maintain the current visual identity used in administrative documents.')
+                        Section::make('Identité visuelle')
+                            ->description('Maintenez la charte visuelle utilisée dans les documents administratifs.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 FileUpload::make('logo_path')
-                                    ->label('Company logo')
+                                    ->label('Logo de l’entreprise')
                                     ->directory('company-assets')
                                     ->image()
                                     ->disk('public'),
@@ -83,22 +83,22 @@ class CompanySettingResource extends Resource
                                     ->label('Slogan'),
                             ]),
                         Section::make('Communications')
-                            ->description('Set the default contact channels for customers and internal finance teams.')
+                            ->description('Définissez les canaux de contact par défaut pour les clients et l’équipe finance.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('email')
-                                    ->label('Contact email')
+                                    ->label('E-mail de contact')
                                     ->email(),
                                 TextInput::make('phone')
-                                    ->label('Billing support phone')
+                                    ->label('Téléphone support facturation')
                                     ->tel(),
                                 TextInput::make('city'),
                                 TextInput::make('country'),
                             ]),
-                        Section::make('Financial defaults')
-                            ->description('Regional and invoicing defaults for the active ledger instance.')
+                        Section::make('Paramètres financiers')
+                            ->description('Valeurs par défaut pour la facturation et la comptabilité courante.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
@@ -111,20 +111,20 @@ class CompanySettingResource extends Resource
                                     ->default('FCFA')
                                     ->native(false),
                                 Placeholder::make('configuration_state')
-                                    ->label('Configuration state')
-                                    ->content('Administrative profile ready for document generation.'),
+                                    ->label('État de configuration')
+                                    ->content('Le profil administratif est prêt pour la génération des documents.'),
                             ]),
-                        Section::make('Template defaults')
-                            ->description('Standard copy inserted into invoices and quote documents.')
+                        Section::make('Notes par défaut')
+                            ->description('Texte standard ajouté aux factures et aux devis.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpanFull()
                             ->columns(['lg' => 2])
                             ->schema([
                                 Textarea::make('invoice_default_notes')
-                                    ->label('Invoice notes')
+                                    ->label('Notes de facture')
                                     ->rows(5),
                                 Textarea::make('quote_default_notes')
-                                    ->label('Quote notes')
+                                    ->label('Notes de devis')
                                     ->rows(5),
                             ]),
                     ]),
@@ -137,7 +137,7 @@ class CompanySettingResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('company_name')
-                    ->label('Organization')
+                    ->label('Organisation')
                     ->searchable(),
                 TextColumn::make('email')
                     ->searchable(),
@@ -146,7 +146,7 @@ class CompanySettingResource extends Resource
                     ->badge(),
                 TextColumn::make('updated_at')
                     ->since()
-                    ->label('Updated'),
+                    ->label('Mis à jour'),
             ])
             ->recordActions([
                 EditAction::make(),

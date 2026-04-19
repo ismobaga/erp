@@ -15,18 +15,18 @@ class CreateService extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Register New Service';
+        return 'Créer un service';
     }
 
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()
-            ->label('Finalize Service Entry');
+            ->label('Enregistrer le service');
     }
 
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()
-            ->label('Discard Draft');
+            ->label('Annuler');
     }
 }

@@ -19,7 +19,7 @@ class ListUsers extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Staff Onboarding & Security';
+        return 'Intégration et sécurité du personnel';
     }
 
     protected function getHeaderWidgets(): array
@@ -34,33 +34,33 @@ class ListUsers extends ListRecords
     {
         return [
             Action::make('inviteStaff')
-                ->label('Invite staff')
+                ->label('Inviter un membre')
                 ->schema([
-                    TextInput::make('name')->label('Full name')->required(),
-                    TextInput::make('email')->label('Email address')->email()->required(),
+                    TextInput::make('name')->label('Nom complet')->required(),
+                    TextInput::make('email')->label('Adresse e-mail')->email()->required(),
                     Select::make('role')->options([
-                        'financial_auditor' => 'Financial Auditor',
-                        'ledger_controller' => 'Ledger Controller',
-                        'regional_manager' => 'Regional Manager',
-                        'staff_coordinator' => 'Staff Coordinator',
+                        'financial_auditor' => 'Auditeur financier',
+                        'ledger_controller' => 'Contrôleur comptable',
+                        'regional_manager' => 'Responsable régional',
+                        'staff_coordinator' => 'Coordinateur du personnel',
                     ])->required()->native(false),
                     Select::make('region')->options([
-                        'bamako' => 'Bamako HQ',
-                        'kayes' => 'Kayes Regional',
-                        'mopti' => 'Mopti Regional',
-                        'global_treasury' => 'Global Treasury',
+                        'bamako' => 'Siège de Bamako',
+                        'kayes' => 'Région de Kayes',
+                        'mopti' => 'Région de Mopti',
+                        'global_treasury' => 'Trésorerie globale',
                     ])->required()->native(false),
                 ])
                 ->action(function (array $data): void {
                     Notification::make()
-                        ->title('Invitation prepared for ' . $data['name'] . ' at ' . $data['email'] . '.')
+                        ->title('Invitation préparée pour ' . $data['name'] . ' à l’adresse ' . $data['email'] . '.')
                         ->success()
                         ->send();
                 }),
             Action::make('report')
-                ->label('Export security report')
-                ->action(fn() => Notification::make()->title('Security access report queued for export.')->success()->send()),
-            CreateAction::make()->label('Add collaborator'),
+                ->label('Exporter le rapport de sécurité')
+                ->action(fn() => Notification::make()->title('Le rapport de sécurité a été ajouté à la file d’export.')->success()->send()),
+            CreateAction::make()->label('Ajouter un collaborateur'),
         ];
     }
 }

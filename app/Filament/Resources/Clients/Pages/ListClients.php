@@ -13,13 +13,13 @@ class ListClients extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Client Ledger';
+        return 'Registre clients';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('New client'),
+            CreateAction::make()->label('Nouveau client'),
         ];
     }
 }

@@ -47,7 +47,7 @@ class SecurityAccessOverview extends Widget
                     'name' => $user->name,
                     'detail' => $user->email,
                     'state' => strtoupper($user->status ?: 'active'),
-                    'time' => $user->last_login_at?->diffForHumans() ?? 'recently',
+                    'time' => $user->last_login_at?->diffForHumans() ?? 'à l’instant',
                 ])
                 ->all();
 

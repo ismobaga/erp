@@ -39,9 +39,11 @@ class InvoiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
 
     protected static ?int $navigationSort = 3;
+
+    protected static ?string $navigationLabel = 'Factures';
 
     protected static ?string $recordTitleAttribute = 'invoice_number';
 
@@ -51,26 +53,26 @@ class InvoiceResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Invoice identity')
-                            ->description('Create and dispatch a formal receivable record linked to the operational ledger.')
+                        Section::make('Identité de la facture')
+                            ->description('Créez un document de facturation officiel lié au suivi comptable opérationnel.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('invoice_number')
-                                    ->label('Invoice number')
+                                    ->label('Numéro de facture')
                                     ->default(fn(): string => static::generateInvoiceNumber())
                                     ->readOnly()
                                     ->required(),
                                 Select::make('client_id')
-                                    ->label('Client entity')
+                                    ->label('Client')
                                     ->relationship('client', 'company_name')
                                     ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
                                     ->preload()
                                     ->required(),
                                 Select::make('quote_id')
-                                    ->label('Linked quote')
+                                    ->label('Devis lié')
                                     ->relationship('quote', 'quote_number')
                                     ->searchable()
                                     ->preload()
@@ -98,36 +100,36 @@ class InvoiceResource extends Resource
                                 DatePicker::make('due_date')
                                     ->default(now()->addDays(30)),
                             ]),
-                        Section::make('Ledger status')
-                            ->description('Track collection state and payment urgency.')
+                        Section::make('État comptable')
+                            ->description('Suivez le recouvrement et le niveau d’urgence du paiement.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Select::make('status')
                                     ->options([
-                                        'draft' => 'Draft',
-                                        'sent' => 'Sent',
-                                        'partially_paid' => 'Partially paid',
-                                        'paid' => 'Paid',
-                                        'overdue' => 'Overdue',
-                                        'cancelled' => 'Cancelled',
+                                        'draft' => 'Brouillon',
+                                        'sent' => 'Envoyée',
+                                        'partially_paid' => 'Partiellement payée',
+                                        'paid' => 'Payée',
+                                        'overdue' => 'En retard',
+                                        'cancelled' => 'Annulée',
                                     ])
                                     ->default('draft')
                                     ->native(false)
                                     ->required(),
                                 Placeholder::make('collection_brief')
-                                    ->label('Collection brief')
-                                    ->content('Monitor receivables, client follow-up, and overdue exposure from this panel.'),
+                                    ->label('Résumé du recouvrement')
+                                    ->content('Suivez ici les créances, les relances clients et les retards de règlement.'),
                             ]),
-                        Section::make('Invoice line items')
-                            ->description('Compose the billable scope with services, quantities, and unit pricing.')
+                        Section::make('Lignes de facture')
+                            ->description('Définissez les prestations facturables, quantités et prix unitaires.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpanFull()
                             ->schema([
                                 Repeater::make('items')
                                     ->relationship()
                                     ->defaultItems(1)
-                                    ->addActionLabel('Add line item')
+                                    ->addActionLabel('Ajouter une ligne')
                                     ->schema([
                                         Select::make('service_id')
                                             ->label('Service')
@@ -166,43 +168,43 @@ class InvoiceResource extends Resource
                                             ->required()
                                             ->live(),
                                         Placeholder::make('line_total_preview')
-                                            ->label('Line total')
+                                            ->label('Total de la ligne')
                                             ->content(fn(Get $get): string => static::formatMoney(((float) ($get('quantity') ?? 0)) * ((float) ($get('unit_price') ?? 0)))),
                                     ])
                                     ->columns(6)
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Billing notes')
-                            ->description('Store reminders, dispatch notes, and collection guidance.')
+                        Section::make('Notes de facturation')
+                            ->description('Ajoutez les instructions, remarques d’envoi et consignes de recouvrement.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 7])
                             ->schema([
                                 Textarea::make('notes')
-                                    ->label('Administrative notes')
+                                    ->label('Notes administratives')
                                     ->rows(6)
-                                    ->placeholder('Include payment instructions, internal context, or contract references...'),
+                                    ->placeholder('Ajoutez les instructions de paiement, le contexte interne ou les références contractuelles...'),
                             ]),
-                        Section::make('Financial summary')
+                        Section::make('Résumé financier')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 5])
                             ->schema([
                                 TextInput::make('discount_total')
-                                    ->label('Discount total')
+                                    ->label('Remise totale')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)
                                     ->live(),
                                 TextInput::make('tax_total')
-                                    ->label('Tax total')
+                                    ->label('Taxes totales')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)
                                     ->live(),
                                 Placeholder::make('subtotal_preview')
-                                    ->label('Subtotal')
+                                    ->label('Sous-total')
                                     ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
                                 Placeholder::make('grand_total_preview')
-                                    ->label('Total receivable')
+                                    ->label('Total à recevoir')
                                     ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
                             ]),
                     ]),
@@ -215,26 +217,26 @@ class InvoiceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('invoice_number')
-                    ->label('Invoice')
-                    ->description(fn(Invoice $record): string => $record->quote?->quote_number ? 'Linked to ' . $record->quote->quote_number : 'Standalone billing')
+                    ->label('Facture')
+                    ->description(fn(Invoice $record): string => $record->quote?->quote_number ? 'Liée au devis ' . $record->quote->quote_number : 'Facturation indépendante')
                     ->searchable(),
                 TextColumn::make('client_name')
-                    ->label('Client entity')
-                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account')
-                    ->description(fn(Invoice $record): string => $record->client?->email ?: 'No billing email'),
+                    ->label('Client')
+                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
+                    ->description(fn(Invoice $record): string => $record->client?->email ?: 'Aucun e-mail de facturation'),
                 TextColumn::make('issue_date')
-                    ->label('Issue / due')
-                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? 'Not issued')
-                    ->description(fn(Invoice $record): string => $record->due_date ? 'Due ' . (optional($record->due_date)->format('M d, Y') ?? 'TBD') : 'No due date')
+                    ->label('Émission / échéance')
+                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? 'Non émise')
+                    ->description(fn(Invoice $record): string => $record->due_date ? 'Échéance ' . (optional($record->due_date)->format('M d, Y') ?? 'À définir') : 'Aucune échéance')
                     ->sortable(),
                 TextColumn::make('total')
-                    ->label('Total amount')
+                    ->label('Montant total')
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
                     ->sortable(),
                 TextColumn::make('balance_due')
-                    ->label('Balance due')
+                    ->label('Reste dû')
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0 ? 'Paid: ' . static::formatMoney((float) $record->paid_total) : 'No payment recorded')
+                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0 ? 'Payé : ' . static::formatMoney((float) $record->paid_total) : 'Aucun paiement enregistré')
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -251,22 +253,22 @@ class InvoiceResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'draft' => 'Draft',
-                        'sent' => 'Sent',
-                        'partially_paid' => 'Partially paid',
-                        'paid' => 'Paid',
-                        'overdue' => 'Overdue',
-                        'cancelled' => 'Cancelled',
+                        'draft' => 'Brouillon',
+                        'sent' => 'Envoyée',
+                        'partially_paid' => 'Partiellement payée',
+                        'paid' => 'Payée',
+                        'overdue' => 'En retard',
+                        'cancelled' => 'Annulée',
                     ]),
             ])
             ->recordActions([
                 Action::make('sendReminder')
-                    ->label('Send reminder')
+                    ->label('Envoyer un rappel')
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true))
-                    ->action(fn(Invoice $record) => Notification::make()->title('Reminder queued for ' . $record->invoice_number . '.')->success()->send()),
+                    ->action(fn(Invoice $record) => Notification::make()->title('Rappel préparé pour ' . $record->invoice_number . '.')->success()->send()),
                 Action::make('exportPdf')
-                    ->label('Export PDF')
-                    ->action(fn(Invoice $record) => Notification::make()->title('PDF export prepared for ' . $record->invoice_number . '.')->success()->send()),
+                    ->label('Exporter en PDF')
+                    ->action(fn(Invoice $record) => Notification::make()->title('Export PDF préparé pour ' . $record->invoice_number . '.')->success()->send()),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

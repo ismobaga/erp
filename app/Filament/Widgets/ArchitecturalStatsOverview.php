@@ -17,9 +17,9 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Operations dashboard';
+    protected ?string $heading = 'Vue d’ensemble opérationnelle';
 
-    protected ?string $description = 'A live executive summary across finance, delivery, and staffing.';
+    protected ?string $description = 'Résumé en temps réel des finances, projets et équipes.';
 
     protected function getStats(): array
     {
@@ -35,20 +35,20 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
             $activeProjects = Project::query()->whereIn('status', ['active', 'in_progress'])->count();
 
             return [
-                Stat::make('Client portfolio', number_format($clients))
-                    ->description(number_format($activeClients) . ' active relationships')
+                Stat::make('Portefeuille clients', number_format($clients))
+                    ->description(number_format($activeClients) . ' relations actives')
                     ->color('primary')
                     ->chart([7, 8, 10, 11, 13, 14, max(15, $clients)]),
-                Stat::make('Open invoices', number_format($openInvoices))
-                    ->description('Collection flow under watch')
+                Stat::make('Factures ouvertes', number_format($openInvoices))
+                    ->description('Flux de recouvrement à surveiller')
                     ->color('warning')
                     ->chart([12, 10, 11, 9, 8, 7, max(6, $openInvoices)]),
-                Stat::make('Settled revenue', $this->money($settledRevenue))
-                    ->description('Confirmed payments in the ledger')
+                Stat::make('Revenus encaissés', $this->money($settledRevenue))
+                    ->description('Paiements confirmés dans le registre')
                     ->color('success')
                     ->chart([2, 4, 3, 6, 8, 7, 9]),
-                Stat::make('Active projects', number_format($activeProjects))
-                    ->description('Delivery momentum this cycle')
+                Stat::make('Projets actifs', number_format($activeProjects))
+                    ->description('Rythme de livraison en cours')
                     ->color('info')
                     ->chart([3, 4, 5, 4, 6, 7, max(4, $activeProjects)]),
             ];

@@ -13,13 +13,13 @@ class ListQuotes extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Quote Ledger';
+        return 'Registre des devis';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('New quote'),
+            CreateAction::make()->label('Nouveau devis'),
         ];
     }
 }

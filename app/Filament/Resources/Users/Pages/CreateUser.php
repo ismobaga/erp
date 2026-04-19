@@ -15,16 +15,16 @@ class CreateUser extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Add Staff Member';
+        return 'Ajouter un membre du personnel';
     }
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Save Staff Record');
+        return parent::getCreateFormAction()->label('Enregistrer la fiche');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Discard Draft');
+        return parent::getCancelFormAction()->label('Annuler');
     }
 }

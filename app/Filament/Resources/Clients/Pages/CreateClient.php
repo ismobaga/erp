@@ -15,7 +15,7 @@ class CreateClient extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Create New Client';
+        return 'Créer un client';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -29,12 +29,12 @@ class CreateClient extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()
-            ->label('Save Client Record');
+            ->label('Enregistrer le client');
     }
 
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()
-            ->label('Discard Draft');
+            ->label('Annuler');
     }
 }

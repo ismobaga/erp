@@ -31,9 +31,11 @@ class ClientResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
 
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Clients';
 
     protected static ?string $recordTitleAttribute = 'company_name';
 
@@ -43,17 +45,17 @@ class ClientResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('General information')
-                            ->description('Register a new entity or individual into the central ledger system.')
+                        Section::make('Informations générales')
+                            ->description('Enregistrez un nouveau client ou une nouvelle entité dans le référentiel central.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 Radio::make('type')
-                                    ->label('Client type')
+                                    ->label('Type de client')
                                     ->options([
-                                        'company' => 'Company',
-                                        'individual' => 'Individual',
+                                        'company' => 'Entreprise',
+                                        'individual' => 'Particulier',
                                     ])
                                     ->default('company')
                                     ->inline()
@@ -62,25 +64,25 @@ class ClientResource extends Resource
                                     ->columnSpanFull(),
                                 Select::make('status')
                                     ->options([
-                                        'lead' => 'Lead',
-                                        'active' => 'Active',
-                                        'customer' => 'Customer',
-                                        'inactive' => 'Inactive',
+                                        'lead' => 'Prospect',
+                                        'active' => 'Actif',
+                                        'customer' => 'Client',
+                                        'inactive' => 'Inactif',
                                     ])
                                     ->default('lead')
                                     ->native(false)
                                     ->required(),
                                 TextInput::make('company_name')
-                                    ->label(fn(Get $get): string => $get('type') === 'individual' ? 'Client name' : 'Company name')
+                                    ->label(fn(Get $get): string => $get('type') === 'individual' ? 'Nom du client' : 'Nom de l’entreprise')
                                     ->placeholder('Acme Architecture Ltd.')
                                     ->required()
                                     ->columnSpanFull(),
                                 TextInput::make('contact_name')
-                                    ->label('Primary contact name')
-                                    ->placeholder('Full name')
+                                    ->label('Contact principal')
+                                    ->placeholder('Nom complet')
                                     ->required(),
                                 TextInput::make('email')
-                                    ->label('Email address')
+                                    ->label('Adresse e-mail')
                                     ->email()
                                     ->placeholder('contact@company.com'),
                                 TextInput::make('phone')
@@ -88,8 +90,8 @@ class ClientResource extends Resource
                                     ->placeholder('+223 00 00 00 00')
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Internal notes')
-                            ->description('Confidential notes for the account management team.')
+                        Section::make('Notes internes')
+                            ->description('Notes confidentielles pour l’équipe en charge du compte.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
@@ -97,18 +99,18 @@ class ClientResource extends Resource
                                     ->rows(8)
                                     ->placeholder('Document specific requirements, historical context, or preferred communication channels...'),
                                 Placeholder::make('registry_state')
-                                    ->label('Registry status')
-                                    ->content('Draft mode · Ready for verification'),
+                                    ->label('État du dossier')
+                                    ->content('Brouillon · Prêt pour vérification'),
                             ]),
-                        Section::make('Location & logistics')
-                            ->description('Store the operational location and contact routing details.')
+                        Section::make('Localisation et logistique')
+                            ->description('Conservez l’adresse opérationnelle et les informations de contact.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 TextInput::make('address')
-                                    ->label('Physical address')
-                                    ->placeholder('Street address')
+                                    ->label('Adresse physique')
+                                    ->placeholder('Adresse')
                                     ->columnSpanFull(),
                                 TextInput::make('city')
                                     ->placeholder('City'),
@@ -123,16 +125,16 @@ class ClientResource extends Resource
                                     ->searchable()
                                     ->native(false),
                             ]),
-                        Section::make('Completion overview')
+                        Section::make('Résumé du dossier')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Placeholder::make('draft_mode')
-                                    ->label('Registry mode')
-                                    ->content('Draft mode'),
+                                    ->label('Mode du dossier')
+                                    ->content('Brouillon'),
                                 Placeholder::make('verification_hint')
-                                    ->label('Verification')
-                                    ->content('Ready for account review and approval.'),
+                                    ->label('Vérification')
+                                    ->content('Prêt pour revue et validation.'),
                             ]),
                     ]),
             ])
@@ -145,7 +147,7 @@ class ClientResource extends Resource
             ->columns([
                 TextColumn::make('identity')
                     ->label('Client')
-                    ->state(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: 'Unnamed client')
+                    ->state(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: 'Client sans nom')
                     ->searchable(['company_name', 'contact_name', 'email']),
                 TextColumn::make('type')
                     ->badge(),
@@ -160,7 +162,7 @@ class ClientResource extends Resource
                     ->badge(),
                 TextColumn::make('updated_at')
                     ->since()
-                    ->label('Updated'),
+                    ->label('Mis à jour'),
             ])
             ->recordActions([
                 EditAction::make(),

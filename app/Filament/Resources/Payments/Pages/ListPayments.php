@@ -18,7 +18,7 @@ class ListPayments extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Finance Payment Terminal';
+        return 'Terminal de paiements';
     }
 
     protected function getHeaderWidgets(): array
@@ -33,13 +33,13 @@ class ListPayments extends ListRecords
     {
         return [
             Action::make('batchProcess')
-                ->label('Batch process all')
-                ->action(fn() => Notification::make()->title('Ready-to-pay items were queued for batch review.')->success()->send()),
+                ->label('Traiter le lot')
+                ->action(fn() => Notification::make()->title('Les éléments prêts ont été envoyés pour révision groupée.')->success()->send()),
             Action::make('exportLedger')
-                ->label('Export ledger report')
-                ->action(fn() => Notification::make()->title('Ledger report export started successfully.')->success()->send()),
+                ->label('Exporter le registre')
+                ->action(fn() => Notification::make()->title('L’export du registre a démarré avec succès.')->success()->send()),
             Action::make('smartLink')
-                ->label('Run smart-link')
+                ->label('Lancer le rapprochement')
                 ->action(function (): void {
                     $matched = 0;
 
@@ -53,7 +53,7 @@ class ListPayments extends ListRecords
                         });
 
                     $notification = Notification::make()
-                        ->title($matched > 0 ? $matched . ' payment(s) reconciled.' : 'No unmatched payments were eligible for auto-link.');
+                        ->title($matched > 0 ? $matched . ' paiement(s) rapproché(s).' : 'Aucun paiement non affecté n’était éligible au rapprochement automatique.');
 
                     if ($matched > 0) {
                         $notification->success();
@@ -63,7 +63,7 @@ class ListPayments extends ListRecords
 
                     $notification->send();
                 }),
-            CreateAction::make()->label('Record payment'),
+            CreateAction::make()->label('Enregistrer un paiement'),
         ];
     }
 }

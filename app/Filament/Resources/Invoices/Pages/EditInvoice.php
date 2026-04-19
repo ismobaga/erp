@@ -14,7 +14,7 @@ class EditInvoice extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Revise Invoice';
+        return 'Modifier la facture';
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -33,6 +33,6 @@ class EditInvoice extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save Invoice Updates');
+        return parent::getSaveFormAction()->label('Enregistrer les modifications');
     }
 }

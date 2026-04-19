@@ -15,7 +15,7 @@ class CreateQuote extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Create New Quote';
+        return 'Créer un devis';
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -30,12 +30,12 @@ class CreateQuote extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()
-            ->label('Finalize Quote');
+            ->label('Valider le devis');
     }
 
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()
-            ->label('Discard Draft');
+            ->label('Annuler');
     }
 }

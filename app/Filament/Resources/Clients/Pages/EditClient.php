@@ -14,7 +14,7 @@ class EditClient extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Edit Client Profile';
+        return 'Modifier le client';
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -34,6 +34,6 @@ class EditClient extends EditRecord
     protected function getSaveFormAction(): Action
     {
         return parent::getSaveFormAction()
-            ->label('Update Client');
+            ->label('Mettre à jour');
     }
 }

@@ -23,9 +23,9 @@ class ApprovalCenter extends Page
 
     protected static ?int $navigationSort = 7;
 
-    protected static ?string $navigationLabel = 'Approvals';
+    protected static ?string $navigationLabel = 'Validations';
 
-    protected static ?string $title = 'Manager Approval Dashboard';
+    protected static ?string $title = 'Tableau des validations';
 
     protected string $view = 'filament.pages.approval-center';
 
@@ -33,11 +33,11 @@ class ApprovalCenter extends Page
     {
         return [
             Action::make('approveLowRisk')
-                ->label('Approve low-risk')
-                ->action(fn() => Notification::make()->title('Low-risk approvals have been prepared for review.')->success()->send()),
+                ->label('Valider les cas simples')
+                ->action(fn() => Notification::make()->title('Les validations à faible risque ont été préparées.')->success()->send()),
             Action::make('exportQueue')
-                ->label('Export queue')
-                ->action(fn() => Notification::make()->title('Approval queue export has been queued.')->success()->send()),
+                ->label('Exporter la file')
+                ->action(fn() => Notification::make()->title('L’export de la file de validation a été lancé.')->success()->send()),
         ];
     }
 

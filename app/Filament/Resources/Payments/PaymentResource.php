@@ -36,11 +36,11 @@ class PaymentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Payments Tracking';
+    protected static ?string $navigationLabel = 'Paiements';
 
     protected static ?string $recordTitleAttribute = 'reference';
 
@@ -50,23 +50,23 @@ class PaymentResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Transaction identity')
-                            ->description('Record fiscal inflows and link them to outstanding invoice obligations.')
+                        Section::make('Identité de la transaction')
+                            ->description('Enregistrez les encaissements et rattachez-les aux factures en attente.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
                                 DatePicker::make('payment_date')
-                                    ->label('Payment date')
+                                    ->label('Date du paiement')
                                     ->default(now())
                                     ->required(),
                                 Select::make('invoice_id')
-                                    ->label('Linked invoice')
+                                    ->label('Facture liée')
                                     ->relationship('invoice', 'invoice_number')
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
-                                    ->helperText('Optional at entry time. Use smart-link later if finance records the payment before matching it.')
+                                    ->helperText('Optionnel à la saisie. Utilisez le rapprochement intelligent si le paiement est saisi avant son affectation.')
                                     ->live()
                                     ->afterStateUpdated(function ($state, callable $set): void {
                                         if (blank($state)) {
@@ -89,47 +89,47 @@ class PaymentResource extends Resource
                                     ->preload()
                                     ->required(),
                                 Select::make('payment_method')
-                                    ->label('Method')
+                                    ->label('Mode')
                                     ->options([
-                                        'bank_transfer' => 'Bank transfer',
-                                        'cash' => 'Cash',
-                                        'check' => 'Check',
+                                        'bank_transfer' => 'Virement bancaire',
+                                        'cash' => 'Espèces',
+                                        'check' => 'Chèque',
                                         'mobile_money' => 'Mobile money',
                                     ])
                                     ->default('bank_transfer')
                                     ->native(false)
                                     ->required(),
                                 TextInput::make('reference')
-                                    ->label('Reference #')
+                                    ->label('Référence')
                                     ->placeholder('BT-9902-XQ')
                                     ->columnSpanFull(),
                                 TextInput::make('amount')
-                                    ->label('Received amount')
+                                    ->label('Montant reçu')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->minValue(0.01)
                                     ->required(),
                             ]),
-                        Section::make('Settlement controls')
-                            ->description('Apply validation logic and reconciliation exceptions.')
+                        Section::make('Contrôles de règlement')
+                            ->description('Appliquez les validations et les exceptions de rapprochement.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Toggle::make('allow_overpayment')
-                                    ->label('Allow overpayment')
-                                    ->helperText('Only enable when finance explicitly approves the excess receipt.'),
+                                    ->label('Autoriser le trop-perçu')
+                                    ->helperText('À activer uniquement après validation explicite de l’équipe finance.'),
                                 Placeholder::make('tracking_notice')
-                                    ->label('Verification note')
-                                    ->content('Bank transfers and high-value entries should be reconciled daily.'),
+                                    ->label('Note de vérification')
+                                    ->content('Les virements et les montants élevés doivent être rapprochés chaque jour.'),
                             ]),
-                        Section::make('Administrative notes')
-                            ->description('Store internal settlement context and reconciliation comments.')
+                        Section::make('Notes administratives')
+                            ->description('Conservez le contexte interne et les commentaires de rapprochement.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpanFull()
                             ->schema([
                                 Textarea::make('notes')
                                     ->rows(5)
-                                    ->placeholder('Include bank confirmation details, anomalies, or collection remarks...'),
+                                    ->placeholder('Ajoutez les confirmations bancaires, anomalies ou remarques de recouvrement...'),
                             ]),
                     ]),
             ])
@@ -143,59 +143,69 @@ class PaymentResource extends Resource
                 TextColumn::make('reference')
                     ->label('Transaction')
                     ->state(fn(Payment $record): string => $record->reference ?: ('PAY-' . str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
-                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? 'Undated') . ' • ' . str($record->payment_method)->replace('_', ' ')->title())
+                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? 'Sans date') . ' • ' . match ($record->payment_method) {
+                        'bank_transfer' => 'Virement bancaire',
+                        'cash' => 'Espèces',
+                        'check' => 'Chèque',
+                        default => 'Mobile money',
+                    })
                     ->searchable(['reference'])
                     ->sortable(),
                 TextColumn::make('client_name')
                     ->label('Client')
-                    ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account')
-                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number ? 'Linked to ' . $record->invoice->invoice_number : 'Awaiting invoice match')
+                    ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
+                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number ? 'Lié à ' . $record->invoice->invoice_number : 'En attente de rapprochement')
                     ->searchable(['reference']),
                 TextColumn::make('amount')
-                    ->label('Amount')
+                    ->label('Montant')
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->description(fn(Payment $record): string => $record->allow_overpayment ? 'Overpayment override enabled' : 'Standard settlement')
+                    ->description(fn(Payment $record): string => $record->allow_overpayment ? 'Trop-perçu autorisé' : 'Règlement standard')
                     ->sortable(),
                 TextColumn::make('invoice_due_date')
-                    ->label('Due date')
-                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? 'Not scheduled')
-                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? 'Overdue exposure' : 'Finance schedule'),
+                    ->label('Échéance')
+                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? 'Non planifiée')
+                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? 'Facture en retard' : 'Calendrier finance'),
                 TextColumn::make('payment_method')
-                    ->label('Method')
+                    ->label('Mode')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', ucfirst($state))),
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'bank_transfer' => 'Virement bancaire',
+                        'cash' => 'Espèces',
+                        'check' => 'Chèque',
+                        default => 'Mobile money',
+                    }),
                 TextColumn::make('reconciliation_state')
-                    ->label('Reconciliation')
+                    ->label('Rapprochement')
                     ->state(fn(Payment $record): string => match ($record->reconciliationState()) {
-                        'completed' => 'Completed',
-                        'flagged' => 'Flagged',
-                        default => 'Pending',
+                        'completed' => 'Terminé',
+                        'flagged' => 'À vérifier',
+                        default => 'En attente',
                     })
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'Completed' => 'success',
-                        'Flagged' => 'danger',
+                        'Terminé' => 'success',
+                        'À vérifier' => 'danger',
                         default => 'warning',
                     }),
             ])
             ->filters([
                 SelectFilter::make('payment_method')
                     ->options([
-                        'bank_transfer' => 'Bank transfer',
-                        'cash' => 'Cash',
-                        'check' => 'Check',
+                        'bank_transfer' => 'Virement bancaire',
+                        'cash' => 'Espèces',
+                        'check' => 'Chèque',
                         'mobile_money' => 'Mobile money',
                     ]),
             ])
             ->recordActions([
                 Action::make('reconcile')
-                    ->label('Smart-link')
+                    ->label('Rapprochement intelligent')
                     ->visible(fn(Payment $record): bool => $record->invoice_id === null)
                     ->action(function (Payment $record): void {
                         $matched = $record->reconcileAgainstOpenInvoice();
 
                         $notification = Notification::make()
-                            ->title($matched ? 'Payment reconciled to an open invoice.' : 'No eligible invoice match was found for this payment.');
+                            ->title($matched ? 'Paiement rapproché avec une facture ouverte.' : 'Aucune facture compatible n’a été trouvée pour ce paiement.');
 
                         if ($matched) {
                             $notification->success();
@@ -206,9 +216,9 @@ class PaymentResource extends Resource
                         $notification->send();
                     }),
                 Action::make('flag')
-                    ->label('Flag')
+                    ->label('Signaler')
                     ->color('danger')
-                    ->action(fn(Payment $record) => Notification::make()->title(($record->reference ?: 'Payment entry') . ' has been flagged for finance review.')->warning()->send()),
+                    ->action(fn(Payment $record) => Notification::make()->title(($record->reference ?: 'Paiement') . ' a été signalé pour vérification par la finance.')->warning()->send()),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

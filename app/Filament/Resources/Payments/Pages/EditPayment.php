@@ -14,7 +14,7 @@ class EditPayment extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Revise Payment Entry';
+        return 'Modifier le paiement';
     }
 
     protected function getHeaderActions(): array
@@ -26,6 +26,6 @@ class EditPayment extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save Payment Updates');
+        return parent::getSaveFormAction()->label('Enregistrer les modifications');
     }
 }

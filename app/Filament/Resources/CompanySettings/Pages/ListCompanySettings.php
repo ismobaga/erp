@@ -29,13 +29,13 @@ class ListCompanySettings extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Company Settings';
+        return 'Paramètres société';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Initialize settings'),
+            CreateAction::make()->label('Initialiser les paramètres'),
         ];
     }
 }

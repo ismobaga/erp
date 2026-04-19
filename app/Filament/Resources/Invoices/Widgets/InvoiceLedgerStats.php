@@ -13,9 +13,9 @@ class InvoiceLedgerStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Financial overview';
+    protected ?string $heading = 'Vue financière';
 
-    protected ?string $description = 'A live receivables snapshot for the invoice desk.';
+    protected ?string $description = 'Indicateurs en direct pour le suivi des factures et des créances.';
 
     protected function getStats(): array
     {
@@ -30,20 +30,20 @@ class InvoiceLedgerStats extends StatsOverviewWidget
             $linkedQuotes = Quote::query()->count();
 
             return [
-                Stat::make('Total receivables', $this->money($receivables))
-                    ->description('Confirmed invoice value in the ledger')
+                Stat::make('Créances totales', $this->money($receivables))
+                    ->description('Valeur confirmée des factures')
                     ->color('primary')
                     ->chart([12, 14, 13, 18, 20, 22, 24]),
-                Stat::make('Overdue exposure', $this->money($overdueBalance))
-                    ->description('Amounts requiring immediate action')
+                Stat::make('Montants en retard', $this->money($overdueBalance))
+                    ->description('Sommes demandant une action rapide')
                     ->color('danger')
                     ->chart([9, 8, 10, 9, 7, 6, 5]),
-                Stat::make('Pending invoices', number_format($pendingCount))
-                    ->description('Active collection workload')
+                Stat::make('Factures en attente', number_format($pendingCount))
+                    ->description('Charge active de recouvrement')
                     ->color('warning')
                     ->chart([3, 4, 6, 7, 8, 7, 9]),
-                Stat::make('Linked quotes', number_format($linkedQuotes))
-                    ->description('Commercial source documents')
+                Stat::make('Devis liés', number_format($linkedQuotes))
+                    ->description('Documents commerciaux d’origine')
                     ->color('success')
                     ->chart([2, 3, 4, 5, 6, 7, 8]),
             ];
