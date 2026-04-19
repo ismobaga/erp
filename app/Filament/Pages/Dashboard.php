@@ -10,6 +10,21 @@ class Dashboard extends BaseDashboard
 {
     protected static ?string $title = 'Tableau de bord';
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user || $user->status === 'restricted') {
+            return false;
+        }
+
+        if ($user->hasRole('Super Admin')) {
+            return true;
+        }
+
+        return $user->getAllPermissions()->isNotEmpty() || $user->roles()->exists();
+    }
+
     public function getColumns(): int|array
     {
         return [

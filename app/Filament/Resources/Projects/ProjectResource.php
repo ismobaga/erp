@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Projects;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
@@ -32,6 +33,10 @@ use Filament\Tables\Table;
 
 class ProjectResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'projects';
+
     protected static ?string $model = Project::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBriefcase;
@@ -191,7 +196,7 @@ class ProjectResource extends Resource
                 Action::make('approve')
                     ->label('Approuver')
                     ->color('success')
-                    ->visible(fn(Project $record): bool => $record->approval_status !== 'approved')
+                    ->visible(fn(Project $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         $record->approve(auth()->user(), 'Projet approuvé pour lancement.');
 
@@ -203,7 +208,7 @@ class ProjectResource extends Resource
                 Action::make('start')
                     ->label('Démarrer')
                     ->color('info')
-                    ->visible(fn(Project $record): bool => in_array($record->status, ['planned', 'on_hold'], true) && $record->approval_status !== 'rejected')
+                    ->visible(fn(Project $record): bool => in_array($record->status, ['planned', 'on_hold'], true) && $record->approval_status !== 'rejected' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         if ($record->approval_status === 'pending') {
                             $record->approve(auth()->user(), 'Validation automatique au démarrage.');
@@ -219,7 +224,7 @@ class ProjectResource extends Resource
                 Action::make('complete')
                     ->label('Clôturer')
                     ->color('primary')
-                    ->visible(fn(Project $record): bool => $record->status !== 'completed')
+                    ->visible(fn(Project $record): bool => $record->status !== 'completed' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         $record->markCompleted();
 

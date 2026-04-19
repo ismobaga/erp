@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CompanySettings;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\CompanySettings\Pages\CreateCompanySetting;
 use App\Filament\Resources\CompanySettings\Pages\EditCompanySetting;
 use App\Filament\Resources\CompanySettings\Pages\ListCompanySettings;
@@ -26,6 +27,10 @@ use Filament\Tables\Table;
 
 class CompanySettingResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'settings';
+
     protected static ?string $model = CompanySetting::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
@@ -40,7 +45,7 @@ class CompanySettingResource extends Resource
 
     public static function canCreate(): bool
     {
-        return CompanySetting::query()->doesntExist();
+        return static::canAccessPermission('update') && CompanySetting::query()->doesntExist();
     }
 
     public static function form(Schema $schema): Schema

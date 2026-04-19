@@ -32,6 +32,7 @@ class ListInvoices extends ListRecords
         return [
             Action::make('sendReminders')
                 ->label('Envoyer les rappels')
+                ->visible(fn(): bool => auth()->user()?->can('invoices.update') ?? false)
                 ->action(function (): void {
                     $total = Invoice::query()->whereIn('status', ['sent', 'overdue', 'partially_paid'])->count();
 

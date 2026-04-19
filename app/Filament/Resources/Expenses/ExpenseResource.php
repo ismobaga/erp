@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Expenses;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Expenses\Pages\CreateExpense;
 use App\Filament\Resources\Expenses\Pages\EditExpense;
 use App\Filament\Resources\Expenses\Pages\ListExpenses;
@@ -29,6 +30,10 @@ use Filament\Tables\Table;
 
 class ExpenseResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'expenses';
+
     protected static ?string $model = Expense::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
@@ -178,7 +183,7 @@ class ExpenseResource extends Resource
                 Action::make('approve')
                     ->label('Approuver')
                     ->color('success')
-                    ->visible(fn(Expense $record): bool => $record->approval_status !== 'approved')
+                    ->visible(fn(Expense $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->approve(auth()->user(), 'Validation effectuée depuis le terminal de gestion.');
 
@@ -190,7 +195,7 @@ class ExpenseResource extends Resource
                 Action::make('review')
                     ->label('Demander une revue')
                     ->color('warning')
-                    ->visible(fn(Expense $record): bool => $record->approval_status === 'pending')
+                    ->visible(fn(Expense $record): bool => $record->approval_status === 'pending' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->markForReview(auth()->user(), 'Contrôle complémentaire demandé.');
 

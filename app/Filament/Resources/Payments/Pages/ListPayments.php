@@ -34,12 +34,15 @@ class ListPayments extends ListRecords
         return [
             Action::make('batchProcess')
                 ->label('Traiter le lot')
+                ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
                 ->action(fn() => Notification::make()->title('Les éléments prêts ont été envoyés pour révision groupée.')->success()->send()),
             Action::make('exportLedger')
                 ->label('Exporter le registre')
+                ->visible(fn(): bool => auth()->user()?->canAny(['payments.view', 'reports.view']) ?? false)
                 ->action(fn() => Notification::make()->title('L’export du registre a démarré avec succès.')->success()->send()),
             Action::make('smartLink')
                 ->label('Lancer le rapprochement')
+                ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
                 ->action(function (): void {
                     $matched = 0;
 

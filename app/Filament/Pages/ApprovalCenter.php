@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Payments\PaymentResource;
@@ -20,6 +21,10 @@ use Throwable;
 
 class ApprovalCenter extends Page
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'reports';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Administration';
@@ -37,6 +42,7 @@ class ApprovalCenter extends Page
         return [
             Action::make('approveLowRisk')
                 ->label('Valider les cas simples')
+                ->visible(fn(): bool => auth()->user()?->canAny(['expenses.update', 'projects.update', 'invoices.update', 'payments.update']) ?? false)
                 ->action(function (): void {
                     $user = auth()->user();
                     $approved = 0;

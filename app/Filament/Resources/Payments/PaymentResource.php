@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Payments;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Payments\Pages\CreatePayment;
 use App\Filament\Resources\Payments\Pages\EditPayment;
 use App\Filament\Resources\Payments\Pages\ListPayments;
@@ -32,6 +33,10 @@ use Filament\Tables\Table;
 
 class PaymentResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'payments';
+
     protected static ?string $model = Payment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
@@ -200,7 +205,7 @@ class PaymentResource extends Resource
             ->recordActions([
                 Action::make('reconcile')
                     ->label('Rapprochement intelligent')
-                    ->visible(fn(Payment $record): bool => $record->invoice_id === null)
+                    ->visible(fn(Payment $record): bool => $record->invoice_id === null && (auth()->user()?->can('payments.update') ?? false))
                     ->action(function (Payment $record): void {
                         $matched = $record->reconcileAgainstOpenInvoice();
 
@@ -217,6 +222,7 @@ class PaymentResource extends Resource
                     }),
                 Action::make('flag')
                     ->label('Signaler')
+                    ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
                     ->color('danger')
                     ->action(fn(Payment $record) => Notification::make()->title(($record->reference ?: 'Paiement') . ' a été signalé pour vérification par la finance.')->warning()->send()),
                 EditAction::make(),

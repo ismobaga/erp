@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invoices;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
@@ -35,6 +36,10 @@ use Filament\Tables\Table;
 
 class InvoiceResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'invoices';
+
     protected static ?string $model = Invoice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
@@ -264,10 +269,11 @@ class InvoiceResource extends Resource
             ->recordActions([
                 Action::make('sendReminder')
                     ->label('Envoyer un rappel')
-                    ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true))
+                    ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
                     ->action(fn(Invoice $record) => Notification::make()->title('Rappel préparé pour ' . $record->invoice_number . '.')->success()->send()),
                 Action::make('exportPdf')
                     ->label('Exporter en PDF')
+                    ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
                     ->action(fn(Invoice $record) => Notification::make()->title('Export PDF préparé pour ' . $record->invoice_number . '.')->success()->send()),
                 EditAction::make(),
                 DeleteAction::make(),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Quotes;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Quotes\Pages\CreateQuote;
 use App\Filament\Resources\Quotes\Pages\EditQuote;
 use App\Filament\Resources\Quotes\Pages\ListQuotes;
@@ -31,6 +32,10 @@ use Filament\Tables\Table;
 
 class QuoteResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'quotes';
+
     protected static ?string $model = Quote::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

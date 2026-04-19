@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -16,6 +17,10 @@ use Throwable;
 
 class NotificationHub extends Page
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'reports';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Administration';
