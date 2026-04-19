@@ -1,0 +1,189 @@
+<?php
+
+namespace App\Filament\Resources\Clients;
+
+use App\Filament\Resources\Clients\Pages\CreateClient;
+use App\Filament\Resources\Clients\Pages\EditClient;
+use App\Filament\Resources\Clients\Pages\ListClients;
+use App\Models\Client;
+use BackedEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+class ClientResource extends Resource
+{
+    protected static ?string $model = Client::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Ledger';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'company_name';
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Grid::make(['lg' => 12])
+                    ->schema([
+                        Section::make('General information')
+                            ->description('Register a new entity or individual into the central ledger system.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
+                            ->columnSpan(['lg' => 8])
+                            ->columns(['lg' => 2])
+                            ->schema([
+                                Radio::make('type')
+                                    ->label('Client type')
+                                    ->options([
+                                        'company' => 'Company',
+                                        'individual' => 'Individual',
+                                    ])
+                                    ->default('company')
+                                    ->inline()
+                                    ->live()
+                                    ->required()
+                                    ->columnSpanFull(),
+                                Select::make('status')
+                                    ->options([
+                                        'lead' => 'Lead',
+                                        'active' => 'Active',
+                                        'customer' => 'Customer',
+                                        'inactive' => 'Inactive',
+                                    ])
+                                    ->default('lead')
+                                    ->native(false)
+                                    ->required(),
+                                TextInput::make('company_name')
+                                    ->label(fn(Get $get): string => $get('type') === 'individual' ? 'Client name' : 'Company name')
+                                    ->placeholder('Acme Architecture Ltd.')
+                                    ->required()
+                                    ->columnSpanFull(),
+                                TextInput::make('contact_name')
+                                    ->label('Primary contact name')
+                                    ->placeholder('Full name')
+                                    ->required(),
+                                TextInput::make('email')
+                                    ->label('Email address')
+                                    ->email()
+                                    ->placeholder('contact@company.com'),
+                                TextInput::make('phone')
+                                    ->tel()
+                                    ->placeholder('+223 00 00 00 00')
+                                    ->columnSpanFull(),
+                            ]),
+                        Section::make('Internal notes')
+                            ->description('Confidential notes for the account management team.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
+                            ->columnSpan(['lg' => 4])
+                            ->schema([
+                                Textarea::make('notes')
+                                    ->rows(8)
+                                    ->placeholder('Document specific requirements, historical context, or preferred communication channels...'),
+                                Placeholder::make('registry_state')
+                                    ->label('Registry status')
+                                    ->content('Draft mode · Ready for verification'),
+                            ]),
+                        Section::make('Location & logistics')
+                            ->description('Store the operational location and contact routing details.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
+                            ->columnSpan(['lg' => 8])
+                            ->columns(['lg' => 2])
+                            ->schema([
+                                TextInput::make('address')
+                                    ->label('Physical address')
+                                    ->placeholder('Street address')
+                                    ->columnSpanFull(),
+                                TextInput::make('city')
+                                    ->placeholder('City'),
+                                Select::make('country')
+                                    ->options([
+                                        'Mali' => 'Mali',
+                                        'Senegal' => 'Senegal',
+                                        'Ghana' => 'Ghana',
+                                        'France' => 'France',
+                                        'United Arab Emirates' => 'United Arab Emirates',
+                                    ])
+                                    ->searchable()
+                                    ->native(false),
+                            ]),
+                        Section::make('Completion overview')
+                            ->extraAttributes(['class' => 'ledger-summary-card'])
+                            ->columnSpan(['lg' => 4])
+                            ->schema([
+                                Placeholder::make('draft_mode')
+                                    ->label('Registry mode')
+                                    ->content('Draft mode'),
+                                Placeholder::make('verification_hint')
+                                    ->label('Verification')
+                                    ->content('Ready for account review and approval.'),
+                            ]),
+                    ]),
+            ])
+            ->columns(1);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('identity')
+                    ->label('Client')
+                    ->state(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: 'Unnamed client')
+                    ->searchable(['company_name', 'contact_name', 'email']),
+                TextColumn::make('type')
+                    ->badge(),
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable(),
+                TextColumn::make('phone')
+                    ->searchable(),
+                TextColumn::make('city')
+                    ->searchable(),
+                TextColumn::make('status')
+                    ->badge(),
+                TextColumn::make('updated_at')
+                    ->since()
+                    ->label('Updated'),
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListClients::route('/'),
+            'create' => CreateClient::route('/create'),
+            'edit' => EditClient::route('/{record}/edit'),
+        ];
+    }
+}
