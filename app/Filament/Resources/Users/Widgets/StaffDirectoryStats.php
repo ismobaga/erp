@@ -12,9 +12,9 @@ class StaffDirectoryStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Workforce overview';
+    protected ?string $heading = 'Security and personnel overview';
 
-    protected ?string $description = 'A live snapshot of staff, collaborators, and operational availability.';
+    protected ?string $description = 'A live snapshot of onboarding, access integrity, and staff availability.';
 
     protected function getStats(): array
     {

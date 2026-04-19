@@ -99,13 +99,27 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Collaborator')
                     ->description(fn(User $record): string => $record->email)
-                    ->searchable(['name', 'email']),
+                    ->searchable(['name', 'email'])
+                    ->sortable(),
+                TextColumn::make('access_tier')
+                    ->label('Access tier')
+                    ->state(fn(User $record): string => static::resolveAccessTier($record))
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Admin Access' => 'primary',
+                        'Restricted' => 'danger',
+                        'Contractor' => 'warning',
+                        default => 'success',
+                    }),
                 TextColumn::make('role_summary')
-                    ->label('Role affinity')
-                    ->state(fn(User $record): string => $record->getRoleNames()->join(', ') ?: 'Team member'),
+                    ->label('Permissions')
+                    ->state(fn(User $record): string => $record->getRoleNames()->join(', ') ?: 'Standard workspace')
+                    ->wrap(),
                 TextColumn::make('phone')
-                    ->label('Contact vector'),
+                    ->label('Operational contact')
+                    ->placeholder('No direct line'),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -126,6 +140,10 @@ class UserResource extends Resource
                         'offline' => 'Offline',
                         'restricted' => 'Restricted',
                     ]),
+                SelectFilter::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -136,6 +154,25 @@ class UserResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function resolveAccessTier(User $record): string
+    {
+        $roles = $record->getRoleNames()->map(fn(string $role): string => str($role)->lower()->toString());
+
+        if ($record->status === 'restricted') {
+            return 'Restricted';
+        }
+
+        if ($roles->contains(fn(string $role): bool => str_contains($role, 'admin'))) {
+            return 'Admin Access';
+        }
+
+        if ($roles->contains(fn(string $role): bool => str_contains($role, 'contract'))) {
+            return 'Contractor';
+        }
+
+        return 'Standard';
     }
 
     public static function getRelations(): array

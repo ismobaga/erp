@@ -40,13 +40,15 @@ class Payment extends Model
                 return;
             }
 
-            $invoice = $payment->invoice()->lockForUpdate()->first();
+            /** @var Invoice|null $invoice */
+            $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
+
             if ($invoice === null || $payment->allow_overpayment) {
                 return;
             }
 
             $otherPayments = (float) $invoice->payments()
-                ->when($payment->exists, fn ($query) => $query->whereKeyNot($payment->getKey()))
+                ->when($payment->exists, fn($query) => $query->whereKeyNot($payment->getKey()))
                 ->sum('amount');
 
             if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
@@ -78,5 +80,46 @@ class Payment extends Model
     public function recorder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function reconcileAgainstOpenInvoice(): bool
+    {
+        if ($this->invoice_id !== null) {
+            $this->invoice?->refreshFinancials();
+
+            return true;
+        }
+
+        if ($this->client_id === null) {
+            return false;
+        }
+
+        $candidate = Invoice::query()
+            ->where('client_id', $this->client_id)
+            ->whereNotIn('status', ['paid', 'cancelled'])
+            ->where('balance_due', '>', 0)
+            ->when(!$this->allow_overpayment, fn($query) => $query->where('balance_due', '>=', (float) $this->amount))
+            ->orderByRaw('case when due_date is null then 1 else 0 end')
+            ->orderBy('due_date')
+            ->orderBy('issue_date')
+            ->first();
+
+        if (!$candidate) {
+            return false;
+        }
+
+        $this->invoice()->associate($candidate);
+        $this->save();
+
+        return true;
+    }
+
+    public function reconciliationState(): string
+    {
+        if ($this->invoice_id === null) {
+            return blank($this->reference) ? 'flagged' : 'pending';
+        }
+
+        return blank($this->reference) ? 'flagged' : 'completed';
     }
 }

@@ -12,9 +12,9 @@ class PaymentTrackingStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Payment desk overview';
+    protected ?string $heading = 'Finance terminal status';
 
-    protected ?string $description = 'Real-time recording of fiscal inflows for the current ledger cycle.';
+    protected ?string $description = 'Restricted ledger view for ready-to-settle invoices and flagged payment reviews.';
 
     protected function getStats(): array
     {
@@ -25,7 +25,7 @@ class PaymentTrackingStats extends StatsOverviewWidget
 
             $totalReceived = (float) Payment::query()->sum('amount');
             $bankTransfers = (float) Payment::query()->where('payment_method', 'bank_transfer')->sum('amount');
-            $cashHandling = (float) Payment::query()->where('payment_method', 'cash')->sum('amount');
+            $pendingReconciliation = Payment::query()->whereNull('invoice_id')->count();
             $flagged = Payment::query()->where(fn($query) => $query->whereNull('reference')->orWhere('reference', ''))->count();
 
             return [
@@ -33,15 +33,15 @@ class PaymentTrackingStats extends StatsOverviewWidget
                     ->description('Settled inflows across the ledger')
                     ->color('primary')
                     ->chart([8, 9, 12, 14, 16, 18, 20]),
+                Stat::make('Pending reconciliation', number_format($pendingReconciliation))
+                    ->description('Transactions waiting for invoice matching')
+                    ->color('warning')
+                    ->chart([10, 9, 8, 7, 6, 5, max(1, $pendingReconciliation)]),
                 Stat::make('Bank transfers', $this->money($bankTransfers))
                     ->description('Institutional wire settlements')
                     ->color('success')
                     ->chart([4, 6, 7, 9, 11, 12, 14]),
-                Stat::make('Cash handling', $this->money($cashHandling))
-                    ->description('Physical collection and field desk receipts')
-                    ->color('info')
-                    ->chart([1, 2, 3, 2, 4, 3, 5]),
-                Stat::make('Flagged reference', number_format($flagged))
+                Stat::make('Flagged items', number_format($flagged))
                     ->description('Entries needing reconciliation attention')
                     ->color('danger')
                     ->chart([5, 4, 4, 3, 2, 2, 1]),
@@ -60,9 +60,9 @@ class PaymentTrackingStats extends StatsOverviewWidget
     {
         return [
             Stat::make('Total received', 'FCFA 42M')->description('Settled inflows across the ledger')->color('primary'),
+            Stat::make('Pending reconciliation', '24')->description('Transactions waiting for invoice matching')->color('warning'),
             Stat::make('Bank transfers', 'FCFA 28M')->description('Institutional wire settlements')->color('success'),
-            Stat::make('Cash handling', 'FCFA 4M')->description('Physical collection and field desk receipts')->color('info'),
-            Stat::make('Flagged reference', '2')->description('Entries needing reconciliation attention')->color('danger'),
+            Stat::make('Flagged items', '2')->description('Entries needing reconciliation attention')->color('danger'),
         ];
     }
 }

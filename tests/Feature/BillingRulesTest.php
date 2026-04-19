@@ -108,6 +108,43 @@ class BillingRulesTest extends TestCase
         ]);
     }
 
+    public function test_unmatched_payment_can_be_auto_reconciled_to_an_open_invoice(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'ACME', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-RECON-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'status' => 'sent',
+            'total' => 400,
+            'balance_due' => 400,
+            'created_by' => $user->id,
+        ]);
+
+        $payment = Payment::create([
+            'client_id' => $client->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 150,
+            'payment_method' => 'bank transfer',
+            'reference' => 'TRX-001',
+            'recorded_by' => $user->id,
+        ]);
+
+        $this->assertNull($payment->invoice_id);
+        $this->assertTrue($payment->reconcileAgainstOpenInvoice());
+
+        $payment->refresh();
+        $invoice->refresh();
+
+        $this->assertSame($invoice->id, $payment->invoice_id);
+        $this->assertSame('150.00', $invoice->paid_total);
+        $this->assertSame('250.00', $invoice->balance_due);
+        $this->assertSame('partially_paid', $invoice->status);
+    }
+
     public function test_expired_quote_cannot_be_accepted_without_reopening(): void
     {
         $user = User::factory()->create();

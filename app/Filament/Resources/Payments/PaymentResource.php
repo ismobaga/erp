@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Payment;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -63,6 +65,8 @@ class PaymentResource extends Resource
                                     ->relationship('invoice', 'invoice_number')
                                     ->searchable()
                                     ->preload()
+                                    ->native(false)
+                                    ->helperText('Optional at entry time. Use smart-link later if finance records the payment before matching it.')
                                     ->live()
                                     ->afterStateUpdated(function ($state, callable $set): void {
                                         if (blank($state)) {
@@ -76,8 +80,7 @@ class PaymentResource extends Resource
                                         }
 
                                         $set('client_id', $invoice->client_id);
-                                    })
-                                    ->required(),
+                                    }),
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
@@ -137,27 +140,43 @@ class PaymentResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('payment_date')
-                    ->label('Date')
-                    ->date()
+                TextColumn::make('reference')
+                    ->label('Transaction')
+                    ->state(fn(Payment $record): string => $record->reference ?: ('PAY-' . str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
+                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? 'Undated') . ' • ' . str($record->payment_method)->replace('_', ' ')->title())
+                    ->searchable(['reference'])
                     ->sortable(),
                 TextColumn::make('client_name')
                     ->label('Client')
                     ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account')
+                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number ? 'Linked to ' . $record->invoice->invoice_number : 'Awaiting invoice match')
                     ->searchable(['reference']),
-                TextColumn::make('reference')
-                    ->label('Reference #')
-                    ->searchable(),
-                TextColumn::make('payment_method')
-                    ->badge()
-                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', ucfirst($state))),
-                TextColumn::make('invoice.invoice_number')
-                    ->label('Linked invoice')
-                    ->searchable(),
                 TextColumn::make('amount')
                     ->label('Amount')
-                    ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
+                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->description(fn(Payment $record): string => $record->allow_overpayment ? 'Overpayment override enabled' : 'Standard settlement')
                     ->sortable(),
+                TextColumn::make('invoice_due_date')
+                    ->label('Due date')
+                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? 'Not scheduled')
+                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? 'Overdue exposure' : 'Finance schedule'),
+                TextColumn::make('payment_method')
+                    ->label('Method')
+                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', ucfirst($state))),
+                TextColumn::make('reconciliation_state')
+                    ->label('Reconciliation')
+                    ->state(fn(Payment $record): string => match ($record->reconciliationState()) {
+                        'completed' => 'Completed',
+                        'flagged' => 'Flagged',
+                        default => 'Pending',
+                    })
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'Completed' => 'success',
+                        'Flagged' => 'danger',
+                        default => 'warning',
+                    }),
             ])
             ->filters([
                 SelectFilter::make('payment_method')
@@ -169,6 +188,27 @@ class PaymentResource extends Resource
                     ]),
             ])
             ->recordActions([
+                Action::make('reconcile')
+                    ->label('Smart-link')
+                    ->visible(fn(Payment $record): bool => $record->invoice_id === null)
+                    ->action(function (Payment $record): void {
+                        $matched = $record->reconcileAgainstOpenInvoice();
+
+                        $notification = Notification::make()
+                            ->title($matched ? 'Payment reconciled to an open invoice.' : 'No eligible invoice match was found for this payment.');
+
+                        if ($matched) {
+                            $notification->success();
+                        } else {
+                            $notification->warning();
+                        }
+
+                        $notification->send();
+                    }),
+                Action::make('flag')
+                    ->label('Flag')
+                    ->color('danger')
+                    ->action(fn(Payment $record) => Notification::make()->title(($record->reference ?: 'Payment entry') . ' has been flagged for finance review.')->warning()->send()),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -177,6 +217,11 @@ class PaymentResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    protected static function formatMoney(float $amount): string
+    {
+        return 'FCFA ' . number_format($amount, 2, '.', ' ');
     }
 
     public static function getRelations(): array

@@ -17,9 +17,9 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Portfolio snapshot';
+    protected ?string $heading = 'Operations dashboard';
 
-    protected ?string $description = 'A live executive summary shaped for the Architectural Ledger experience.';
+    protected ?string $description = 'A live executive summary across finance, delivery, and staffing.';
 
     protected function getStats(): array
     {

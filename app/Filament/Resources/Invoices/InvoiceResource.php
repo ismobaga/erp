@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Service;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -20,6 +21,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -213,11 +215,27 @@ class InvoiceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('invoice_number')
-                    ->label('Invoice no.')
+                    ->label('Invoice')
+                    ->description(fn(Invoice $record): string => $record->quote?->quote_number ? 'Linked to ' . $record->quote->quote_number : 'Standalone billing')
                     ->searchable(),
                 TextColumn::make('client_name')
                     ->label('Client entity')
-                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account'),
+                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Client account')
+                    ->description(fn(Invoice $record): string => $record->client?->email ?: 'No billing email'),
+                TextColumn::make('issue_date')
+                    ->label('Issue / due')
+                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? 'Not issued')
+                    ->description(fn(Invoice $record): string => $record->due_date ? 'Due ' . (optional($record->due_date)->format('M d, Y') ?? 'TBD') : 'No due date')
+                    ->sortable(),
+                TextColumn::make('total')
+                    ->label('Total amount')
+                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->sortable(),
+                TextColumn::make('balance_due')
+                    ->label('Balance due')
+                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0 ? 'Paid: ' . static::formatMoney((float) $record->paid_total) : 'No payment recorded')
+                    ->sortable(),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -229,22 +247,6 @@ class InvoiceResource extends Resource
                         default => 'warning',
                     })
                     ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', ucfirst($state))),
-                TextColumn::make('issue_date')
-                    ->label('Issue date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('due_date')
-                    ->label('Due date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('total')
-                    ->label('Total amount')
-                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->sortable(),
-                TextColumn::make('balance_due')
-                    ->label('Balance due')
-                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -258,6 +260,13 @@ class InvoiceResource extends Resource
                     ]),
             ])
             ->recordActions([
+                Action::make('sendReminder')
+                    ->label('Send reminder')
+                    ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true))
+                    ->action(fn(Invoice $record) => Notification::make()->title('Reminder queued for ' . $record->invoice_number . '.')->success()->send()),
+                Action::make('exportPdf')
+                    ->label('Export PDF')
+                    ->action(fn(Invoice $record) => Notification::make()->title('PDF export prepared for ' . $record->invoice_number . '.')->success()->send()),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
