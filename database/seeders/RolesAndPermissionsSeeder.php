@@ -45,6 +45,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'projects.create',
             'projects.update',
             'projects.delete',
+            'documents.view',
+            'documents.create',
+            'documents.update',
+            'documents.delete',
             'settings.view',
             'settings.update',
             'reports.view',
@@ -80,6 +84,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'expenses.create',
             'expenses.update',
             'expenses.delete',
+            'documents.view',
+            'documents.create',
             'reports.view',
         ])->get());
 
@@ -91,6 +97,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'projects.create',
             'projects.update',
             'projects.delete',
+            'documents.view',
+            'documents.create',
             'reports.view',
         ])->get());
 
@@ -98,6 +106,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'clients.view',
             'quotes.view',
             'projects.view',
+            'documents.view',
         ])->get());
 
         $readOnly->syncPermissions(Permission::where('name', 'like', '%.view')->orWhere('name', 'reports.view')->get());

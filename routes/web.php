@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
@@ -33,6 +34,9 @@ Route::post('/contact-request', function (Request $request) {
 })->name('company.presentation.contact');
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)
+        ->name('attachments.download');
+
     Route::get('/invoices/{invoice}/pdf', InvoicePdfController::class)
         ->name('invoices.pdf');
 });
