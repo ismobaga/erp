@@ -148,6 +148,8 @@ return [
             'expenses' => 'Expenses',
             'taxes' => 'Taxes & VAT',
             'net' => 'Net result',
+            'entries' => 'Entries',
+            'audit' => 'Audit items',
             'format' => 'Format',
         ],
         'rows' => [
@@ -155,6 +157,7 @@ return [
             'unreferenced_payment' => 'Payment without reference',
             'free_payment' => 'Unassigned payment',
             'expense_prefix' => 'Expense :category',
+            'audit_event' => 'Audit event',
         ],
         'export_ready' => 'Analytics export prepared successfully.',
         'metrics_refreshed' => 'Financial metrics refreshed.',

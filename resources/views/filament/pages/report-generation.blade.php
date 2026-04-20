@@ -135,7 +135,16 @@
                                 Taxes & TVA
                             </div>
                         </label>
+                        <label class="relative flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model="selectedModules.audit" class="peer sr-only" />
+                            <div
+                                class="flex items-center gap-2 rounded-full bg-surface-container-low px-6 py-3 text-sm font-semibold text-primary-container transition-all peer-checked:bg-primary-container peer-checked:text-white dark:bg-slate-800 dark:text-slate-200">
+                                <span>🛡</span>
+                                Audit & conformité
+                            </div>
+                        </label>
                     </div>
+                    <p class="mt-4 text-xs text-on-surface-variant dark:text-slate-400">Le format CSV inclut désormais un journal comptable structuré et une piste d’audit exploitable par les cabinets comptables.</p>
                 </div>
 
                 <div

@@ -134,6 +134,81 @@ class ReportGenerationPageTest extends TestCase
             ->assertSet('scheduledPlans.0.status', __('erp.reports.scheduled_statuses.recent'));
     }
 
+    public function test_accountant_ready_csv_export_contains_ledger_and_audit_sections(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Audit Ledger SAS',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(4)->toDateString(),
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'sent',
+            'total' => 300000,
+            'tax_total' => 54000,
+            'balance_due' => 300000,
+            'created_by' => $user->id,
+        ]);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => now()->subDays(2)->toDateString(),
+            'amount' => 100000,
+            'payment_method' => 'bank transfer',
+            'reference' => 'AUD-TRX-100',
+            'recorded_by' => $user->id,
+        ]);
+
+        Expense::create([
+            'category' => 'compliance',
+            'title' => 'Audit légal externe',
+            'amount' => 40000,
+            'expense_date' => now()->subDay()->toDateString(),
+            'payment_method' => 'card',
+            'recorded_by' => $user->id,
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'manual_audit_check',
+            'subject_type' => Invoice::class,
+            'subject_id' => $invoice->id,
+            'meta_json' => ['note' => 'Audit sample'],
+        ]);
+
+        $component = Livewire::actingAs($user)
+            ->test(ReportGeneration::class)
+            ->set('startDate', now()->subDays(30)->toDateString())
+            ->set('endDate', now()->toDateString())
+            ->set('exportFormat', 'csv')
+            ->set('selectedModules.audit', true)
+            ->set('selectedModules.expenses', true)
+            ->set('selectedModules.payments', true)
+            ->set('selectedModules.taxes', true)
+            ->call('generateReport')
+            ->assertHasNoErrors()
+            ->assertSet('reportReady', true);
+
+        $generatedPath = $component->get('generatedReportPath');
+        $content = Storage::disk('local')->get($generatedPath);
+
+        $this->assertStringContainsString('Journal comptable prêt pour audit', $content);
+        $this->assertStringContainsString('Date;Type de pièce;Référence;Tiers;Description;Débit;Crédit;Taxes;Solde dû;Statut', $content);
+        $this->assertStringContainsString('Piste d\'audit', $content);
+        $this->assertStringContainsString((string) $invoice->invoice_number, $content);
+        $this->assertStringContainsString('AUD-TRX-100', $content);
+        $this->assertStringContainsString('manual_audit_check', $content);
+    }
+
     public function test_cleanup_command_removes_expired_report_exports(): void
     {
         $path = 'reports/legacy/expired-export.csv';

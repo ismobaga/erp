@@ -148,6 +148,8 @@ return [
             'expenses' => 'Dépenses',
             'taxes' => 'Taxes & TVA',
             'net' => 'Résultat net',
+            'entries' => 'Écritures',
+            'audit' => 'Éléments d’audit',
             'format' => 'Format',
         ],
         'rows' => [
@@ -155,6 +157,7 @@ return [
             'unreferenced_payment' => 'Paiement sans référence',
             'free_payment' => 'Paiement libre',
             'expense_prefix' => 'Dépense :category',
+            'audit_event' => 'Événement d’audit',
         ],
         'export_ready' => 'Export analytique préparé avec succès.',
         'metrics_refreshed' => 'Indicateurs financiers actualisés.',

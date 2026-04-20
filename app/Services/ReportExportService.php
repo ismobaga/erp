@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -19,7 +20,7 @@ class ReportExportService
 
     public function generate(Carbon $start, Carbon $end, array $selectedModules, string $format = 'pdf', bool $includeCharts = true, ?int $userId = null): array
     {
-        $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts);
+        $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts, $userId);
         $path = $this->storeExport($report, $format, $userId);
         $generatedAt = now()->format('d/m/Y H:i');
 
@@ -155,14 +156,24 @@ class ReportExportService
         ]);
     }
 
-    protected function buildReport(Carbon $start, Carbon $end, array $selectedModules, string $format, bool $includeCharts): array
+    protected function buildReport(Carbon $start, Carbon $end, array $selectedModules, string $format, bool $includeCharts, ?int $userId = null): array
     {
+        $selectedModules = array_merge([
+            'revenue' => false,
+            'expenses' => false,
+            'payments' => false,
+            'taxes' => false,
+            'audit' => false,
+        ], $selectedModules);
+
         $invoices = Invoice::query()
+            ->with('client')
             ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
             ->latest('issue_date')
             ->get();
 
         $payments = Payment::query()
+            ->with(['client', 'invoice'])
             ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
             ->latest('payment_date')
             ->get();
@@ -172,11 +183,20 @@ class ReportExportService
             ->latest('expense_date')
             ->get();
 
+        $activityLogs = !empty($selectedModules['audit'])
+            ? ActivityLog::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->latest('created_at')
+                ->get()
+            : collect();
+
         $revenue = !empty($selectedModules['revenue']) ? (float) $invoices->sum('total') : 0.0;
         $expenseTotal = !empty($selectedModules['expenses']) ? (float) $expenses->sum('amount') : 0.0;
         $paymentTotal = !empty($selectedModules['payments']) ? (float) $payments->sum('amount') : 0.0;
         $taxTotal = !empty($selectedModules['taxes']) ? (float) $invoices->sum('tax_total') : 0.0;
         $netResult = $paymentTotal - $expenseTotal;
+        $ledgerRows = $this->buildLedgerRows($invoices, $payments, $expenses, $selectedModules);
+        $auditRows = !empty($selectedModules['audit']) ? $this->buildAuditRows($activityLogs) : [];
 
         $summary = [
             ['label' => __('erp.reports.summary.revenue'), 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
@@ -184,6 +204,8 @@ class ReportExportService
             ['label' => __('erp.reports.summary.expenses'), 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
             ['label' => __('erp.reports.summary.taxes'), 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
             ['label' => __('erp.reports.summary.net'), 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
+            ['label' => __('erp.reports.summary.entries'), 'value' => number_format(count($ledgerRows)), 'tone' => 'text-slate-600'],
+            ['label' => __('erp.reports.summary.audit'), 'value' => number_format(count($auditRows)), 'tone' => 'text-violet-600'],
             ['label' => __('erp.reports.summary.format'), 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
         ];
 
@@ -222,6 +244,17 @@ class ReportExportService
             ]));
         }
 
+        if (!empty($selectedModules['audit'])) {
+            $rows = $rows->merge($activityLogs->map(fn(ActivityLog $log): array => [
+                'sort_date' => optional($log->created_at)?->format('Y-m-d H:i:s') ?? '',
+                'date' => optional($log->created_at)?->format('d/m/Y H:i') ?? __('erp.common.none'),
+                'title' => $log->action,
+                'subtitle' => __('erp.reports.rows.audit_event'),
+                'amount' => __('erp.common.none'),
+                'badge' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+            ]));
+        }
+
         $rows = $rows
             ->sortByDesc('sort_date')
             ->values()
@@ -231,12 +264,15 @@ class ReportExportService
             'summary' => $summary,
             'previewRows' => $rows->take(8)->all(),
             'rows' => $rows->all(),
+            'ledgerRows' => $ledgerRows,
+            'auditRows' => $auditRows,
             'meta' => [
                 'startDate' => $start->format('d/m/Y'),
                 'endDate' => $end->format('d/m/Y'),
                 'generatedAt' => now()->format('d/m/Y H:i'),
                 'format' => strtoupper($format),
                 'includeCharts' => $includeCharts,
+                'generatedBy' => $userId ? 'Utilisateur #' . $userId : 'Système',
             ],
         ];
     }
@@ -265,8 +301,9 @@ class ReportExportService
     {
         $handle = fopen('php://temp', 'r+');
 
-        fputcsv($handle, ['Rapport financier', $report['meta']['generatedAt']], ';');
+        fputcsv($handle, ['Journal comptable prêt pour audit', $report['meta']['generatedAt']], ';');
         fputcsv($handle, ['Période', $report['meta']['startDate'] . ' -> ' . $report['meta']['endDate']], ';');
+        fputcsv($handle, ['Généré par', $report['meta']['generatedBy'] ?? 'Système'], ';');
         fputcsv($handle, []);
         fputcsv($handle, ['Indicateur', 'Valeur'], ';');
 
@@ -275,10 +312,39 @@ class ReportExportService
         }
 
         fputcsv($handle, []);
-        fputcsv($handle, ['Date', 'Titre', 'Description', 'Montant', 'Statut'], ';');
+        fputcsv($handle, ['Journal comptable'], ';');
+        fwrite($handle, "Date;Type de pièce;Référence;Tiers;Description;Débit;Crédit;Taxes;Solde dû;Statut\n");
 
-        foreach ($report['rows'] as $row) {
-            fputcsv($handle, [$row['date'], $row['title'], $row['subtitle'], $row['amount'], $row['badge']], ';');
+        foreach ($report['ledgerRows'] as $row) {
+            fputcsv($handle, [
+                $row['date'],
+                $row['document_type'],
+                $row['reference'],
+                $row['counterparty'],
+                $row['description'],
+                $row['debit'],
+                $row['credit'],
+                $row['tax'],
+                $row['balance_due'],
+                $row['status'],
+            ], ';');
+        }
+
+        if (!empty($report['auditRows'])) {
+            fputcsv($handle, []);
+            fputcsv($handle, ['Piste d\'audit'], ';');
+            fwrite($handle, "Horodatage;Utilisateur;Action;Sujet;Identifiant;Contexte\n");
+
+            foreach ($report['auditRows'] as $row) {
+                fputcsv($handle, [
+                    $row['timestamp'],
+                    $row['user'],
+                    $row['action'],
+                    $row['subject'],
+                    $row['subject_id'],
+                    $row['context'],
+                ], ';');
+            }
         }
 
         rewind($handle);
@@ -286,6 +352,80 @@ class ReportExportService
         fclose($handle);
 
         return $content;
+    }
+
+    protected function buildLedgerRows($invoices, $payments, $expenses, array $selectedModules): array
+    {
+        $rows = collect();
+
+        if (!empty($selectedModules['revenue'])) {
+            $rows = $rows->merge($invoices->map(fn(Invoice $invoice): array => [
+                'date_key' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
+                'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                'document_type' => __('erp.common.invoice'),
+                'reference' => $invoice->invoice_number,
+                'counterparty' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: __('erp.common.account_client'),
+                'description' => __('erp.reports.rows.client_invoice'),
+                'debit' => '',
+                'credit' => $this->formatMoney((float) $invoice->total),
+                'tax' => $this->formatMoney((float) $invoice->tax_total),
+                'balance_due' => $this->formatMoney((float) $invoice->balance_due),
+                'status' => __('erp.resources.invoice.statuses.' . $invoice->status),
+            ]));
+        }
+
+        if (!empty($selectedModules['payments'])) {
+            $rows = $rows->merge($payments->map(fn(Payment $payment): array => [
+                'date_key' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
+                'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                'document_type' => __('erp.common.transaction'),
+                'reference' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                'counterparty' => $payment->client?->company_name ?: $payment->client?->contact_name ?: __('erp.common.account_client'),
+                'description' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
+                'debit' => '',
+                'credit' => $this->formatMoney((float) $payment->amount),
+                'tax' => '',
+                'balance_due' => $this->formatMoney((float) ($payment->invoice?->balance_due ?? 0)),
+                'status' => __('erp.resources.payment.reconciliation.' . $payment->reconciliationState()),
+            ]));
+        }
+
+        if (!empty($selectedModules['expenses'])) {
+            $rows = $rows->merge($expenses->map(fn(Expense $expense): array => [
+                'date_key' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
+                'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                'document_type' => __('erp.common.expense'),
+                'reference' => $expense->reference ?: ('EXP-' . $expense->getKey()),
+                'counterparty' => $expense->vendor ?: __('erp.common.not_provided'),
+                'description' => $expense->title,
+                'debit' => $this->formatMoney((float) $expense->amount),
+                'credit' => '',
+                'tax' => '',
+                'balance_due' => '',
+                'status' => __('erp.resources.expense.approval_statuses.' . ($expense->approval_status ?? 'pending')),
+            ]));
+        }
+
+        return $rows
+            ->sortBy('date_key')
+            ->values()
+            ->map(fn(array $row): array => Arr::except($row, ['date_key']))
+            ->all();
+    }
+
+    protected function buildAuditRows($activityLogs): array
+    {
+        return $activityLogs
+            ->map(fn(ActivityLog $log): array => [
+                'timestamp' => optional($log->created_at)?->format('d/m/Y H:i:s') ?? __('erp.common.none'),
+                'user' => (string) ($log->user_id ?? 'system'),
+                'action' => $log->action,
+                'subject' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+                'subject_id' => (string) ($log->subject_id ?? ''),
+                'context' => json_encode($log->meta_json ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ])
+            ->values()
+            ->all();
     }
 
     protected function nextExecutionAt(Carbon $current, string $frequency): Carbon

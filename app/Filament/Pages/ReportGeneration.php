@@ -42,6 +42,7 @@ class ReportGeneration extends Page
         'expenses' => false,
         'payments' => true,
         'taxes' => false,
+        'audit' => true,
     ];
 
     public bool $includeCharts = true;
@@ -119,6 +120,7 @@ class ReportGeneration extends Page
             'selectedModules.expenses' => ['boolean'],
             'selectedModules.payments' => ['boolean'],
             'selectedModules.taxes' => ['boolean'],
+            'selectedModules.audit' => ['boolean'],
             'includeCharts' => ['boolean'],
             'autoScheduleEnabled' => ['boolean'],
             'scheduleFrequency' => ['nullable', 'in:Quotidienne,Hebdomadaire,Mensuelle'],
