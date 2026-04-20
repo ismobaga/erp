@@ -42,13 +42,20 @@ Internal-only ERP foundation for **CROMMIX MALI S.A.** built with:
 
 ## Quick start
 
-### Start PostgreSQL with Docker Compose
+### Deploy with Docker Compose / Dokploy
 
 ```bash
 docker compose up -d
 ```
 
-Default database credentials:
+By default this starts:
+
+- `app` on `http://localhost:8000`
+- `postgres` on `5432`
+
+Set a secure `APP_KEY` in your environment before deployment (Dokploy environment variables or `.env`).
+
+Default database credentials used by the compose file:
 
 - Host: `127.0.0.1`
 - Port: `5432`
@@ -56,7 +63,7 @@ Default database credentials:
 - Username: `postgres`
 - Password: `postgres`
 
-### Run the application
+### Run the application locally without Docker
 
 ```bash
 composer install
