@@ -36,6 +36,17 @@ class Payment extends Model
                 throw ValidationException::withMessages(['amount' => 'Payment amount must be positive.']);
             }
 
+            $referenceRequiredMethods = array_map(
+                static fn(string $method): string => strtolower(trim($method)),
+                config('erp.billing.payment_reference_required_methods', [])
+            );
+
+            if (in_array(strtolower(trim((string) $payment->payment_method)), $referenceRequiredMethods, true) && blank($payment->reference)) {
+                throw ValidationException::withMessages([
+                    'reference' => 'A payment reference is required for traceable payment methods.',
+                ]);
+            }
+
             FinancialPeriod::ensureDateIsOpen($payment->payment_date, 'payment');
 
             if ($payment->invoice_id === null) {
@@ -45,7 +56,27 @@ class Payment extends Model
             /** @var Invoice|null $invoice */
             $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
 
-            if ($invoice === null || $payment->allow_overpayment) {
+            if ($invoice === null) {
+                return;
+            }
+
+            if ($invoice->status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'invoice_id' => 'Cancelled invoices cannot accept new payments.',
+                ]);
+            }
+
+            if (
+                $payment->payment_date !== null
+                && $invoice->issue_date !== null
+                && now()->parse((string) $payment->payment_date)->lt(now()->parse((string) $invoice->issue_date))
+            ) {
+                throw ValidationException::withMessages([
+                    'payment_date' => 'Payment date cannot be earlier than the invoice issue date.',
+                ]);
+            }
+
+            if ($payment->allow_overpayment) {
                 return;
             }
 

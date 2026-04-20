@@ -39,10 +39,40 @@ class CreditNote extends Model
                 ]);
             }
 
+            if (blank($creditNote->reason)) {
+                throw ValidationException::withMessages([
+                    'reason' => 'A credit note reason is required for auditability.',
+                ]);
+            }
+
+            $creditNote->status = blank($creditNote->status) ? 'issued' : $creditNote->status;
+
             $invoice = $creditNote->invoice;
 
             if (!$invoice) {
                 return;
+            }
+
+            if ($invoice->status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'invoice_id' => 'Cancelled invoices cannot receive credit notes.',
+                ]);
+            }
+
+            if (
+                $creditNote->issue_date !== null
+                && $invoice->issue_date !== null
+                && now()->parse((string) $creditNote->issue_date)->lt(now()->parse((string) $invoice->issue_date))
+            ) {
+                throw ValidationException::withMessages([
+                    'issue_date' => 'Credit note date cannot be earlier than the related invoice issue date.',
+                ]);
+            }
+
+            $autoIssueLimit = max(0, (float) config('erp.billing.credit_note_auto_issue_limit', 0));
+
+            if ($autoIssueLimit > 0 && (float) $creditNote->amount > $autoIssueLimit && !in_array($creditNote->status, ['approved', 'void'], true)) {
+                $creditNote->status = 'pending_approval';
             }
 
             $otherCredits = (float) $invoice->creditNotes()
@@ -62,15 +92,32 @@ class CreditNote extends Model
             }
         });
 
-        static::created(function (CreditNote $creditNote): void {
+        static::saved(function (CreditNote $creditNote): void {
             $creditNote->invoice?->refreshCreditBalance();
 
-            app(AuditTrailService::class)->log('credit_note_issued', $creditNote, [
-                'invoice_number' => $creditNote->invoice?->invoice_number,
-                'credit_number' => $creditNote->credit_number,
-                'amount' => (float) $creditNote->amount,
-                'reason' => $creditNote->reason,
-            ], $creditNote->created_by);
+            if ($creditNote->wasRecentlyCreated) {
+                $action = $creditNote->status === 'pending_approval'
+                    ? 'credit_note_pending_approval'
+                    : 'credit_note_issued';
+
+                app(AuditTrailService::class)->log($action, $creditNote, [
+                    'invoice_number' => $creditNote->invoice?->invoice_number,
+                    'credit_number' => $creditNote->credit_number,
+                    'amount' => (float) $creditNote->amount,
+                    'reason' => $creditNote->reason,
+                    'status' => $creditNote->status,
+                ], $creditNote->created_by);
+            }
+
+            if ($creditNote->wasChanged('status') && $creditNote->status === 'approved') {
+                app(AuditTrailService::class)->log('credit_note_approved', $creditNote, [
+                    'invoice_number' => $creditNote->invoice?->invoice_number,
+                    'credit_number' => $creditNote->credit_number,
+                    'amount' => (float) $creditNote->amount,
+                    'reason' => $creditNote->reason,
+                    'status' => $creditNote->status,
+                ], $creditNote->updated_by ?? $creditNote->created_by);
+            }
         });
 
         static::deleted(function (CreditNote $creditNote): void {
@@ -86,5 +133,13 @@ class CreditNote extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function approve(?int $userId = null): void
+    {
+        $this->forceFill([
+            'status' => 'approved',
+            'updated_by' => $userId,
+        ])->save();
     }
 }

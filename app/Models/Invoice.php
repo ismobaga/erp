@@ -120,7 +120,9 @@ class Invoice extends Model
 
     public function refreshCreditBalance(): void
     {
-        $creditedTotal = (float) $this->creditNotes()->sum('amount');
+        $creditedTotal = (float) $this->creditNotes()
+            ->whereIn('status', ['issued', 'approved'])
+            ->sum('amount');
         $updatedDiscount = $creditedTotal;
         $currentSubtotal = max((float) $this->subtotal, (float) $this->total + (float) $this->discount_total - (float) $this->tax_total);
         $taxComputation = app(TaxProfileResolver::class)->calculateForClient($currentSubtotal, $this->client);

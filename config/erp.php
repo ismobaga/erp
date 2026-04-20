@@ -4,6 +4,11 @@ return [
     'billing' => [
         'invoice_default_due_days' => max(0, (int) env('ERP_INVOICE_DEFAULT_DUE_DAYS', 30)),
         'overdue_grace_days' => max(0, (int) env('ERP_INVOICE_OVERDUE_GRACE_DAYS', 0)),
+        'credit_note_auto_issue_limit' => max(0, (float) env('ERP_CREDIT_NOTE_AUTO_ISSUE_LIMIT', 100000)),
+        'payment_reference_required_methods' => array_values(array_filter(array_map(
+            static fn(string $method): string => trim(strtolower($method)),
+            explode(',', (string) env('ERP_PAYMENT_REFERENCE_REQUIRED_METHODS', ''))
+        ))),
         'invoice_numbering' => [
             'prefix' => trim((string) env('ERP_INVOICE_NUMBER_PREFIX', 'INV')),
             'padding' => max(3, (int) env('ERP_INVOICE_NUMBER_PADDING', 4)),

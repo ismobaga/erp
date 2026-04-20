@@ -448,6 +448,96 @@ class BillingRulesTest extends TestCase
         ]);
     }
 
+    public function test_large_credit_note_requires_approval_before_affecting_balance(): void
+    {
+        config()->set('erp.billing.credit_note_auto_issue_limit', 100);
+
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Approval Credit Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-15',
+            'status' => 'sent',
+            'created_by' => $user->id,
+            'total' => 1000,
+            'balance_due' => 1000,
+        ]);
+
+        $creditNote = CreditNote::create([
+            'invoice_id' => $invoice->id,
+            'credit_number' => 'CN-2026-003',
+            'issue_date' => '2026-04-16',
+            'amount' => 250,
+            'reason' => 'Major service adjustment',
+            'status' => 'issued',
+            'created_by' => $user->id,
+        ]);
+
+        $invoice->refresh();
+        $creditNote->refresh();
+
+        $this->assertSame('pending_approval', $creditNote->status);
+        $this->assertSame('0.00', $invoice->discount_total);
+        $this->assertSame('1000.00', $invoice->total);
+        $this->assertSame('1000.00', $invoice->balance_due);
+    }
+
+    public function test_non_cash_payment_requires_a_reference(): void
+    {
+        config()->set('erp.billing.payment_reference_required_methods', ['bank transfer', 'card']);
+
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Ref Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'created_by' => $user->id,
+            'total' => 400,
+            'balance_due' => 400,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 100,
+            'payment_method' => 'bank transfer',
+            'recorded_by' => $user->id,
+        ]);
+    }
+
+    public function test_cancelled_invoice_cannot_accept_new_payments(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Cancelled Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'cancelled',
+            'created_by' => $user->id,
+            'total' => 400,
+            'balance_due' => 400,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 100,
+            'payment_method' => 'cash',
+            'reference' => 'PMT-001',
+            'recorded_by' => $user->id,
+        ]);
+    }
+
     public function test_invoice_number_cannot_be_changed_once_assigned(): void
     {
         $user = User::factory()->create();
