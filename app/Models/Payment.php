@@ -36,6 +36,8 @@ class Payment extends Model
                 throw ValidationException::withMessages(['amount' => 'Payment amount must be positive.']);
             }
 
+            FinancialPeriod::ensureDateIsOpen($payment->payment_date, 'payment');
+
             if ($payment->invoice_id === null) {
                 return;
             }

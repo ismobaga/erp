@@ -1,0 +1,143 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Client;
+use App\Models\Expense;
+use App\Models\FinancialPeriod;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
+use Tests\TestCase;
+
+class FinancialPeriodsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_financial_period_tracks_date_range_and_status(): void
+    {
+        $period = FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => '2026-04',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'open',
+        ]);
+
+        $this->assertTrue($period->isOpen());
+        $this->assertTrue($period->containsDate('2026-04-15'));
+        $this->assertFalse($period->containsDate('2026-05-01'));
+    }
+
+    public function test_financial_period_can_be_closed_and_reopened(): void
+    {
+        $user = User::factory()->create();
+
+        $period = FinancialPeriod::create([
+            'name' => 'Q2 2026',
+            'code' => '2026-Q2',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-06-30',
+        ]);
+
+        $period->close($user->id, 'Month-end validated');
+
+        $this->assertTrue($period->fresh()->isClosed());
+        $this->assertSame($user->id, $period->fresh()->closed_by);
+        $this->assertNotNull($period->fresh()->closed_at);
+
+        $period->fresh()->reopen($user->id, 'Adjustment required');
+
+        $this->assertTrue($period->fresh()->isOpen());
+        $this->assertSame($user->id, $period->fresh()->reopened_by);
+        $this->assertNotNull($period->fresh()->reopened_at);
+        $this->assertSame('Adjustment required', $period->fresh()->notes);
+    }
+
+    public function test_invoice_updates_are_blocked_when_the_accounting_period_is_closed(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Lock Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-LOCK-001',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-10',
+            'due_date' => '2026-04-25',
+            'status' => 'sent',
+            'total' => 100,
+            'balance_due' => 100,
+            'created_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        $invoice->update(['notes' => 'Should be blocked']);
+    }
+
+    public function test_payment_and_expense_updates_are_blocked_when_the_accounting_period_is_closed(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Lock Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-LOCK-002',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-05',
+            'due_date' => '2026-04-20',
+            'status' => 'sent',
+            'total' => 300,
+            'balance_due' => 300,
+            'created_by' => $user->id,
+        ]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => '2026-04-12',
+            'amount' => 100,
+            'payment_method' => 'bank transfer',
+            'recorded_by' => $user->id,
+        ]);
+
+        $expense = Expense::create([
+            'category' => 'operations',
+            'title' => 'Cloud hosting',
+            'amount' => 80,
+            'expense_date' => '2026-04-18',
+            'recorded_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-OPS',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        try {
+            $payment->update(['reference' => 'LOCKED-REF']);
+            $this->fail('Expected payment update to be blocked for a closed period.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('closed accounting period', $exception->errors()['financial_period'][0] ?? '');
+        }
+
+        try {
+            $expense->update(['reference' => 'LOCKED-EXP']);
+            $this->fail('Expected expense update to be blocked for a closed period.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('closed accounting period', $exception->errors()['financial_period'][0] ?? '');
+        }
+    }
+}

@@ -40,6 +40,13 @@ class Invoice extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (Invoice $invoice): void {
+            FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
+        });
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

@@ -42,6 +42,8 @@ class Expense extends Model
                     'amount' => 'Expense amount must be positive.',
                 ]);
             }
+
+            FinancialPeriod::ensureDateIsOpen($expense->expense_date, 'expense');
         });
     }
 
