@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
@@ -380,6 +382,70 @@ class BillingRulesTest extends TestCase
         $this->assertSame('FAC-2026-0001', $invoice2026a->invoice_number);
         $this->assertSame('FAC-2026-0002', $invoice2026b->invoice_number);
         $this->assertSame('FAC-2027-0001', $invoice2027->invoice_number);
+    }
+
+    public function test_credit_note_reduces_invoice_balance_and_is_logged(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Credit Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-15',
+            'status' => 'sent',
+            'created_by' => $user->id,
+            'total' => 1000,
+            'balance_due' => 1000,
+        ]);
+
+        $creditNote = CreditNote::create([
+            'invoice_id' => $invoice->id,
+            'credit_number' => 'CN-2026-001',
+            'issue_date' => '2026-04-16',
+            'amount' => 250,
+            'reason' => 'Service discount correction',
+            'status' => 'issued',
+            'created_by' => $user->id,
+        ]);
+
+        $invoice->refresh();
+
+        $this->assertSame('250.00', $invoice->discount_total);
+        $this->assertSame('750.00', $invoice->total);
+        $this->assertSame('750.00', $invoice->balance_due);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'action' => 'credit_note_issued',
+            'subject_type' => CreditNote::class,
+            'subject_id' => $creditNote->id,
+        ]);
+    }
+
+    public function test_credit_note_cannot_exceed_invoice_total(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Credit Guard Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-15',
+            'status' => 'sent',
+            'created_by' => $user->id,
+            'total' => 300,
+            'balance_due' => 300,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        CreditNote::create([
+            'invoice_id' => $invoice->id,
+            'credit_number' => 'CN-2026-002',
+            'issue_date' => '2026-04-16',
+            'amount' => 500,
+            'reason' => 'Invalid over-credit',
+            'status' => 'issued',
+            'created_by' => $user->id,
+        ]);
     }
 
     public function test_invoice_number_cannot_be_changed_once_assigned(): void

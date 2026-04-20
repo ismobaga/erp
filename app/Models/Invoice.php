@@ -94,6 +94,11 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
     public function recalculateTotals(): void
     {
         $subtotal = (float) $this->items()->sum('line_total');
@@ -108,6 +113,26 @@ class Invoice extends Model
             'subtotal' => $subtotal,
             'tax_total' => $taxTotal,
             'total' => $total,
+        ])->saveQuietly();
+
+        $this->refreshFinancials();
+    }
+
+    public function refreshCreditBalance(): void
+    {
+        $creditedTotal = (float) $this->creditNotes()->sum('amount');
+        $updatedDiscount = $creditedTotal;
+        $currentSubtotal = max((float) $this->subtotal, (float) $this->total + (float) $this->discount_total - (float) $this->tax_total);
+        $taxComputation = app(TaxProfileResolver::class)->calculateForClient($currentSubtotal, $this->client);
+        $taxTotal = $taxComputation['matched'] ? (float) $taxComputation['tax_total'] : (float) $this->tax_total;
+        $baseTotal = $taxComputation['matched'] && (($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive')
+            ? (float) $taxComputation['total']
+            : $currentSubtotal + $taxTotal;
+
+        $this->forceFill([
+            'discount_total' => $updatedDiscount,
+            'tax_total' => $taxTotal,
+            'total' => max(0, $baseTotal - $updatedDiscount),
         ])->saveQuietly();
 
         $this->refreshFinancials();
