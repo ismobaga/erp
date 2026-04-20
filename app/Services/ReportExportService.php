@@ -21,13 +21,22 @@ class ReportExportService
     {
         $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts);
         $path = $this->storeExport($report, $format, $userId);
+        $generatedAt = now()->format('d/m/Y H:i');
+
+        app(\App\Services\AuditTrailService::class)->log('report_generated', null, [
+            'path' => $path,
+            'format' => strtoupper($format),
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+            'selected_modules' => $selectedModules,
+        ], $userId);
 
         return [
             'summary' => $report['summary'],
             'previewRows' => $report['previewRows'],
             'path' => $path,
             'name' => basename($path),
-            'generatedAt' => now()->format('d/m/Y H:i'),
+            'generatedAt' => $generatedAt,
             'downloadUrl' => $this->temporaryDownloadUrl($path),
         ];
     }
@@ -114,6 +123,29 @@ class ReportExportService
         Cache::forever(self::SCHEDULE_CACHE_KEY, $plans);
 
         return $processed;
+    }
+
+    public function cleanupExpiredExports(?int $retentionDays = null): int
+    {
+        $retentionDays = max(1, $retentionDays ?? (int) config('erp.enterprise.report_retention_days', 30));
+        $threshold = now()->subDays($retentionDays)->timestamp;
+        $deleted = 0;
+
+        foreach (Storage::disk('local')->allFiles('reports') as $file) {
+            if (Storage::disk('local')->lastModified($file) > $threshold) {
+                continue;
+            }
+
+            Storage::disk('local')->delete($file);
+            $deleted++;
+        }
+
+        app(\App\Services\AuditTrailService::class)->log('report_exports_cleaned', null, [
+            'deleted_count' => $deleted,
+            'retention_days' => $retentionDays,
+        ]);
+
+        return $deleted;
     }
 
     public function temporaryDownloadUrl(string $path): string

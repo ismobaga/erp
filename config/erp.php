@@ -30,4 +30,9 @@ return [
             explode(',', (string) env('ERP_DOCUMENTS_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,zip,txt'))
         ))),
     ],
+
+    'enterprise' => [
+        'report_retention_days' => max(1, (int) env('ERP_REPORT_RETENTION_DAYS', 30)),
+        'audit_retention_days' => max(7, (int) env('ERP_AUDIT_RETENTION_DAYS', 365)),
+    ],
 ];

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Services\AuditTrailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,6 +26,12 @@ class AttachmentDownloadController
 
         abort_unless(Str::startsWith($normalizedPath, $directory . '/'), 403);
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
+
+        app(\App\Services\AuditTrailService::class)->log('document_downloaded', $attachment, [
+            'disk' => $disk,
+            'path' => $normalizedPath,
+            'mime_type' => $attachment->mime_type,
+        ]);
 
         return response()->streamDownload(function () use ($disk, $normalizedPath): void {
             $stream = Storage::disk($disk)->readStream($normalizedPath);

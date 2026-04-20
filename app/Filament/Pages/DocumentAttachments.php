@@ -85,7 +85,7 @@ class DocumentAttachments extends Page
             $disk
         );
 
-        Attachment::create([
+        $attachment = Attachment::create([
             'attachable_type' => User::class,
             'attachable_id' => $user->getKey(),
             'file_name' => $file->getClientOriginalName(),
@@ -95,6 +95,13 @@ class DocumentAttachments extends Page
             'size_bytes' => $file->getSize(),
             'uploaded_by' => $user->getKey(),
         ]);
+
+        app(\App\Services\AuditTrailService::class)->log('document_uploaded', $attachment, [
+            'category' => $this->documentCategory,
+            'disk' => $disk,
+            'path' => $storedPath,
+            'size_bytes' => $file->getSize(),
+        ], $user->getKey());
 
         $this->reset('upload');
         $this->documentCategory = 'Factures';

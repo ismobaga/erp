@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\DocumentAttachments;
+use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -96,6 +97,13 @@ class DocumentAttachmentsPageTest extends TestCase
         $this->actingAs($user)
             ->get($signedUrl)
             ->assertOk();
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'document_downloaded',
+            'subject_type' => Attachment::class,
+            'subject_id' => $attachment->id,
+            'user_id' => $user->id,
+        ]);
     }
 
     public function test_upload_is_blocked_when_secure_storage_quota_is_exceeded(): void

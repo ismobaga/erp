@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\ReportGeneration;
+use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -99,6 +100,11 @@ class ReportGenerationPageTest extends TestCase
         $this->assertNotSame('', $generatedPath);
         $this->assertNotSame('', $component->get('generatedDownloadUrl'));
         Storage::disk('local')->assertExists($generatedPath);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'report_generated',
+            'user_id' => $user->id,
+        ]);
     }
 
     public function test_user_can_schedule_an_automatic_export_plan(): void
@@ -125,6 +131,19 @@ class ReportGenerationPageTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(ReportGeneration::class)
-            ->assertSet('scheduledPlans.0.status', 'Traité récemment');
+            ->assertSet('scheduledPlans.0.status', __('erp.reports.scheduled_statuses.recent'));
+    }
+
+    public function test_cleanup_command_removes_expired_report_exports(): void
+    {
+        $path = 'reports/legacy/expired-export.csv';
+
+        Storage::disk('local')->put($path, 'legacy-data');
+        touch(Storage::disk('local')->path($path), now()->subDays(40)->timestamp);
+        config()->set('erp.enterprise.report_retention_days', 7);
+
+        $this->artisan('reports:cleanup-exports')->assertExitCode(0);
+
+        $this->assertFalse(Storage::disk('local')->exists($path));
     }
 }

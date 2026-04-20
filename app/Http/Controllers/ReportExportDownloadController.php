@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditTrailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,6 +22,11 @@ class ReportExportDownloadController extends Controller
 
         abort_unless(is_string($path) && Str::startsWith($path, 'reports/'), 403);
         abort_unless(Storage::disk('local')->exists($path), 404);
+
+        app(\App\Services\AuditTrailService::class)->log('report_downloaded', null, [
+            'path' => $path,
+            'name' => basename($path),
+        ]);
 
         return response()->download(storage_path('app/private/' . $path), basename($path));
     }
