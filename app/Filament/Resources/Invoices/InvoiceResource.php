@@ -274,7 +274,7 @@ class InvoiceResource extends Resource
                 Action::make('exportPdf')
                     ->label('Exporter en PDF')
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
-                    ->action(fn(Invoice $record) => Notification::make()->title('Export PDF préparé pour ' . $record->invoice_number . '.')->success()->send()),
+                    ->url(fn(Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
