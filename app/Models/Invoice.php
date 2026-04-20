@@ -45,6 +45,10 @@ class Invoice extends Model
         static::saving(function (Invoice $invoice): void {
             FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
         });
+
+        static::deleting(function (Invoice $invoice): void {
+            FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
+        });
     }
 
     public function client(): BelongsTo

@@ -45,6 +45,10 @@ class Expense extends Model
 
             FinancialPeriod::ensureDateIsOpen($expense->expense_date, 'expense');
         });
+
+        static::deleting(function (Expense $expense): void {
+            FinancialPeriod::ensureDateIsOpen($expense->expense_date, 'expense');
+        });
     }
 
     public function recorder(): BelongsTo

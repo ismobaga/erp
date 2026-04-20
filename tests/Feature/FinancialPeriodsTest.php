@@ -153,4 +153,59 @@ class FinancialPeriodsTest extends TestCase
             $this->assertStringContainsString('closed accounting period', $exception->errors()['financial_period'][0] ?? '');
         }
     }
+
+    public function test_invoice_payment_and_expense_deletions_are_blocked_when_the_period_is_closed(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Delete Lock Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-LOCK-DELETE',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-08',
+            'due_date' => '2026-04-28',
+            'status' => 'sent',
+            'total' => 220,
+            'balance_due' => 220,
+            'created_by' => $user->id,
+        ]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => '2026-04-12',
+            'amount' => 50,
+            'payment_method' => 'cash',
+            'recorded_by' => $user->id,
+        ]);
+
+        $expense = Expense::create([
+            'category' => 'operations',
+            'title' => 'Office internet',
+            'amount' => 60,
+            'expense_date' => '2026-04-14',
+            'recorded_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-DELETE',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        foreach ([
+            [$invoice, 'invoice'],
+            [$payment, 'payment'],
+            [$expense, 'expense'],
+        ] as [$record, $label]) {
+            try {
+                $record->delete();
+                $this->fail("Expected {$label} deletion to be blocked for a closed period.");
+            } catch (ValidationException $exception) {
+                $this->assertStringContainsString('closed accounting period', $exception->errors()['financial_period'][0] ?? '');
+            }
+        }
+    }
 }

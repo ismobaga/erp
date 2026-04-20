@@ -60,6 +60,10 @@ class Payment extends Model
             }
         });
 
+        static::deleting(function (Payment $payment): void {
+            FinancialPeriod::ensureDateIsOpen($payment->payment_date, 'payment');
+        });
+
         static::saved(function (Payment $payment): void {
             $payment->invoice?->refreshFinancials();
         });
