@@ -103,7 +103,7 @@ class InvoiceResource extends Resource
                                     ->default(now())
                                     ->required(),
                                 DatePicker::make('due_date')
-                                    ->default(now()->addDays(30)),
+                                    ->default(now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))),
                             ]),
                         Section::make('État comptable')
                             ->description('Suivez le recouvrement et le niveau d’urgence du paiement.')

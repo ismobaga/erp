@@ -78,13 +78,17 @@ class Invoice extends Model
         $paidTotal = (float) $this->payments()->sum('amount');
         $balanceDue = max(0, (float) $this->total - $paidTotal);
         $isSettled = $balanceDue <= 0.00001;
+        $overdueGraceDays = max(0, (int) config('erp.billing.overdue_grace_days', 0));
+        $overdueAt = $this->due_date !== null
+            ? now()->parse($this->due_date)->endOfDay()->addDays($overdueGraceDays)
+            : null;
 
         $status = 'sent';
         if ($isSettled && (float) $this->total > 0) {
             $status = 'paid';
         } elseif ($paidTotal > 0.0 && $balanceDue > 0.0) {
             $status = 'partially_paid';
-        } elseif ($balanceDue > 0.0 && $this->due_date !== null && now()->greaterThan($this->due_date)) {
+        } elseif ($balanceDue > 0.0 && $overdueAt !== null && now()->greaterThan($overdueAt)) {
             $status = 'overdue';
         }
 

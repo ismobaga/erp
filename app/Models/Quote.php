@@ -67,6 +67,9 @@ class Quote extends Model
             return false;
         }
 
-        return $this->valid_until->isFuture();
+        $graceDays = max(0, (int) config('erp.quotes.expired_acceptance_grace_days', 0));
+        $acceptedUntil = now()->parse($this->valid_until)->endOfDay()->addDays($graceDays);
+
+        return ($at ?? now())->lessThanOrEqualTo($acceptedUntil);
     }
 }

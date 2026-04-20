@@ -179,6 +179,56 @@ class BillingRulesTest extends TestCase
         $this->assertTrue($quote->canBeAccepted());
     }
 
+    public function test_expired_quote_can_be_accepted_within_configured_grace_period(): void
+    {
+        config()->set('erp.quotes.expired_acceptance_grace_days', 2);
+
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Grace Corp', 'status' => 'lead']);
+
+        $quote = Quote::create([
+            'quote_number' => 'Q-002',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(5)->toDateString(),
+            'valid_until' => now()->subDay()->toDateString(),
+            'status' => 'expired',
+            'created_by' => $user->id,
+        ]);
+
+        $this->assertTrue($quote->canBeAccepted(now()));
+    }
+
+    public function test_invoice_overdue_status_respects_configured_grace_period(): void
+    {
+        config()->set('erp.billing.overdue_grace_days', 2);
+
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Grace Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-GRACE-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(3)->toDateString(),
+            'due_date' => now()->subDay()->toDateString(),
+            'status' => 'sent',
+            'total' => 100,
+            'balance_due' => 100,
+            'created_by' => $user->id,
+        ]);
+
+        $invoice->refreshFinancials();
+        $invoice->refresh();
+
+        $this->assertSame('sent', $invoice->status);
+
+        config()->set('erp.billing.overdue_grace_days', 0);
+
+        $invoice->refreshFinancials();
+        $invoice->refresh();
+
+        $this->assertSame('overdue', $invoice->status);
+    }
+
     public function test_overpayment_can_be_allowed_explicitly(): void
     {
         $user = User::factory()->create();

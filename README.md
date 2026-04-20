@@ -69,6 +69,17 @@ php artisan serve
 
 Access Filament at `/admin`.
 
+## Business rules configuration
+
+Key ERP rules are now centralized in [config/erp.php](config/erp.php) and can be overridden through environment variables:
+
+- `ERP_INVOICE_DEFAULT_DUE_DAYS`
+- `ERP_INVOICE_OVERDUE_GRACE_DAYS`
+- `ERP_QUOTE_ACCEPTANCE_GRACE_DAYS`
+- `ERP_EXPENSE_AUTO_APPROVE_LIMIT`
+- `ERP_APPROVAL_BULK_LIMIT`
+- `ERP_PROJECT_AUTO_APPROVE_STATUSES`
+
 ## Tests
 
 ```bash

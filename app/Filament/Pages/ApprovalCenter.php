@@ -46,6 +46,9 @@ class ApprovalCenter extends Page
                 ->action(function (): void {
                     $user = auth()->user();
                     $approved = 0;
+                    $expenseLimit = max(0, (float) config('erp.approvals.expense_auto_approve_limit', 250000));
+                    $bulkLimit = max(1, (int) config('erp.approvals.bulk_approval_limit', 10));
+                    $projectStatuses = config('erp.approvals.project_auto_approve_statuses', ['planned', 'on_hold']);
 
                     if (!$user) {
                         Notification::make()->title('Aucun utilisateur authentifié pour valider les éléments.')->danger()->send();
@@ -56,9 +59,9 @@ class ApprovalCenter extends Page
                     if (Schema::hasTable('expenses')) {
                         Expense::query()
                             ->where('approval_status', 'pending')
-                            ->where('amount', '<=', 250000)
+                            ->where('amount', '<=', $expenseLimit)
                             ->latest()
-                            ->take(10)
+                            ->take($bulkLimit)
                             ->get()
                             ->each(function (Expense $expense) use ($user, &$approved): void {
                                 $expense->approve($user, 'Validation rapide depuis le centre d’approbation.');
@@ -69,9 +72,9 @@ class ApprovalCenter extends Page
                     if (Schema::hasTable('projects')) {
                         Project::query()
                             ->where('approval_status', 'pending')
-                            ->whereIn('status', ['planned', 'on_hold'])
+                            ->whereIn('status', $projectStatuses)
                             ->latest()
-                            ->take(10)
+                            ->take($bulkLimit)
                             ->get()
                             ->each(function (Project $project) use ($user, &$approved): void {
                                 $project->approve($user, 'Projet approuvé depuis le centre d’approbation.');
