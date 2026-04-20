@@ -53,15 +53,21 @@ By default this starts:
 - `app` on `http://localhost:8000`
 - `postgres` on `5432`
 
-Set a secure `APP_KEY` in your environment before deployment (Dokploy environment variables or `.env`).
+Set these Dokploy environment variables before deployment:
 
-Default database credentials used by the compose file:
+- `APP_KEY` (required)
+- `DB_DATABASE` (optional, default: `erp`)
+- `DB_USERNAME` (optional, default: `postgres`)
+- `DB_PASSWORD` (required)
+- `RUN_MIGRATIONS` (optional, default: `false`; set `true` for one-time schema migration runs)
+
+Database connection values used by the compose file:
 
 - Host: `127.0.0.1`
 - Port: `5432`
-- Database: `erp`
-- Username: `postgres`
-- Password: `postgres`
+- Database: `${DB_DATABASE:-erp}`
+- Username: `${DB_USERNAME:-postgres}`
+- Password: `${DB_PASSWORD}`
 
 ### Run the application locally without Docker
 

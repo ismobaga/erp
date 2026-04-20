@@ -34,8 +34,10 @@ COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 
 RUN mkdir -p storage/framework/{cache,sessions,testing,views} storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
+    && chmod +x docker/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["sh", "-lc", "php artisan package:discover --ansi && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["./docker/entrypoint.sh"]
