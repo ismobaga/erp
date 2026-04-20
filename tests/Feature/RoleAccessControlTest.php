@@ -28,6 +28,10 @@ class RoleAccessControlTest extends TestCase
             ->assertOk();
 
         $this->actingAs($user)
+            ->get('/admin/financial-periods')
+            ->assertOk();
+
+        $this->actingAs($user)
             ->get('/admin/users')
             ->assertForbidden();
     }
@@ -40,6 +44,10 @@ class RoleAccessControlTest extends TestCase
         $this->actingAs($user)
             ->get('/admin/projects')
             ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/financial-periods')
+            ->assertForbidden();
 
         $this->actingAs($user)
             ->get('/admin/expenses')
