@@ -32,6 +32,11 @@ trait HasPermissionAccess
         return static::canAccessPermission('view');
     }
 
+    public static function canView(Model $record): bool
+    {
+        return static::canAccessPermission('view');
+    }
+
     public static function canCreate(): bool
     {
         return static::canAccessPermission('create');

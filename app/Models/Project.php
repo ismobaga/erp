@@ -100,6 +100,20 @@ class Project extends Model
         }
     }
 
+    public function addInternalNote(User $user, string $note): void
+    {
+        $entryHeader = now()->format('d/m/Y H:i') . ' — ' . $user->name;
+        $entry = $entryHeader . PHP_EOL . trim($note);
+        $existingNotes = trim((string) $this->notes);
+
+        $this->forceFill([
+            'notes' => blank($existingNotes) ? $entry : $entry . PHP_EOL . PHP_EOL . $existingNotes,
+            'updated_by' => $user->getKey(),
+        ])->save();
+
+        $this->logActivity('project_note_added', $user, $note);
+    }
+
     protected function logActivity(string $action, User $user, ?string $notes = null): void
     {
         ActivityLog::create([

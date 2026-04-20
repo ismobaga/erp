@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
+use App\Filament\Resources\Projects\Pages\ViewProjectDetails;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\Service;
@@ -138,6 +139,7 @@ class ProjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(fn(Project $record): string => static::getUrl('details', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')
                     ->label('Projet')
@@ -193,6 +195,11 @@ class ProjectResource extends Resource
                     ]),
             ])
             ->recordActions([
+                Action::make('details')
+                    ->label('Détails')
+                    ->icon(Heroicon::OutlinedEye)
+                    ->color('gray')
+                    ->url(fn(Project $record): string => static::getUrl('details', ['record' => $record])),
                 Action::make('approve')
                     ->label('Approuver')
                     ->color('success')
@@ -253,6 +260,7 @@ class ProjectResource extends Resource
         return [
             'index' => ListProjects::route('/'),
             'create' => CreateProject::route('/create'),
+            'details' => ViewProjectDetails::route('/{record}/details'),
             'edit' => EditProject::route('/{record}/edit'),
         ];
     }
