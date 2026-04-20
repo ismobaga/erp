@@ -11,7 +11,9 @@
         "filament/filament": "*",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
-        "spatie/laravel-permission": "*"
+        "spatie/laravel-permission": "*",
+	"ext-intl": "*",
+	"ext-zip": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
