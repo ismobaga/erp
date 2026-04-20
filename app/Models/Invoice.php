@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\AuditTrailService;
 use App\Services\InvoiceNumberService;
+use App\Services\TaxProfileResolver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -96,10 +97,16 @@ class Invoice extends Model
     public function recalculateTotals(): void
     {
         $subtotal = (float) $this->items()->sum('line_total');
-        $total = max(0, $subtotal - (float) $this->discount_total + (float) $this->tax_total);
+        $taxComputation = app(TaxProfileResolver::class)->calculateForClient($subtotal, $this->client);
+        $taxTotal = $taxComputation['matched'] ? (float) $taxComputation['tax_total'] : (float) $this->tax_total;
+        $baseTotal = $taxComputation['matched'] && (($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive')
+            ? (float) $taxComputation['total']
+            : $subtotal + $taxTotal;
+        $total = max(0, $baseTotal - (float) $this->discount_total);
 
         $this->forceFill([
             'subtotal' => $subtotal,
+            'tax_total' => $taxTotal,
             'total' => $total,
         ])->saveQuietly();
 

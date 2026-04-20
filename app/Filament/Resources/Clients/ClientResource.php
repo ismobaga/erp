@@ -118,7 +118,9 @@ class ClientResource extends Resource
                                     ->placeholder('Adresse')
                                     ->columnSpanFull(),
                                 TextInput::make('city')
-                                    ->placeholder('City'),
+                                    ->label('Région / ville fiscale')
+                                    ->placeholder('Dakar')
+                                    ->helperText('Utilisée pour résoudre les profils fiscaux régionaux quand ils existent.'),
                                 Select::make('country')
                                     ->options([
                                         'Mali' => 'Mali',
@@ -127,8 +129,29 @@ class ClientResource extends Resource
                                         'France' => 'France',
                                         'United Arab Emirates' => 'United Arab Emirates',
                                     ])
+                                    ->helperText('Le pays détermine le profil de TVA ou de taxe par défaut pour ce client.')
                                     ->searchable()
                                     ->native(false),
+                                Placeholder::make('tax_profile_preview')
+                                    ->label('Profil fiscal appliqué')
+                                    ->content(function (Get $get): string {
+                                        $profiles = (array) config('erp.tax_profiles.countries', []);
+                                        $country = (string) ($get('country') ?? '');
+                                        $region = (string) ($get('city') ?? '');
+                                        $countryProfile = $profiles[$country] ?? [];
+                                        $regionProfile = ($countryProfile['regions'][$region] ?? []);
+                                        $profile = array_merge((array) config('erp.tax_profiles.default', []), $countryProfile, $regionProfile);
+
+                                        if (blank($country) && blank($region)) {
+                                            return 'Aucun profil fiscal spécifique sélectionné.';
+                                        }
+
+                                        $label = $profile['label'] ?? 'Profil standard';
+                                        $rate = number_format((float) ($profile['rate'] ?? 0), 2, ',', ' ');
+
+                                        return $label . ' · ' . $rate . ' %';
+                                    })
+                                    ->columnSpanFull(),
                             ]),
                         Section::make('Résumé du dossier')
                             ->extraAttributes(['class' => 'ledger-summary-card'])

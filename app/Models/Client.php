@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\TaxProfileResolver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,4 +20,10 @@ use Illuminate\Database\Eloquent\Model;
     'created_by',
     'updated_by',
 ])]
-class Client extends Model {}
+class Client extends Model
+{
+    public function taxProfile(): array
+    {
+        return app(TaxProfileResolver::class)->resolveForClient($this);
+    }
+}

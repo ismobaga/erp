@@ -16,6 +16,56 @@ return [
         'expired_acceptance_grace_days' => max(0, (int) env('ERP_QUOTE_ACCEPTANCE_GRACE_DAYS', 0)),
     ],
 
+    'tax_profiles' => [
+        'default_country' => trim((string) env('ERP_TAX_DEFAULT_COUNTRY', '')),
+        'default' => [
+            'code' => trim((string) env('ERP_TAX_DEFAULT_CODE', 'STANDARD')),
+            'label' => trim((string) env('ERP_TAX_DEFAULT_LABEL', 'Standard tax profile')),
+            'rate' => max(0, (float) env('ERP_TAX_DEFAULT_RATE', 0)),
+            'mode' => (string) env('ERP_TAX_DEFAULT_MODE', 'exclusive'),
+        ],
+        'countries' => [
+            'Mali' => [
+                'code' => 'ML-VAT',
+                'label' => 'TVA Mali',
+                'rate' => 18,
+                'mode' => 'exclusive',
+            ],
+            'Senegal' => [
+                'code' => 'SN-VAT',
+                'label' => 'TVA Sénégal',
+                'rate' => 18,
+                'mode' => 'exclusive',
+                'regions' => [
+                    'Dakar' => [
+                        'code' => 'SN-DAKAR',
+                        'label' => 'TVA Dakar',
+                        'rate' => 20,
+                        'mode' => 'exclusive',
+                    ],
+                ],
+            ],
+            'France' => [
+                'code' => 'FR-VAT',
+                'label' => 'TVA France',
+                'rate' => 20,
+                'mode' => 'exclusive',
+            ],
+            'Ghana' => [
+                'code' => 'GH-VAT',
+                'label' => 'VAT Ghana',
+                'rate' => 15,
+                'mode' => 'exclusive',
+            ],
+            'United Arab Emirates' => [
+                'code' => 'AE-VAT',
+                'label' => 'VAT UAE',
+                'rate' => 5,
+                'mode' => 'exclusive',
+            ],
+        ],
+    ],
+
     'approvals' => [
         'expense_auto_approve_limit' => max(0, (float) env('ERP_EXPENSE_AUTO_APPROVE_LIMIT', 250000)),
         'bulk_approval_limit' => max(1, (int) env('ERP_APPROVAL_BULK_LIMIT', 10)),

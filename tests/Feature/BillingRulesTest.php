@@ -229,6 +229,92 @@ class BillingRulesTest extends TestCase
         $this->assertSame('overdue', $invoice->status);
     }
 
+    public function test_invoice_tax_total_uses_the_configured_region_profile_when_available(): void
+    {
+        config()->set('erp.tax_profiles.default.rate', 0);
+        config()->set('erp.tax_profiles.countries', [
+            'Senegal' => [
+                'label' => 'TVA Sénégal',
+                'rate' => 18,
+                'mode' => 'exclusive',
+                'regions' => [
+                    'Dakar' => [
+                        'label' => 'TVA Dakar',
+                        'rate' => 20,
+                    ],
+                ],
+            ],
+        ]);
+
+        $user = User::factory()->create();
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Tax Region Corp',
+            'city' => 'Dakar',
+            'country' => 'Senegal',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-10',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => 'Regional tax service',
+            'quantity' => 1,
+            'unit_price' => 1000,
+        ]);
+
+        $invoice->refresh();
+
+        $this->assertSame('200.00', $invoice->tax_total);
+        $this->assertSame('1200.00', $invoice->total);
+    }
+
+    public function test_invoice_tax_total_falls_back_to_the_country_profile(): void
+    {
+        config()->set('erp.tax_profiles.default.rate', 0);
+        config()->set('erp.tax_profiles.countries', [
+            'Senegal' => [
+                'label' => 'TVA Sénégal',
+                'rate' => 18,
+                'mode' => 'exclusive',
+            ],
+        ]);
+
+        $user = User::factory()->create();
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Tax Country Corp',
+            'city' => 'Thiès',
+            'country' => 'Senegal',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-12',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => 'Country tax service',
+            'quantity' => 2,
+            'unit_price' => 500,
+        ]);
+
+        $invoice->refresh();
+
+        $this->assertSame('180.00', $invoice->tax_total);
+        $this->assertSame('1180.00', $invoice->total);
+    }
+
     public function test_overpayment_can_be_allowed_explicitly(): void
     {
         $user = User::factory()->create();
