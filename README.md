@@ -59,7 +59,7 @@ Set these Dokploy environment variables before deployment:
 - `DB_DATABASE` (optional, default: `erp`)
 - `DB_USERNAME` (optional, default: `postgres`)
 - `DB_PASSWORD` (required)
-- `RUN_MIGRATIONS` (optional, default: `false`; set `true` for one-time schema migration runs)
+- `RUN_MIGRATIONS` (optional, default: `false`; when `true`, migrations run on each container start)
 
 Database connection values used by the compose file:
 

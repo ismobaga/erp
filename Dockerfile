@@ -38,6 +38,8 @@ RUN mkdir -p storage/framework/{cache,sessions,testing,views} storage/logs boots
     && rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
     && chmod +x docker/entrypoint.sh
 
+USER www-data
+
 EXPOSE 8000
 
-CMD ["./docker/entrypoint.sh"]
+CMD ["/var/www/html/docker/entrypoint.sh"]
