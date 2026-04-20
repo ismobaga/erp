@@ -11,7 +11,9 @@ use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\WithFileUploads;
 
 class DocumentAttachments extends Page
@@ -50,9 +52,14 @@ class DocumentAttachments extends Page
 
     public function uploadDocument(): void
     {
+        $disk = (string) config('erp.documents.disk', 'local');
+        $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
+        $maxUploadKb = max(512, (int) config('erp.documents.max_upload_kb', 10240));
+        $allowedExtensions = (array) config('erp.documents.allowed_extensions', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png', 'zip', 'txt']);
+
         $validated = $this->validate([
             'documentCategory' => ['required', 'string', 'max:255'],
-            'upload' => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,zip'],
+            'upload' => ['required', 'file', 'max:' . $maxUploadKb, 'mimes:' . implode(',', $allowedExtensions)],
         ], [], [
             'documentCategory' => 'catégorie',
             'upload' => 'document',
@@ -63,10 +70,19 @@ class DocumentAttachments extends Page
         abort_unless((bool) $user, 403);
 
         $file = $validated['upload'];
+        $quotaBytes = max(1, (int) config('erp.documents.quota_mb', 200)) * 1024 * 1024;
+        $projectedUsage = (int) Attachment::query()->sum('size_bytes') + (int) $file->getSize();
+
+        if ($projectedUsage > $quotaBytes) {
+            throw ValidationException::withMessages([
+                'upload' => 'Le quota de stockage sécurisé des documents a été dépassé.',
+            ]);
+        }
+
         $storedPath = $file->storeAs(
-            'attachments/' . now()->format('Y/m'),
-            Str::uuid() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension(),
-            'local'
+            $directory . '/' . now()->format('Y/m'),
+            Str::uuid() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . Str::lower($file->getClientOriginalExtension()),
+            $disk
         );
 
         Attachment::create([
@@ -94,13 +110,14 @@ class DocumentAttachments extends Page
         $documents = $this->filteredDocuments();
         $allDocuments = Attachment::query()->latest()->get();
         $totalBytes = (int) $allDocuments->sum(fn(Attachment $attachment) => (int) ($attachment->size_bytes ?? 0));
-        $quotaBytes = 200 * 1024 * 1024;
+        $quotaMb = max(1, (int) config('erp.documents.quota_mb', 200));
+        $quotaBytes = $quotaMb * 1024 * 1024;
 
         return [
             'documents' => $documents,
             'storage' => [
                 'used' => $this->formatBytes($totalBytes),
-                'quota' => '200 MB',
+                'quota' => $quotaMb . ' MB',
                 'percent' => min(100, $quotaBytes > 0 ? (int) round(($totalBytes / $quotaBytes) * 100) : 0),
             ],
             'categories' => $this->categoryBreakdown($allDocuments),
@@ -138,7 +155,11 @@ class DocumentAttachments extends Page
                     'type' => $attachment->extensionLabel(),
                     'date' => $attachment->created_at?->translatedFormat('d M Y') ?? '—',
                     'size' => $attachment->humanSize(),
-                    'downloadUrl' => route('attachments.download', $attachment),
+                    'downloadUrl' => URL::temporarySignedRoute(
+                        'attachments.download',
+                        now()->addMinutes((int) config('erp.documents.download_url_ttl_minutes', 30)),
+                        ['attachment' => $attachment]
+                    ),
                     'icon' => $this->iconFor($attachment),
                     'tint' => $this->tintFor($attachment),
                 ];
@@ -211,6 +232,7 @@ class DocumentAttachments extends Page
             'xls' => 'application/vnd.ms-excel',
             'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'csv' => 'text/csv',
+            'txt' => 'text/plain',
             'zip' => 'application/zip',
             'jpg', 'jpeg' => 'image/jpeg',
             'png' => 'image/png',

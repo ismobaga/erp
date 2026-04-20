@@ -18,4 +18,16 @@ return [
             explode(',', (string) env('ERP_PROJECT_AUTO_APPROVE_STATUSES', 'planned,on_hold'))
         ))),
     ],
+
+    'documents' => [
+        'disk' => (string) env('ERP_DOCUMENTS_DISK', 'local'),
+        'directory' => trim((string) env('ERP_DOCUMENTS_DIRECTORY', 'attachments'), '/'),
+        'max_upload_kb' => max(512, (int) env('ERP_DOCUMENTS_MAX_UPLOAD_KB', 10240)),
+        'quota_mb' => max(1, (int) env('ERP_DOCUMENTS_QUOTA_MB', 200)),
+        'download_url_ttl_minutes' => max(1, (int) env('ERP_DOCUMENTS_DOWNLOAD_URL_TTL', 30)),
+        'allowed_extensions' => array_values(array_filter(array_map(
+            static fn(string $extension): string => trim(strtolower($extension)),
+            explode(',', (string) env('ERP_DOCUMENTS_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,zip,txt'))
+        ))),
+    ],
 ];

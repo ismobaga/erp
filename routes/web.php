@@ -36,6 +36,7 @@ Route::post('/contact-request', function (Request $request) {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)
+        ->middleware(['signed', 'throttle:30,1'])
         ->name('attachments.download');
 
     Route::get('/invoices/{invoice}/pdf', InvoicePdfController::class)
