@@ -3,15 +3,13 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\HasPermissionAccess;
-use App\Models\Expense;
-use App\Models\Invoice;
-use App\Models\Payment;
+use App\Services\ReportExportService;
 use BackedEnum;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Collection;
 
 class ReportGeneration extends Page
 {
@@ -64,12 +62,40 @@ class ReportGeneration extends Page
 
     public array $scheduledPlans = [];
 
+    public string $generatedReportName = '';
+
+    public string $generatedReportPath = '';
+
+    public string $generatedDownloadUrl = '';
+
+    public string $generatedReportTimestamp = '';
+
     public function mount(): void
     {
         $this->usePreset('quarter');
         $this->nextExecutionAt = now()->addDay()->setTime(8, 0)->format('Y-m-d\TH:i');
         $this->scheduleEmail = auth()->user()?->email ?? '';
-        $this->scheduledPlans = $this->defaultScheduledPlans();
+        $this->scheduledPlans = $this->loadScheduledPlans();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('runScheduledExports')
+                ->label('Exécuter les exports planifiés')
+                ->action(function (): void {
+                    $processed = app(ReportExportService::class)->runDueScheduledExports();
+                    $this->scheduledPlans = $this->loadScheduledPlans();
+
+                    $notification = Notification::make()->title(
+                        $processed > 0
+                        ? $processed . ' export(s) planifié(s) généré(s).'
+                        : 'Aucun export planifié à exécuter.'
+                    );
+
+                    ($processed > 0 ? $notification->success() : $notification->warning())->send();
+                }),
+        ];
     }
 
     public function usePreset(string $preset): void
@@ -111,104 +137,53 @@ class ReportGeneration extends Page
         $start = Carbon::parse($validated['startDate'])->startOfDay();
         $end = Carbon::parse($validated['endDate'])->endOfDay();
 
-        $invoices = Invoice::query()
-            ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('issue_date')
-            ->get();
+        $report = app(ReportExportService::class)->generate(
+            $start,
+            $end,
+            $this->selectedModules,
+            $this->exportFormat,
+            $this->includeCharts,
+            auth()->id(),
+        );
 
-        $payments = Payment::query()
-            ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('payment_date')
-            ->get();
-
-        $expenses = Expense::query()
-            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('expense_date')
-            ->get();
-
-        $revenue = $this->selectedModules['revenue'] ? (float) $invoices->sum('total') : 0.0;
-        $expenseTotal = $this->selectedModules['expenses'] ? (float) $expenses->sum('amount') : 0.0;
-        $paymentTotal = $this->selectedModules['payments'] ? (float) $payments->sum('amount') : 0.0;
-        $taxTotal = $this->selectedModules['taxes'] ? (float) $invoices->sum('tax_total') : 0.0;
-        $netResult = $paymentTotal - $expenseTotal;
-
-        $this->reportSummary = [
-            ['label' => 'Chiffre d’affaires', 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
-            ['label' => 'Encaissements', 'value' => $this->formatMoney($paymentTotal), 'tone' => 'text-emerald-600'],
-            ['label' => 'Dépenses', 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
-            ['label' => 'Taxes & TVA', 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
-            ['label' => 'Résultat net', 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
-            ['label' => 'Format', 'value' => strtoupper($this->exportFormat), 'tone' => 'text-sky-600'],
-        ];
-
-        $rows = collect();
-
-        if ($this->selectedModules['revenue']) {
-            $rows = $rows->merge($invoices->map(fn(Invoice $invoice): array => [
-                'date' => optional($invoice->issue_date)->format('d/m/Y') ?? '—',
-                'title' => $invoice->invoice_number,
-                'subtitle' => 'Facture client',
-                'amount' => $this->formatMoney((float) $invoice->total),
-                'badge' => strtoupper(str_replace('_', ' ', $invoice->status)),
-            ]));
-        }
-
-        if ($this->selectedModules['payments']) {
-            $rows = $rows->merge($payments->map(fn(Payment $payment): array => [
-                'date' => optional($payment->payment_date)->format('d/m/Y') ?? '—',
-                'title' => $payment->reference ?: 'Paiement sans référence',
-                'subtitle' => $payment->invoice?->invoice_number ?: 'Paiement libre',
-                'amount' => $this->formatMoney((float) $payment->amount),
-                'badge' => 'PAIEMENT',
-            ]));
-        }
-
-        if ($this->selectedModules['expenses']) {
-            $rows = $rows->merge($expenses->map(fn(Expense $expense): array => [
-                'date' => optional($expense->expense_date)->format('d/m/Y') ?? '—',
-                'title' => $expense->title,
-                'subtitle' => 'Dépense ' . $expense->category,
-                'amount' => $this->formatMoney((float) $expense->amount),
-                'badge' => 'DÉPENSE',
-            ]));
-        }
-
-        $this->previewRows = $rows
-            ->sortByDesc('date')
-            ->take(8)
-            ->values()
-            ->all();
-
+        $this->reportSummary = $report['summary'];
+        $this->previewRows = $report['previewRows'];
+        $this->generatedReportPath = $report['path'];
+        $this->generatedReportName = $report['name'];
+        $this->generatedDownloadUrl = $report['downloadUrl'];
+        $this->generatedReportTimestamp = $report['generatedAt'];
         $this->reportReady = true;
 
         if ($this->autoScheduleEnabled) {
-            $this->prependScheduledPlan();
+            app(ReportExportService::class)->persistScheduledPlan(
+                app(ReportExportService::class)->buildScheduledPlan([
+                    'startDate' => $validated['startDate'],
+                    'endDate' => $validated['endDate'],
+                    'exportFormat' => $validated['exportFormat'],
+                    'scheduleFrequency' => $this->scheduleFrequency,
+                    'nextExecutionAt' => $this->nextExecutionAt,
+                    'scheduleEmail' => $this->scheduleEmail,
+                    'selectedModules' => $this->selectedModules,
+                    'includeCharts' => $this->includeCharts,
+                ], auth()->id())
+            );
+
+            $this->scheduledPlans = $this->loadScheduledPlans();
         }
 
         Notification::make()
             ->title('Rapport généré avec succès.')
             ->body(
-                'Votre export ' . strtoupper($this->exportFormat) . ' est prêt à être exploité.'
+                'Votre export ' . strtoupper($this->exportFormat) . ' est prêt au téléchargement sécurisé.'
                 . ($this->autoScheduleEnabled ? ' La planification automatique est activée.' : '')
             )
             ->success()
             ->send();
     }
 
-    protected function prependScheduledPlan(): void
+    protected function loadScheduledPlans(): array
     {
-        $nextRun = Carbon::parse($this->nextExecutionAt);
-
-        array_unshift($this->scheduledPlans, [
-            'description' => 'Export ' . strtoupper($this->exportFormat) . ' financier',
-            'frequency' => $this->scheduleFrequency,
-            'nextExecution' => $nextRun->format('d M Y - H:i'),
-            'status' => 'Actif',
-            'statusClasses' => 'bg-green-100 text-green-800',
-            'email' => $this->scheduleEmail,
-        ]);
-
-        $this->scheduledPlans = array_slice($this->scheduledPlans, 0, 6);
+        return app(ReportExportService::class)->loadScheduledPlans(auth()->id(), $this->defaultScheduledPlans());
     }
 
     protected function defaultScheduledPlans(): array
@@ -221,6 +196,7 @@ class ReportGeneration extends Page
                 'status' => 'Actif',
                 'statusClasses' => 'bg-green-100 text-green-800',
                 'email' => 'direction@entreprise.com',
+                'lastGenerated' => 'Jamais',
             ],
             [
                 'description' => 'Audit Fiscal Hebdo',
@@ -229,6 +205,7 @@ class ReportGeneration extends Page
                 'status' => 'En attente',
                 'statusClasses' => 'bg-yellow-100 text-yellow-800',
                 'email' => 'comptabilite@entreprise.com',
+                'lastGenerated' => 'Jamais',
             ],
         ];
     }

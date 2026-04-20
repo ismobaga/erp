@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -40,6 +41,8 @@ class ReportGenerationPageTest extends TestCase
 
     public function test_user_can_generate_a_financial_report_preview(): void
     {
+        Storage::fake('local');
+
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
@@ -80,7 +83,7 @@ class ReportGenerationPageTest extends TestCase
             'recorded_by' => $user->id,
         ]);
 
-        Livewire::actingAs($user)
+        $component = Livewire::actingAs($user)
             ->test(ReportGeneration::class)
             ->set('startDate', now()->subDays(30)->toDateString())
             ->set('endDate', now()->toDateString())
@@ -90,10 +93,18 @@ class ReportGenerationPageTest extends TestCase
             ->assertSet('reportReady', true)
             ->assertSeeText('INV-REP-001')
             ->assertSeeText('RPT-TRX-001');
+
+        $generatedPath = $component->get('generatedReportPath');
+
+        $this->assertNotSame('', $generatedPath);
+        $this->assertNotSame('', $component->get('generatedDownloadUrl'));
+        Storage::disk('local')->assertExists($generatedPath);
     }
 
     public function test_user_can_schedule_an_automatic_export_plan(): void
     {
+        Storage::fake('local');
+
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
@@ -101,7 +112,7 @@ class ReportGenerationPageTest extends TestCase
             ->test(ReportGeneration::class)
             ->set('autoScheduleEnabled', true)
             ->set('scheduleFrequency', 'Hebdomadaire')
-            ->set('nextExecutionAt', now()->addDay()->setTime(8, 30)->format('Y-m-d\TH:i'))
+            ->set('nextExecutionAt', now()->subDay()->setTime(8, 30)->format('Y-m-d\TH:i'))
             ->set('scheduleEmail', 'exports.planifies@entreprise.com')
             ->call('generateReport')
             ->assertHasNoErrors()
@@ -109,5 +120,11 @@ class ReportGenerationPageTest extends TestCase
             ->assertSet('scheduledPlans.0.email', 'exports.planifies@entreprise.com')
             ->assertSeeText('exports.planifies@entreprise.com')
             ->assertSeeText('Hebdomadaire');
+
+        $this->artisan('reports:run-scheduled-exports')->assertExitCode(0);
+
+        Livewire::actingAs($user)
+            ->test(ReportGeneration::class)
+            ->assertSet('scheduledPlans.0.status', 'Traité récemment');
     }
 }

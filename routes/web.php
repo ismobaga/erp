@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\ReportExportDownloadController;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -39,4 +40,7 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/invoices/{invoice}/pdf', InvoicePdfController::class)
         ->name('invoices.pdf');
+
+    Route::get('/reports/download', ReportExportDownloadController::class)
+        ->name('reports.download');
 });
