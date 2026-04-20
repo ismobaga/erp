@@ -51,7 +51,7 @@ docker compose up -d
 By default this starts:
 
 - `app` on `http://localhost:8000`
-- `postgres` on `5432`
+- `postgres` on the internal Docker network (not published to host)
 
 Set these Dokploy environment variables before deployment:
 
