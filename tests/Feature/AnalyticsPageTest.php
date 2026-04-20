@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Client;
 use App\Models\Expense;
+use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
@@ -152,5 +153,34 @@ class AnalyticsPageTest extends TestCase
         $response->assertSee('30 derniers jours');
         $response->assertSee('Recent Labs');
         $response->assertDontSee('Legacy Systems');
+    }
+
+    public function test_dashboard_surfaces_accounting_period_overview(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'DASH-APR-2026',
+            'starts_on' => now()->startOfMonth()->toDateString(),
+            'ends_on' => now()->endOfMonth()->toDateString(),
+            'status' => 'open',
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'March 2026',
+            'code' => 'DASH-MAR-2026',
+            'starts_on' => now()->subMonth()->startOfMonth()->toDateString(),
+            'ends_on' => now()->subMonth()->endOfMonth()->toDateString(),
+            'status' => 'closed',
+        ]);
+
+        $response = $this->actingAs($user)->get('/admin');
+
+        $response->assertOk();
+        $response->assertSee('Périodes comptables');
+        $response->assertSee('Périodes ouvertes');
+        $response->assertSee('Périodes clôturées');
     }
 }
