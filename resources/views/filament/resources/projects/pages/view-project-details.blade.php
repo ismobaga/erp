@@ -3,6 +3,10 @@
         $project = $this->getRecord()->loadMissing(['client', 'service', 'assignee', 'approver']);
         $progress = $this->getProgressPercentage();
         $noteEntries = $this->getNoteEntries();
+        $relatedAttachments = $this->getRelatedAttachments();
+        $relatedPayments = $this->getRelatedPayments();
+        $relatedInvoices = $this->getRelatedInvoices();
+        $relatedQuotes = $this->getRelatedQuotes();
 
         $statusMap = [
             'planned' => ['Planifié', 'bg-[#d5e3fc] text-[#2d476f]'],
@@ -107,15 +111,123 @@
                     </div>
                 </section>
 
-                <section
-                    class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <section class="space-y-4">
+                    <h3 class="px-2 text-xl font-bold text-primary dark:text-white">Maillage Opérationnel</h3>
+
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-800">📄</div>
+                                    <span class="font-bold text-primary dark:text-white">Documents ({{ count($relatedAttachments) }})</span>
+                                </div>
+                                <a href="{{ url('/admin/documents') }}" class="text-xs font-bold uppercase text-primary hover:underline dark:text-[#8df5e4]">Voir tout</a>
+                            </div>
+
+                            <div class="space-y-3">
+                                @forelse ($relatedAttachments as $attachment)
+                                    <div class="flex items-center justify-between rounded-xl border border-transparent bg-white p-3.5 transition-all hover:border-primary/10 hover:shadow-sm dark:bg-gray-900">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500">PDF</div>
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-bold text-primary dark:text-white">{{ $attachment['name'] }}</span>
+                                                <span class="text-[10px] font-medium text-on-surface-variant dark:text-slate-400">{{ $attachment['meta'] }}</span>
+                                            </div>
+                                        </div>
+                                        <a href="{{ $attachment['downloadUrl'] }}" class="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-container hover:text-primary dark:text-slate-300">↓</a>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-on-surface-variant dark:text-slate-400">Aucun document lié au projet.</p>
+                                @endforelse
+                            </div>
+
+                            <a href="{{ url('/admin/documents') }}" class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-white transition-all hover:opacity-90">
+                                Ajouter un document
+                            </a>
+                        </div>
+
+                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-800">💳</div>
+                                    <span class="font-bold text-primary dark:text-white">Paiements ({{ count($relatedPayments) }})</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                @forelse ($relatedPayments as $payment)
+                                    <div class="flex items-center justify-between rounded-xl bg-white p-3.5 dark:bg-gray-900">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant dark:text-slate-400">{{ $payment['label'] }}</span>
+                                            <span class="text-lg font-bold text-primary dark:text-white">{{ $payment['amount'] }}</span>
+                                            <span class="text-[10px] text-on-surface-variant dark:text-slate-400">{{ $payment['meta'] }}</span>
+                                        </div>
+                                        <span class="rounded-full px-3 py-1 text-[10px] font-black {{ $payment['statusClasses'] }}">{{ $payment['status'] }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-on-surface-variant dark:text-slate-400">Aucun paiement enregistré.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                            <div class="mb-6 flex items-center justify-between">
+                                <span class="font-bold text-primary dark:text-white">Factures ({{ count($relatedInvoices) }})</span>
+                                <a href="{{ url('/admin/invoices') }}" class="text-xs font-bold uppercase text-primary hover:underline dark:text-[#8df5e4]">Détails</a>
+                            </div>
+
+                            <div class="space-y-3">
+                                @forelse ($relatedInvoices as $invoice)
+                                    <div class="rounded-xl bg-white p-3.5 dark:bg-gray-900">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p class="text-sm font-bold text-primary dark:text-white">{{ $invoice['number'] }}</p>
+                                                <p class="text-[10px] text-on-surface-variant dark:text-slate-400">{{ $invoice['meta'] }}</p>
+                                            </div>
+                                            <span class="text-sm font-black text-primary dark:text-white">{{ $invoice['total'] }}</span>
+                                        </div>
+                                        <p class="mt-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant dark:text-slate-400">{{ $invoice['status'] }}</p>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-on-surface-variant dark:text-slate-400">Aucune facture liée.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                            <div class="mb-6 flex items-center justify-between">
+                                <span class="font-bold text-primary dark:text-white">Devis ({{ count($relatedQuotes) }})</span>
+                                <a href="{{ url('/admin/quotes') }}" class="text-xs font-bold uppercase text-primary hover:underline dark:text-[#8df5e4]">Détails</a>
+                            </div>
+
+                            <div class="space-y-3">
+                                @forelse ($relatedQuotes as $quote)
+                                    <div class="rounded-xl bg-white p-3.5 dark:bg-gray-900">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p class="text-sm font-bold text-primary dark:text-white">{{ $quote['number'] }}</p>
+                                                <p class="text-[10px] text-on-surface-variant dark:text-slate-400">{{ $quote['meta'] }}</p>
+                                            </div>
+                                            <span class="text-sm font-black text-primary dark:text-white">{{ $quote['total'] }}</span>
+                                        </div>
+                                        <p class="mt-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant dark:text-slate-400">{{ $quote['status'] }}</p>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-on-surface-variant dark:text-slate-400">Aucun devis lié.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                     <h3 class="mb-8 flex items-center gap-2 text-lg font-bold text-[#002045] dark:text-white">
                         <span class="text-[#86a0cd]">🕘</span>
                         Historique & Notes détaillées
                     </h3>
 
                     <div class="relative space-y-6">
-                        <div class="absolute bottom-2 left-[15px] top-2 w-0.5 bg-[#c4c6cf] opacity-20 dark:bg-white/20">
+                        <div class="absolute bottom-2 left-4 top-2 w-0.5 bg-[#c4c6cf] opacity-20 dark:bg-white/20">
                         </div>
 
                         <div class="relative pl-12">

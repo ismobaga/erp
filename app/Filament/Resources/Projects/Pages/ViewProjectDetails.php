@@ -3,7 +3,11 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\Attachment;
+use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Quote;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
@@ -141,6 +145,96 @@ class ViewProjectDetails extends ViewRecord
         };
     }
 
+    public function getRelatedAttachments(): array
+    {
+        /** @var Project $project */
+        $project = $this->getRecord();
+
+        return $project->attachments()
+            ->latest()
+            ->take(4)
+            ->get()
+            ->map(fn(Attachment $attachment): array => [
+                'name' => $attachment->file_name,
+                'meta' => $attachment->humanSize() . ' • ' . ($attachment->created_at?->translatedFormat('d M Y') ?? '—'),
+                'downloadUrl' => route('attachments.download', $attachment),
+            ])
+            ->all();
+    }
+
+    public function getRelatedPayments(): array
+    {
+        /** @var Project $project */
+        $project = $this->getRecord();
+
+        if (!$project->client_id) {
+            return [];
+        }
+
+        return Payment::query()
+            ->with('invoice')
+            ->where('client_id', $project->client_id)
+            ->latest('payment_date')
+            ->take(3)
+            ->get()
+            ->map(fn(Payment $payment): array => [
+                'label' => $payment->invoice?->invoice_number ?: 'Paiement libre',
+                'amount' => $this->formatMoney((float) $payment->amount),
+                'status' => strtoupper($payment->reconciliationState() === 'completed' ? 'payée' : 'en attente'),
+                'statusClasses' => $payment->reconciliationState() === 'completed'
+                    ? 'bg-tertiary-fixed/40 text-on-tertiary-fixed-variant'
+                    : 'bg-secondary-fixed/50 text-on-secondary-fixed-variant',
+                'meta' => $payment->reference ?: 'Sans référence',
+            ])
+            ->all();
+    }
+
+    public function getRelatedInvoices(): array
+    {
+        /** @var Project $project */
+        $project = $this->getRecord();
+
+        if (!$project->client_id) {
+            return [];
+        }
+
+        return Invoice::query()
+            ->where('client_id', $project->client_id)
+            ->latest('issue_date')
+            ->take(3)
+            ->get()
+            ->map(fn(Invoice $invoice): array => [
+                'number' => $invoice->invoice_number,
+                'total' => $this->formatMoney((float) $invoice->total),
+                'status' => strtoupper(str_replace('_', ' ', $invoice->status)),
+                'meta' => 'Émise le ' . ($invoice->issue_date?->format('d/m/Y') ?? '—'),
+            ])
+            ->all();
+    }
+
+    public function getRelatedQuotes(): array
+    {
+        /** @var Project $project */
+        $project = $this->getRecord();
+
+        if (!$project->client_id) {
+            return [];
+        }
+
+        return Quote::query()
+            ->where('client_id', $project->client_id)
+            ->latest('issue_date')
+            ->take(3)
+            ->get()
+            ->map(fn(Quote $quote): array => [
+                'number' => $quote->quote_number,
+                'total' => $this->formatMoney((float) $quote->total),
+                'status' => strtoupper($quote->status),
+                'meta' => 'Valide jusqu’au ' . ($quote->valid_until?->format('d/m/Y') ?? '—'),
+            ])
+            ->all();
+    }
+
     public function getNoteEntries(): array
     {
         /** @var Project $project */
@@ -180,5 +274,10 @@ class ViewProjectDetails extends ViewRecord
         ];
 
         return $entries;
+    }
+
+    protected function formatMoney(float $amount): string
+    {
+        return number_format($amount, 2, ',', ' ') . ' FCFA';
     }
 }
