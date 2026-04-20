@@ -130,6 +130,14 @@ class FinancialPeriod extends Model
             return null;
         }
 
+        if (static::currentUserCanOverrideLock()) {
+            return sprintf(
+                'Période comptable clôturée : cette %s appartient à %s. Une dérogation contrôlée est autorisée pour votre profil.',
+                $recordLabel,
+                $period->name,
+            );
+        }
+
         return sprintf(
             'Période comptable clôturée : cette %s appartient à %s et reste en lecture seule.',
             $recordLabel,
@@ -137,11 +145,39 @@ class FinancialPeriod extends Model
         );
     }
 
+    public static function currentUserCanOverrideLock(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if (method_exists($user, 'hasRole') && $user->hasRole('Super Admin')) {
+            return true;
+        }
+
+        return $user->can('financial_periods.override');
+    }
+
     public static function ensureDateIsOpen(CarbonInterface|string|null $date, string $recordLabel = 'record'): void
     {
         $period = static::findClosedFor($date);
 
         if ($period === null) {
+            return;
+        }
+
+        if (static::currentUserCanOverrideLock()) {
+            app(AuditTrailService::class)->log('financial_period_override_used', $period, [
+                'record_label' => $recordLabel,
+                'record_date' => $date instanceof CarbonInterface
+                    ? $date->toDateString()
+                    : Carbon::parse($date)->toDateString(),
+                'period_name' => $period->name,
+                'period_code' => $period->code,
+            ]);
+
             return;
         }
 

@@ -140,9 +140,9 @@ class ExpenseResource extends Resource
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn(Expense $record): string => static::isRecordLocked($record) ? 'Clôturée' : 'Ouverte')
+                    ->state(fn(Expense $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn(Expense $record): string => static::isRecordLocked($record) ? 'danger' : 'success'),
+                    ->color(fn(Expense $record): string => static::lockStatusColor($record)),
                 TextColumn::make('expense_date')
                     ->label(__('erp.common.date'))
                     ->date()
@@ -203,17 +203,37 @@ class ExpenseResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return static::canAccessPermission('update') && !static::isRecordLocked($record);
+        return static::canAccessPermission('update')
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
-        return static::canAccessPermission('delete') && !static::isRecordLocked($record);
+        return static::canAccessPermission('delete')
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
     {
         return $record instanceof Expense && FinancialPeriod::isDateLocked($record->expense_date);
+    }
+
+    protected static function lockStatusLabel(Model $record): string
+    {
+        if (!static::isRecordLocked($record)) {
+            return 'Ouverte';
+        }
+
+        return FinancialPeriod::currentUserCanOverrideLock() ? 'Dérogation' : 'Clôturée';
+    }
+
+    protected static function lockStatusColor(Model $record): string
+    {
+        if (!static::isRecordLocked($record)) {
+            return 'success';
+        }
+
+        return FinancialPeriod::currentUserCanOverrideLock() ? 'warning' : 'danger';
     }
 
     public static function getRelations(): array

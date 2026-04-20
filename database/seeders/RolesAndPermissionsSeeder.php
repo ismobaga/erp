@@ -45,6 +45,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'financial_periods.create',
             'financial_periods.update',
             'financial_periods.delete',
+            'financial_periods.override',
             'projects.view',
             'projects.create',
             'projects.update',

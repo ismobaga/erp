@@ -240,9 +240,9 @@ class InvoiceResource extends Resource
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn(Invoice $record): string => static::isRecordLocked($record) ? 'Clôturée' : 'Ouverte')
+                    ->state(fn(Invoice $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn(Invoice $record): string => static::isRecordLocked($record) ? 'danger' : 'success'),
+                    ->color(fn(Invoice $record): string => static::lockStatusColor($record)),
                 TextColumn::make('balance_due')
                     ->label(__('erp.resources.invoice.balance_due'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
@@ -289,17 +289,37 @@ class InvoiceResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return static::canAccessPermission('update') && !static::isRecordLocked($record);
+        return static::canAccessPermission('update')
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
-        return static::canAccessPermission('delete') && !static::isRecordLocked($record);
+        return static::canAccessPermission('delete')
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
     {
         return $record instanceof Invoice && FinancialPeriod::isDateLocked($record->issue_date);
+    }
+
+    protected static function lockStatusLabel(Model $record): string
+    {
+        if (!static::isRecordLocked($record)) {
+            return 'Ouverte';
+        }
+
+        return FinancialPeriod::currentUserCanOverrideLock() ? 'Dérogation' : 'Clôturée';
+    }
+
+    protected static function lockStatusColor(Model $record): string
+    {
+        if (!static::isRecordLocked($record)) {
+            return 'success';
+        }
+
+        return FinancialPeriod::currentUserCanOverrideLock() ? 'warning' : 'danger';
     }
 
     public static function getRelations(): array

@@ -266,4 +266,69 @@ class FinancialPeriodsTest extends TestCase
         $this->assertFalse(ExpenseResource::canEdit($expense));
         $this->assertFalse(ExpenseResource::canDelete($expense));
     }
+
+    public function test_admin_can_apply_a_locked_period_override_with_audit_trace(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Admin');
+        $this->actingAs($user);
+
+        $client = Client::create(['type' => 'company', 'company_name' => 'Override Corp', 'status' => 'active']);
+
+        $period = FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-OVERRIDE',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-LOCK-OVERRIDE',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-12',
+            'due_date' => '2026-04-22',
+            'status' => 'sent',
+            'total' => 180,
+            'balance_due' => 180,
+            'created_by' => $user->id,
+        ]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => '2026-04-13',
+            'amount' => 60,
+            'payment_method' => 'bank transfer',
+            'recorded_by' => $user->id,
+        ]);
+
+        $expense = Expense::create([
+            'category' => 'operations',
+            'title' => 'Override expense',
+            'amount' => 45,
+            'expense_date' => '2026-04-14',
+            'recorded_by' => $user->id,
+        ]);
+
+        $this->assertTrue(InvoiceResource::canEdit($invoice));
+        $this->assertTrue(PaymentResource::canEdit($payment));
+        $this->assertTrue(ExpenseResource::canDelete($expense));
+
+        $invoice->update(['notes' => 'Approved finance override']);
+        $payment->update(['reference' => 'OVERRIDE-REF']);
+        $expense->delete();
+
+        $this->assertSame('Approved finance override', $invoice->fresh()->notes);
+        $this->assertSame('OVERRIDE-REF', $payment->fresh()->reference);
+        $this->assertModelMissing($expense);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'action' => 'financial_period_override_used',
+            'subject_type' => FinancialPeriod::class,
+            'subject_id' => $period->id,
+        ]);
+    }
 }
