@@ -63,15 +63,8 @@ class ExpenseResource extends Resource
                                     ->required()
                                     ->columnSpanFull(),
                                 Select::make('category')
-                                    ->label('Catégorie')
-                                    ->options([
-                                        'travel' => 'Déplacement',
-                                        'supplies' => 'Fournitures',
-                                        'operations' => 'Exploitation',
-                                        'payroll' => 'Personnel',
-                                        'compliance' => 'Conformité',
-                                        'other' => 'Autre',
-                                    ])
+                                    ->label(__('erp.common.category'))
+                                    ->options(trans('erp.resources.expense.categories'))
                                     ->native(false)
                                     ->default('operations')
                                     ->required(),
@@ -109,19 +102,14 @@ class ExpenseResource extends Resource
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Select::make('approval_status')
-                                    ->label('Statut de validation')
-                                    ->options([
-                                        'pending' => 'En attente',
-                                        'approved' => 'Approuvée',
-                                        'review' => 'À vérifier',
-                                        'rejected' => 'Rejetée',
-                                    ])
+                                    ->label(__('erp.common.validation'))
+                                    ->options(trans('erp.resources.expense.approval_statuses'))
                                     ->default('pending')
                                     ->native(false)
                                     ->required(),
                                 Placeholder::make('approval_hint')
-                                    ->label('Note')
-                                    ->content('Les frais approuvés sont tracés dans le journal d’activité.'),
+                                    ->label(__('erp.common.notes'))
+                                    ->content(__('erp.resources.expense.approval_hint')),
                                 Textarea::make('approval_notes')
                                     ->label('Commentaires de validation')
                                     ->rows(5),
@@ -136,23 +124,24 @@ class ExpenseResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('title')
-                    ->label('Dépense')
-                    ->description(fn(Expense $record): string => $record->vendor ?: 'Fournisseur non renseigné')
+                    ->label(__('erp.common.expense'))
+                    ->description(fn(Expense $record): string => $record->vendor ?: __('erp.resources.expense.vendor_missing'))
                     ->searchable(['title', 'vendor', 'reference'])
                     ->wrap(),
                 TextColumn::make('category')
-                    ->label('Catégorie')
-                    ->badge(),
+                    ->label(__('erp.common.category'))
+                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => __('erp.resources.expense.categories.' . $state)),
                 TextColumn::make('amount')
-                    ->label('Montant')
+                    ->label(__('erp.common.amount'))
                     ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
                     ->sortable(),
                 TextColumn::make('expense_date')
-                    ->label('Date')
+                    ->label(__('erp.common.date'))
                     ->date()
                     ->sortable(),
                 TextColumn::make('approval_status')
-                    ->label('Validation')
+                    ->label(__('erp.common.validation'))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'approved' => 'success',
@@ -160,47 +149,38 @@ class ExpenseResource extends Resource
                         'rejected' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'approved' => 'Approuvée',
-                        'review' => 'À vérifier',
-                        'rejected' => 'Rejetée',
-                        default => 'En attente',
-                    }),
+                    ->formatStateUsing(fn(string $state): string => __('erp.resources.expense.approval_statuses.' . $state)),
                 TextColumn::make('updated_at')
-                    ->label('Mis à jour')
+                    ->label(__('erp.common.updated_at'))
                     ->since(),
             ])
             ->filters([
                 SelectFilter::make('approval_status')
-                    ->options([
-                        'pending' => 'En attente',
-                        'approved' => 'Approuvée',
-                        'review' => 'À vérifier',
-                        'rejected' => 'Rejetée',
-                    ]),
+                    ->label(__('erp.common.validation'))
+                    ->options(trans('erp.resources.expense.approval_statuses')),
             ])
             ->recordActions([
                 Action::make('approve')
-                    ->label('Approuver')
+                    ->label(__('erp.actions.approve'))
                     ->color('success')
                     ->visible(fn(Expense $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->approve(auth()->user(), 'Validation effectuée depuis le terminal de gestion.');
 
                         Notification::make()
-                            ->title('Dépense approuvée.')
+                            ->title(__('erp.resources.expense.approved_notification'))
                             ->success()
                             ->send();
                     }),
                 Action::make('review')
-                    ->label('Demander une revue')
+                    ->label(__('erp.actions.review'))
                     ->color('warning')
                     ->visible(fn(Expense $record): bool => $record->approval_status === 'pending' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->markForReview(auth()->user(), 'Contrôle complémentaire demandé.');
 
                         Notification::make()
-                            ->title('La dépense a été marquée pour vérification.')
+                            ->title(__('erp.resources.expense.review_notification'))
                             ->warning()
                             ->send();
                     }),

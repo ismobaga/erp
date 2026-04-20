@@ -95,12 +95,7 @@ class PaymentResource extends Resource
                                     ->required(),
                                 Select::make('payment_method')
                                     ->label('Mode')
-                                    ->options([
-                                        'bank_transfer' => 'Virement bancaire',
-                                        'cash' => 'Espèces',
-                                        'check' => 'Chèque',
-                                        'mobile_money' => 'Mobile money',
-                                    ])
+                                    ->options(trans('erp.payment_methods'))
                                     ->default('bank_transfer')
                                     ->native(false)
                                     ->required(),
@@ -146,71 +141,54 @@ class PaymentResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('reference')
-                    ->label('Transaction')
+                    ->label(__('erp.common.transaction'))
                     ->state(fn(Payment $record): string => $record->reference ?: ('PAY-' . str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
-                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? 'Sans date') . ' • ' . match ($record->payment_method) {
-                        'bank_transfer' => 'Virement bancaire',
-                        'cash' => 'Espèces',
-                        'check' => 'Chèque',
-                        default => 'Mobile money',
-                    })
+                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? __('erp.common.none')) . ' • ' . __('erp.payment_methods.' . $record->payment_method))
                     ->searchable(['reference'])
                     ->sortable(),
                 TextColumn::make('client_name')
-                    ->label('Client')
-                    ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
-                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number ? 'Lié à ' . $record->invoice->invoice_number : 'En attente de rapprochement')
+                    ->label(__('erp.common.client'))
+                    ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
+                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number
+                        ? __('erp.resources.payment.linked_to_invoice', ['invoice' => $record->invoice->invoice_number])
+                        : __('erp.resources.payment.awaiting_reconciliation'))
                     ->searchable(['reference']),
                 TextColumn::make('amount')
-                    ->label('Montant')
+                    ->label(__('erp.common.amount'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->description(fn(Payment $record): string => $record->allow_overpayment ? 'Trop-perçu autorisé' : 'Règlement standard')
+                    ->description(fn(Payment $record): string => $record->allow_overpayment ? __('erp.resources.payment.overpayment_allowed') : __('erp.resources.payment.standard_settlement'))
                     ->sortable(),
                 TextColumn::make('invoice_due_date')
-                    ->label('Échéance')
-                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? 'Non planifiée')
-                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? 'Facture en retard' : 'Calendrier finance'),
+                    ->label(__('erp.common.due_date'))
+                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? __('erp.resources.payment.not_scheduled'))
+                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? __('erp.resources.payment.invoice_overdue') : __('erp.resources.payment.finance_calendar')),
                 TextColumn::make('payment_method')
                     ->label('Mode')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'bank_transfer' => 'Virement bancaire',
-                        'cash' => 'Espèces',
-                        'check' => 'Chèque',
-                        default => 'Mobile money',
-                    }),
+                    ->formatStateUsing(fn(string $state): string => __('erp.payment_methods.' . $state)),
                 TextColumn::make('reconciliation_state')
-                    ->label('Rapprochement')
-                    ->state(fn(Payment $record): string => match ($record->reconciliationState()) {
-                        'completed' => 'Terminé',
-                        'flagged' => 'À vérifier',
-                        default => 'En attente',
-                    })
+                    ->label(__('erp.common.reconciliation'))
+                    ->state(fn(Payment $record): string => __('erp.resources.payment.reconciliation.' . $record->reconciliationState()))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'Terminé' => 'success',
-                        'À vérifier' => 'danger',
+                        __('erp.resources.payment.reconciliation.completed') => 'success',
+                        __('erp.resources.payment.reconciliation.flagged') => 'danger',
                         default => 'warning',
                     }),
             ])
             ->filters([
                 SelectFilter::make('payment_method')
-                    ->options([
-                        'bank_transfer' => 'Virement bancaire',
-                        'cash' => 'Espèces',
-                        'check' => 'Chèque',
-                        'mobile_money' => 'Mobile money',
-                    ]),
+                    ->options(trans('erp.payment_methods')),
             ])
             ->recordActions([
                 Action::make('reconcile')
-                    ->label('Rapprochement intelligent')
+                    ->label(__('erp.actions.reconcile'))
                     ->visible(fn(Payment $record): bool => $record->invoice_id === null && (auth()->user()?->can('payments.update') ?? false))
                     ->action(function (Payment $record): void {
                         $matched = $record->reconcileAgainstOpenInvoice();
 
                         $notification = Notification::make()
-                            ->title($matched ? 'Paiement rapproché avec une facture ouverte.' : 'Aucune facture compatible n’a été trouvée pour ce paiement.');
+                            ->title($matched ? __('erp.resources.payment.reconciled') : __('erp.resources.payment.no_match_found'));
 
                         if ($matched) {
                             $notification->success();
@@ -221,10 +199,10 @@ class PaymentResource extends Resource
                         $notification->send();
                     }),
                 Action::make('flag')
-                    ->label('Signaler')
+                    ->label(__('erp.actions.flag'))
                     ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
                     ->color('danger')
-                    ->action(fn(Payment $record) => Notification::make()->title(($record->reference ?: 'Paiement') . ' a été signalé pour vérification par la finance.')->warning()->send()),
+                    ->action(fn(Payment $record) => Notification::make()->title(__('erp.resources.payment.flagged_notification', ['reference' => $record->reference ?: __('erp.common.transaction')]))->warning()->send()),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

@@ -111,20 +111,14 @@ class InvoiceResource extends Resource
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 Select::make('status')
-                                    ->options([
-                                        'draft' => 'Brouillon',
-                                        'sent' => 'Envoyée',
-                                        'partially_paid' => 'Partiellement payée',
-                                        'paid' => 'Payée',
-                                        'overdue' => 'En retard',
-                                        'cancelled' => 'Annulée',
-                                    ])
+                                    ->label(__('erp.common.status'))
+                                    ->options(trans('erp.resources.invoice.statuses'))
                                     ->default('draft')
                                     ->native(false)
                                     ->required(),
                                 Placeholder::make('collection_brief')
-                                    ->label('Résumé du recouvrement')
-                                    ->content('Suivez ici les créances, les relances clients et les retards de règlement.'),
+                                    ->label(__('erp.resources.invoice.collection_summary'))
+                                    ->content(__('erp.resources.invoice.collection_brief')),
                             ]),
                         Section::make('Lignes de facture')
                             ->description('Définissez les prestations facturables, quantités et prix unitaires.')
@@ -222,28 +216,35 @@ class InvoiceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('invoice_number')
-                    ->label('Facture')
-                    ->description(fn(Invoice $record): string => $record->quote?->quote_number ? 'Liée au devis ' . $record->quote->quote_number : 'Facturation indépendante')
+                    ->label(__('erp.common.invoice'))
+                    ->description(fn(Invoice $record): string => $record->quote?->quote_number
+                        ? __('erp.resources.invoice.linked_quote', ['quote' => $record->quote->quote_number])
+                        : __('erp.resources.invoice.standalone_billing'))
                     ->searchable(),
                 TextColumn::make('client_name')
-                    ->label('Client')
-                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
-                    ->description(fn(Invoice $record): string => $record->client?->email ?: 'Aucun e-mail de facturation'),
+                    ->label(__('erp.common.client'))
+                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
+                    ->description(fn(Invoice $record): string => $record->client?->email ?: __('erp.common.no_billing_email')),
                 TextColumn::make('issue_date')
-                    ->label('Émission / échéance')
-                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? 'Non émise')
-                    ->description(fn(Invoice $record): string => $record->due_date ? 'Échéance ' . (optional($record->due_date)->format('M d, Y') ?? 'À définir') : 'Aucune échéance')
+                    ->label(__('erp.resources.invoice.issue_and_due'))
+                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? __('erp.common.not_issued'))
+                    ->description(fn(Invoice $record): string => $record->due_date
+                        ? __('erp.resources.invoice.due_prefix', ['date' => optional($record->due_date)->format('M d, Y') ?? __('erp.common.to_define')])
+                        : __('erp.resources.invoice.no_due_date'))
                     ->sortable(),
                 TextColumn::make('total')
-                    ->label('Montant total')
+                    ->label(__('erp.resources.invoice.total_amount'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
                     ->sortable(),
                 TextColumn::make('balance_due')
-                    ->label('Reste dû')
+                    ->label(__('erp.resources.invoice.balance_due'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0 ? 'Payé : ' . static::formatMoney((float) $record->paid_total) : 'Aucun paiement enregistré')
+                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0
+                        ? __('erp.resources.invoice.paid_prefix', ['amount' => static::formatMoney((float) $record->paid_total)])
+                        : __('erp.resources.invoice.no_payment_recorded'))
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label(__('erp.common.status'))
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'paid' => 'success',
@@ -253,26 +254,20 @@ class InvoiceResource extends Resource
                         'draft' => 'gray',
                         default => 'warning',
                     })
-                    ->formatStateUsing(fn(string $state): string => str_replace('_', ' ', ucfirst($state))),
+                    ->formatStateUsing(fn(string $state): string => __('erp.resources.invoice.statuses.' . $state)),
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->options([
-                        'draft' => 'Brouillon',
-                        'sent' => 'Envoyée',
-                        'partially_paid' => 'Partiellement payée',
-                        'paid' => 'Payée',
-                        'overdue' => 'En retard',
-                        'cancelled' => 'Annulée',
-                    ]),
+                    ->label(__('erp.common.status'))
+                    ->options(trans('erp.resources.invoice.statuses')),
             ])
             ->recordActions([
                 Action::make('sendReminder')
-                    ->label('Envoyer un rappel')
+                    ->label(__('erp.actions.send_reminder'))
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
-                    ->action(fn(Invoice $record) => Notification::make()->title('Rappel préparé pour ' . $record->invoice_number . '.')->success()->send()),
+                    ->action(fn(Invoice $record) => Notification::make()->title(__('erp.resources.invoice.reminder_prepared', ['invoice' => $record->invoice_number]))->success()->send()),
                 Action::make('exportPdf')
-                    ->label('Exporter en PDF')
+                    ->label(__('erp.actions.export_pdf'))
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
                     ->url(fn(Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
                 EditAction::make(),

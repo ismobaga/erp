@@ -53,11 +53,11 @@ class FinancialInsights extends Page
     {
         return [
             Action::make('exportData')
-                ->label('Exporter les données')
-                ->action(fn() => Notification::make()->title('Export analytique préparé avec succès.')->success()->send()),
+                ->label(__('erp.actions.export_data'))
+                ->action(fn() => Notification::make()->title(__('erp.reports.export_ready'))->success()->send()),
             Action::make('refreshMetrics')
-                ->label('Actualiser les indicateurs')
-                ->action(fn() => Notification::make()->title('Indicateurs financiers actualisés.')->success()->send()),
+                ->label(__('erp.actions.refresh_metrics'))
+                ->action(fn() => Notification::make()->title(__('erp.reports.metrics_refreshed'))->success()->send()),
         ];
     }
 
@@ -88,13 +88,7 @@ class FinancialInsights extends Page
 
     protected function periodOptions(): array
     {
-        return [
-            '30d' => '30 derniers jours',
-            '90d' => '90 derniers jours',
-            'qtd' => 'Trimestre en cours',
-            'ytd' => 'Année en cours',
-            '12m' => '12 derniers mois',
-        ];
+        return trans('erp.periods');
     }
 
     protected function normalizePeriod(string $value): string

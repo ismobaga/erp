@@ -43,7 +43,7 @@ class ReportExportService
             'frequency' => (string) $validated['scheduleFrequency'],
             'nextExecution' => $nextRun->format('d M Y - H:i'),
             'nextExecutionAt' => $nextRun->toDateTimeString(),
-            'status' => 'Actif',
+            'status' => __('erp.reports.scheduled_statuses.active'),
             'statusClasses' => 'bg-green-100 text-green-800',
             'email' => (string) $validated['scheduleEmail'],
             'exportFormat' => (string) $validated['exportFormat'],
@@ -51,7 +51,7 @@ class ReportExportService
             'endDate' => (string) $validated['endDate'],
             'selectedModules' => array_map(static fn(mixed $value): bool => (bool) $value, (array) $validated['selectedModules']),
             'includeCharts' => (bool) ($validated['includeCharts'] ?? true),
-            'lastGenerated' => 'Jamais',
+            'lastGenerated' => __('erp.reports.scheduled_statuses.never'),
             'lastPath' => null,
         ];
     }
@@ -100,7 +100,7 @@ class ReportExportService
 
             $nextRun = $this->nextExecutionAt($nextExecutionAt, (string) ($plan['frequency'] ?? 'Hebdomadaire'));
 
-            $plan['status'] = 'Traité récemment';
+            $plan['status'] = __('erp.reports.scheduled_statuses.recent');
             $plan['statusClasses'] = 'bg-sky-100 text-sky-800';
             $plan['nextExecutionAt'] = $nextRun->toDateTimeString();
             $plan['nextExecution'] = $nextRun->format('d M Y - H:i');
@@ -147,12 +147,12 @@ class ReportExportService
         $netResult = $paymentTotal - $expenseTotal;
 
         $summary = [
-            ['label' => 'Chiffre d’affaires', 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
-            ['label' => 'Encaissements', 'value' => $this->formatMoney($paymentTotal), 'tone' => 'text-emerald-600'],
-            ['label' => 'Dépenses', 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
-            ['label' => 'Taxes & TVA', 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
-            ['label' => 'Résultat net', 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
-            ['label' => 'Format', 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
+            ['label' => __('erp.reports.summary.revenue'), 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
+            ['label' => __('erp.reports.summary.payments'), 'value' => $this->formatMoney($paymentTotal), 'tone' => 'text-emerald-600'],
+            ['label' => __('erp.reports.summary.expenses'), 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
+            ['label' => __('erp.reports.summary.taxes'), 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
+            ['label' => __('erp.reports.summary.net'), 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
+            ['label' => __('erp.reports.summary.format'), 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
         ];
 
         $rows = collect();
@@ -160,33 +160,33 @@ class ReportExportService
         if (!empty($selectedModules['revenue'])) {
             $rows = $rows->merge($invoices->map(fn(Invoice $invoice): array => [
                 'sort_date' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
-                'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? '—',
+                'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
                 'title' => $invoice->invoice_number,
-                'subtitle' => 'Facture client',
+                'subtitle' => __('erp.reports.rows.client_invoice'),
                 'amount' => $this->formatMoney((float) $invoice->total),
-                'badge' => strtoupper(str_replace('_', ' ', (string) $invoice->status)),
+                'badge' => __('erp.resources.invoice.statuses.' . $invoice->status),
             ]));
         }
 
         if (!empty($selectedModules['payments'])) {
             $rows = $rows->merge($payments->map(fn(Payment $payment): array => [
                 'sort_date' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
-                'date' => optional($payment->payment_date)?->format('d/m/Y') ?? '—',
-                'title' => $payment->reference ?: 'Paiement sans référence',
-                'subtitle' => $payment->invoice?->invoice_number ?: 'Paiement libre',
+                'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                'title' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                'subtitle' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
                 'amount' => $this->formatMoney((float) $payment->amount),
-                'badge' => 'PAIEMENT',
+                'badge' => __('erp.common.transaction'),
             ]));
         }
 
         if (!empty($selectedModules['expenses'])) {
             $rows = $rows->merge($expenses->map(fn(Expense $expense): array => [
                 'sort_date' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
-                'date' => optional($expense->expense_date)?->format('d/m/Y') ?? '—',
+                'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
                 'title' => $expense->title,
-                'subtitle' => 'Dépense ' . $expense->category,
+                'subtitle' => __('erp.reports.rows.expense_prefix', ['category' => __('erp.resources.expense.categories.' . $expense->category)]),
                 'amount' => $this->formatMoney((float) $expense->amount),
-                'badge' => 'DÉPENSE',
+                'badge' => __('erp.common.expense'),
             ]));
         }
 

@@ -82,15 +82,15 @@ class ReportGeneration extends Page
     {
         return [
             Action::make('runScheduledExports')
-                ->label('Exécuter les exports planifiés')
+                ->label(__('erp.actions.run_scheduled_exports'))
                 ->action(function (): void {
                     $processed = app(ReportExportService::class)->runDueScheduledExports();
                     $this->scheduledPlans = $this->loadScheduledPlans();
 
                     $notification = Notification::make()->title(
                         $processed > 0
-                        ? $processed . ' export(s) planifié(s) généré(s).'
-                        : 'Aucun export planifié à exécuter.'
+                        ? __('erp.reports.scheduled_generated', ['count' => $processed])
+                        : __('erp.reports.scheduled_none')
                     );
 
                     ($processed > 0 ? $notification->success() : $notification->warning())->send();
@@ -172,10 +172,10 @@ class ReportGeneration extends Page
         }
 
         Notification::make()
-            ->title('Rapport généré avec succès.')
+            ->title(__('erp.reports.report_generated'))
             ->body(
-                'Votre export ' . strtoupper($this->exportFormat) . ' est prêt au téléchargement sécurisé.'
-                . ($this->autoScheduleEnabled ? ' La planification automatique est activée.' : '')
+                __('erp.reports.report_download_ready', ['format' => strtoupper($this->exportFormat)])
+                . ($this->autoScheduleEnabled ? __('erp.reports.schedule_enabled') : '')
             )
             ->success()
             ->send();
@@ -193,19 +193,19 @@ class ReportGeneration extends Page
                 'description' => 'Rapport CA Trimestriel',
                 'frequency' => 'Hebdomadaire',
                 'nextExecution' => now()->addDays(5)->setTime(8, 0)->format('d M Y - H:i'),
-                'status' => 'Actif',
+                'status' => __('erp.reports.scheduled_statuses.active'),
                 'statusClasses' => 'bg-green-100 text-green-800',
                 'email' => 'direction@entreprise.com',
-                'lastGenerated' => 'Jamais',
+                'lastGenerated' => __('erp.reports.scheduled_statuses.never'),
             ],
             [
                 'description' => 'Audit Fiscal Hebdo',
                 'frequency' => 'Quotidienne',
                 'nextExecution' => now()->addDay()->setTime(17, 30)->format('d M Y - H:i'),
-                'status' => 'En attente',
+                'status' => __('erp.reports.scheduled_statuses.pending'),
                 'statusClasses' => 'bg-yellow-100 text-yellow-800',
                 'email' => 'comptabilite@entreprise.com',
-                'lastGenerated' => 'Jamais',
+                'lastGenerated' => __('erp.reports.scheduled_statuses.never'),
             ],
         ];
     }
