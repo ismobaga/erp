@@ -7,6 +7,7 @@ use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Models\Client;
+use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Service;
@@ -33,6 +34,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class InvoiceResource extends Resource
 {
@@ -236,6 +238,11 @@ class InvoiceResource extends Resource
                     ->label(__('erp.resources.invoice.total_amount'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
                     ->sortable(),
+                TextColumn::make('period_lock_status')
+                    ->label('Période')
+                    ->state(fn(Invoice $record): string => static::isRecordLocked($record) ? 'Clôturée' : 'Ouverte')
+                    ->badge()
+                    ->color(fn(Invoice $record): string => static::isRecordLocked($record) ? 'danger' : 'success'),
                 TextColumn::make('balance_due')
                     ->label(__('erp.resources.invoice.balance_due'))
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
@@ -278,6 +285,21 @@ class InvoiceResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canAccessPermission('update') && !static::isRecordLocked($record);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canAccessPermission('delete') && !static::isRecordLocked($record);
+    }
+
+    protected static function isRecordLocked(Model $record): bool
+    {
+        return $record instanceof Invoice && FinancialPeriod::isDateLocked($record->issue_date);
     }
 
     public static function getRelations(): array

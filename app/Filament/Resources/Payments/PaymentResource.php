@@ -7,6 +7,7 @@ use App\Filament\Resources\Payments\Pages\CreatePayment;
 use App\Filament\Resources\Payments\Pages\EditPayment;
 use App\Filament\Resources\Payments\Pages\ListPayments;
 use App\Models\Client;
+use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Payment;
 use BackedEnum;
@@ -30,6 +31,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PaymentResource extends Resource
 {
@@ -158,6 +160,11 @@ class PaymentResource extends Resource
                     ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
                     ->description(fn(Payment $record): string => $record->allow_overpayment ? __('erp.resources.payment.overpayment_allowed') : __('erp.resources.payment.standard_settlement'))
                     ->sortable(),
+                TextColumn::make('period_lock_status')
+                    ->label('Période')
+                    ->state(fn(Payment $record): string => static::isRecordLocked($record) ? 'Clôturée' : 'Ouverte')
+                    ->badge()
+                    ->color(fn(Payment $record): string => static::isRecordLocked($record) ? 'danger' : 'success'),
                 TextColumn::make('invoice_due_date')
                     ->label(__('erp.common.due_date'))
                     ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? __('erp.resources.payment.not_scheduled'))
@@ -211,6 +218,21 @@ class PaymentResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canAccessPermission('update') && !static::isRecordLocked($record);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canAccessPermission('delete') && !static::isRecordLocked($record);
+    }
+
+    protected static function isRecordLocked(Model $record): bool
+    {
+        return $record instanceof Payment && FinancialPeriod::isDateLocked($record->payment_date);
     }
 
     protected static function formatMoney(float $amount): string

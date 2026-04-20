@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Expenses\ExpenseResource;
+use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Payments\PaymentResource;
 use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Expense;
@@ -9,6 +12,7 @@ use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -207,5 +211,59 @@ class FinancialPeriodsTest extends TestCase
                 $this->assertStringContainsString('closed accounting period', $exception->errors()['financial_period'][0] ?? '');
             }
         }
+    }
+
+    public function test_locked_period_records_are_read_only_in_filament_resources(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+        $this->actingAs($user);
+
+        $client = Client::create(['type' => 'company', 'company_name' => 'UI Lock Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-LOCK-UI',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-09',
+            'due_date' => '2026-04-29',
+            'status' => 'sent',
+            'total' => 140,
+            'balance_due' => 140,
+            'created_by' => $user->id,
+        ]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => '2026-04-10',
+            'amount' => 40,
+            'payment_method' => 'cash',
+            'recorded_by' => $user->id,
+        ]);
+
+        $expense = Expense::create([
+            'category' => 'operations',
+            'title' => 'Locked UI expense',
+            'amount' => 30,
+            'expense_date' => '2026-04-11',
+            'recorded_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-UI',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        $this->assertFalse(InvoiceResource::canEdit($invoice));
+        $this->assertFalse(InvoiceResource::canDelete($invoice));
+        $this->assertFalse(PaymentResource::canEdit($payment));
+        $this->assertFalse(PaymentResource::canDelete($payment));
+        $this->assertFalse(ExpenseResource::canEdit($expense));
+        $this->assertFalse(ExpenseResource::canDelete($expense));
     }
 }

@@ -117,6 +117,26 @@ class FinancialPeriod extends Model
             ->first();
     }
 
+    public static function isDateLocked(CarbonInterface|string|null $date): bool
+    {
+        return static::findClosedFor($date) !== null;
+    }
+
+    public static function warningMessageFor(CarbonInterface|string|null $date, string $recordLabel = 'enregistrement'): ?string
+    {
+        $period = static::findClosedFor($date);
+
+        if ($period === null) {
+            return null;
+        }
+
+        return sprintf(
+            'Période comptable clôturée : cette %s appartient à %s et reste en lecture seule.',
+            $recordLabel,
+            $period->name,
+        );
+    }
+
     public static function ensureDateIsOpen(CarbonInterface|string|null $date, string $recordLabel = 'record'): void
     {
         $period = static::findClosedFor($date);

@@ -7,6 +7,7 @@ use App\Filament\Resources\Expenses\Pages\CreateExpense;
 use App\Filament\Resources\Expenses\Pages\EditExpense;
 use App\Filament\Resources\Expenses\Pages\ListExpenses;
 use App\Models\Expense;
+use App\Models\FinancialPeriod;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -27,6 +28,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ExpenseResource extends Resource
 {
@@ -136,6 +138,11 @@ class ExpenseResource extends Resource
                     ->label(__('erp.common.amount'))
                     ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
                     ->sortable(),
+                TextColumn::make('period_lock_status')
+                    ->label('Période')
+                    ->state(fn(Expense $record): string => static::isRecordLocked($record) ? 'Clôturée' : 'Ouverte')
+                    ->badge()
+                    ->color(fn(Expense $record): string => static::isRecordLocked($record) ? 'danger' : 'success'),
                 TextColumn::make('expense_date')
                     ->label(__('erp.common.date'))
                     ->date()
@@ -192,6 +199,21 @@ class ExpenseResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canAccessPermission('update') && !static::isRecordLocked($record);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canAccessPermission('delete') && !static::isRecordLocked($record);
+    }
+
+    protected static function isRecordLocked(Model $record): bool
+    {
+        return $record instanceof Expense && FinancialPeriod::isDateLocked($record->expense_date);
     }
 
     public static function getRelations(): array
