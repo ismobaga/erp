@@ -7,7 +7,7 @@
     <title>{{ $invoice->invoice_number }} - Facture</title>
     <style>
         @page {
-            margin: 12mm;
+            margin: 0mm;
         }
 
         :root {
@@ -28,7 +28,8 @@
 
         body {
             margin: 0;
-            padding: 32px 16px;
+            /* padding: 32px 16px; */
+            padding: 0;
             background: #f8f9ff;
             background: var(--surface);
             color: #0b1c30;
@@ -350,8 +351,8 @@
             display: table;
             width: 100%;
             table-layout: fixed;
-            margin-top: 42px;
-            padding-top: 28px;
+            margin-top: 30px;
+            padding-top: 20px;
             border-top: 1px solid var(--line);
         }
 
@@ -371,20 +372,29 @@
             padding: 18px 20px;
         }
 
-        .small-row {
-            padding: 5px 0;
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 13px;
-            overflow: hidden;
         }
 
-        .small-row span {
-            float: left;
+        .payment-table td {
+            padding: 5px 0;
+            vertical-align: top;
         }
 
-        .small-row strong {
-            float: right;
+        .payment-label {
+            width: 42%;
+            color: #57657a;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .payment-value {
             text-align: right;
-            max-width: 60%;
+            font-weight: 700;
+            color: #002045;
+            color: var(--primary);
         }
 
         .closing-note {
@@ -526,7 +536,7 @@
                         @endif
                         <div>
                             <h1 class="brand-title">{{ $companyName }}</h1>
-                            <div class="brand-subtitle">Excellence architecturale &amp; construction</div>
+                            <div class="brand-subtitle">Excellence architecturale</div>
                         </div>
                     </div>
                     <div class="muted" style="font-size: 14px; line-height: 1.7; margin-top: 16px;">
@@ -666,22 +676,38 @@
                 <div>
                     <div class="section-label" style="margin-bottom: 12px;">Instructions de paiement</div>
                     <div class="small-card">
-                        <div class="small-row"><span
-                                class="muted">Banque</span><strong>{{ $bankDetails['bank_name'] }}</strong></div>
-                        <div class="small-row"><span
-                                class="muted">Titulaire</span><strong>{{ $bankDetails['account_name'] }}</strong></div>
-                        <div class="small-row"><span class="muted">Numéro de compte
-                                (RIB)</span><strong>{{ $bankDetails['account_number'] }}</strong></div>
-                        <div class="small-row"><span class="muted">Code
-                                SWIFT</span><strong>{{ $bankDetails['swift_code'] }}</strong></div>
-                        <div class="small-row"><span
-                                class="muted">Référence</span><strong>{{ $invoice->invoice_number }}</strong></div>
-                        <div class="small-row"><span class="muted">Montant
-                                dû</span><strong>{{ $formatMoney($invoice->balance_due) }}</strong></div>
-                        @if($company?->email)
-                            <div class="small-row"><span class="muted">Contact
-                                    facturation</span><strong>{{ $company->email }}</strong></div>
-                        @endif
+                        <table class="payment-table" role="presentation">
+                            <tr>
+                                <td class="payment-label">Banque</td>
+                                <td class="payment-value">{{ $bankDetails['bank_name'] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-label">Titulaire</td>
+                                <td class="payment-value">{{ $bankDetails['account_name'] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-label">Numéro de compte (RIB)</td>
+                                <td class="payment-value">{{ $bankDetails['account_number'] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-label">Code SWIFT</td>
+                                <td class="payment-value">{{ $bankDetails['swift_code'] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-label">Référence</td>
+                                <td class="payment-value">{{ $invoice->invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-label">Montant dû</td>
+                                <td class="payment-value">{{ $formatMoney($invoice->balance_due) }}</td>
+                            </tr>
+                            @if($company?->email)
+                                <tr>
+                                    <td class="payment-label">Contact facturation</td>
+                                    <td class="payment-value">{{ $company->email }}</td>
+                                </tr>
+                            @endif
+                        </table>
                     </div>
                 </div>
 
