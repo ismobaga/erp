@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\AccountingPeriodsOverview;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\LedgerOverview;
+use App\Filament\Widgets\OperationalResilienceOverview;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -39,6 +40,7 @@ class Dashboard extends BaseDashboard
         return [
             ArchitecturalStatsOverview::class,
             AccountingPeriodsOverview::class,
+            OperationalResilienceOverview::class,
             LedgerOverview::class,
         ];
     }

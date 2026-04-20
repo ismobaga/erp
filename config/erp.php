@@ -96,4 +96,16 @@ return [
         'report_retention_days' => max(1, (int) env('ERP_REPORT_RETENTION_DAYS', 30)),
         'audit_retention_days' => max(7, (int) env('ERP_AUDIT_RETENTION_DAYS', 365)),
     ],
+
+    'resilience' => [
+        'backups' => [
+            'disk' => (string) env('ERP_BACKUPS_DISK', 'local'),
+            'directory' => trim((string) env('ERP_BACKUPS_DIRECTORY', 'backups'), '/'),
+            'retention_days' => max(1, (int) env('ERP_BACKUPS_RETENTION_DAYS', 14)),
+        ],
+        'monitoring' => [
+            'failed_jobs_alert_threshold' => max(1, (int) env('ERP_FAILED_JOBS_ALERT_THRESHOLD', 5)),
+            'backups_stale_after_hours' => max(1, (int) env('ERP_BACKUPS_STALE_AFTER_HOURS', 24)),
+        ],
+    ],
 ];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ActivityLog;
+use App\Services\OperationalResilienceService;
 use App\Services\ReportExportService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -44,6 +45,26 @@ Artisan::command('erp:prune-audit-logs', function () {
     );
 })->purpose('Prune old enterprise audit log records');
 
+Artisan::command('erp:backup-run', function (OperationalResilienceService $service) {
+    $backup = $service->createBackup();
+
+    $this->info('Backup created at ' . ($backup['path'] ?? 'unknown path') . '.');
+})->purpose('Create an operational resilience backup archive');
+
+Artisan::command('erp:restore-backup {path?}', function (OperationalResilienceService $service, ?string $path = null) {
+    $result = $service->restoreBackup($path);
+
+    $this->info('Backup restored from ' . ($result['path'] ?? 'unknown path') . '.');
+})->purpose('Restore the latest or specified resilience backup archive');
+
+Artisan::command('erp:monitor-health', function (OperationalResilienceService $service) {
+    $summary = $service->evaluateHealth();
+
+    $this->info('Health check complete. Failed jobs: ' . $summary['failed_jobs'] . '; Open alerts: ' . $summary['open_alerts'] . '.');
+})->purpose('Evaluate operational resilience thresholds and raise alerts');
+
+Schedule::command('erp:backup-run')->dailyAt('01:00');
 Schedule::command('reports:run-scheduled-exports')->everyThirtyMinutes();
+Schedule::command('erp:monitor-health')->everyFifteenMinutes();
 Schedule::command('reports:cleanup-exports')->dailyAt('02:00');
 Schedule::command('erp:prune-audit-logs')->dailyAt('02:30');
