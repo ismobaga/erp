@@ -61,9 +61,9 @@ Set these Dokploy environment variables before deployment:
 - `DB_PASSWORD` (required)
 - `RUN_MIGRATIONS` (optional, default: `false`; when `true`, migrations run on each container start)
 
-Database connection values used by the compose file:
+Database connection values used by the app container:
 
-- Host: `127.0.0.1`
+- Host: `postgres`
 - Port: `5432`
 - Database: `${DB_DATABASE:-erp}`
 - Username: `${DB_USERNAME:-postgres}`
