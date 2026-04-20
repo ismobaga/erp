@@ -260,4 +260,58 @@ class BillingRulesTest extends TestCase
         $this->assertSame('0.00', $invoice->balance_due);
         $this->assertSame('paid', $invoice->status);
     }
+
+    public function test_invoice_numbers_are_generated_from_config_and_reset_by_year(): void
+    {
+        config()->set('erp.billing.invoice_numbering.prefix', 'FAC');
+        config()->set('erp.billing.invoice_numbering.padding', 4);
+        config()->set('erp.billing.invoice_numbering.reset', 'yearly');
+
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Numbering Corp', 'status' => 'active']);
+
+        $invoice2026a = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-01-10',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        $invoice2026b = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-03-18',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        $invoice2027 = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2027-01-05',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        $this->assertSame('FAC-2026-0001', $invoice2026a->invoice_number);
+        $this->assertSame('FAC-2026-0002', $invoice2026b->invoice_number);
+        $this->assertSame('FAC-2027-0001', $invoice2027->invoice_number);
+    }
+
+    public function test_invoice_number_cannot_be_changed_once_assigned(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Immutable Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-15',
+            'status' => 'sent',
+            'created_by' => $user->id,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        $invoice->update([
+            'invoice_number' => 'MANUAL-OVERRIDE-001',
+        ]);
+    }
 }

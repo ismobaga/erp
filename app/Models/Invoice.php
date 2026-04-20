@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\AuditTrailService;
+use App\Services\InvoiceNumberService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'invoice_number',
@@ -44,6 +47,25 @@ class Invoice extends Model
     {
         static::saving(function (Invoice $invoice): void {
             FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
+
+            if ($invoice->exists && $invoice->isDirty('invoice_number')) {
+                throw ValidationException::withMessages([
+                    'invoice_number' => 'Invoice numbers are immutable once assigned.',
+                ]);
+            }
+        });
+
+        static::creating(function (Invoice $invoice): void {
+            if (blank($invoice->invoice_number)) {
+                $invoice->invoice_number = app(InvoiceNumberService::class)->generate($invoice->issue_date);
+            }
+        });
+
+        static::created(function (Invoice $invoice): void {
+            app(AuditTrailService::class)->log('invoice_number_assigned', $invoice, [
+                'invoice_number' => $invoice->invoice_number,
+                'issue_date' => optional($invoice->issue_date)->toDateString(),
+            ], $invoice->created_by);
         });
 
         static::deleting(function (Invoice $invoice): void {

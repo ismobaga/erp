@@ -11,6 +11,7 @@ use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Service;
+use App\Services\InvoiceNumberService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -68,9 +69,10 @@ class InvoiceResource extends Resource
                             ->schema([
                                 TextInput::make('invoice_number')
                                     ->label('Numéro de facture')
-                                    ->default(fn(): string => static::generateInvoiceNumber())
+                                    ->placeholder('Attribué automatiquement à l’enregistrement')
+                                    ->helperText('Attribué automatiquement selon la séquence fiscale active et figé après émission.')
                                     ->readOnly()
-                                    ->required(),
+                                    ->dehydrated(false),
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
@@ -338,9 +340,7 @@ class InvoiceResource extends Resource
 
     public static function generateInvoiceNumber(): string
     {
-        $next = (Invoice::max('id') ?? 0) + 1;
-
-        return 'INV-' . now()->format('Y') . '-' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return app(InvoiceNumberService::class)->generate(now());
     }
 
     protected static function calculateTotals(array $items, float $discount, float $tax): array

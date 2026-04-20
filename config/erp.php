@@ -4,6 +4,12 @@ return [
     'billing' => [
         'invoice_default_due_days' => max(0, (int) env('ERP_INVOICE_DEFAULT_DUE_DAYS', 30)),
         'overdue_grace_days' => max(0, (int) env('ERP_INVOICE_OVERDUE_GRACE_DAYS', 0)),
+        'invoice_numbering' => [
+            'prefix' => trim((string) env('ERP_INVOICE_NUMBER_PREFIX', 'INV')),
+            'padding' => max(3, (int) env('ERP_INVOICE_NUMBER_PADDING', 4)),
+            'reset' => (string) env('ERP_INVOICE_NUMBER_RESET', 'yearly'),
+            'separator' => (string) env('ERP_INVOICE_NUMBER_SEPARATOR', '-'),
+        ],
     ],
 
     'quotes' => [
