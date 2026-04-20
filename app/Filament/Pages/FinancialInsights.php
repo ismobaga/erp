@@ -531,36 +531,28 @@ class FinancialInsights extends Page
         return [
             'periodLabel' => $periodLabel ?? 'Année en cours',
             'kpis' => [
-                'revenue' => ['label' => 'Chiffre d’affaires', 'value' => 'FCFA 4.2M', 'trend' => '+12%', 'trendTone' => 'positive', 'note' => 'vs mois dernier : FCFA 3.75M', 'icon' => 'account_balance_wallet'],
-                'margin' => ['label' => 'Marge brute', 'value' => '64.2%', 'trend' => '+2.4%', 'trendTone' => 'positive', 'note' => 'Objectif actuel : 60,0 %', 'icon' => 'percent'],
-                'expenses' => ['label' => 'Dépenses opérationnelles', 'value' => 'FCFA 1.1M', 'trend' => '+5%', 'trendTone' => 'negative', 'note' => 'Utilisation du budget : 88 %', 'icon' => 'credit_card'],
-                'cashflow' => ['label' => 'Flux de trésorerie net', 'value' => 'FCFA 2.8M', 'trend' => '+18%', 'trendTone' => 'positive', 'note' => 'Ratio de liquidité : 2.1', 'icon' => 'payments'],
+                'revenue' => ['label' => 'Chiffre d’affaires', 'value' => 'FCFA 0', 'trend' => '+0%', 'trendTone' => 'positive', 'note' => 'Aucune facture sur la période', 'icon' => 'account_balance_wallet'],
+                'margin' => ['label' => 'Marge brute', 'value' => '0.0%', 'trend' => '+0%', 'trendTone' => 'positive', 'note' => 'Aucune marge calculable sans activité', 'icon' => 'percent'],
+                'expenses' => ['label' => 'Dépenses opérationnelles', 'value' => 'FCFA 0', 'trend' => '+0%', 'trendTone' => 'positive', 'note' => 'Aucune dépense enregistrée', 'icon' => 'credit_card'],
+                'cashflow' => ['label' => 'Flux de trésorerie net', 'value' => 'FCFA 0', 'trend' => '+0%', 'trendTone' => 'positive', 'note' => 'Ratio de liquidité : 0.0', 'icon' => 'payments'],
             ],
             'monthly' => [
-                ['label' => 'janv.', 'revenueHeight' => 96, 'expenseHeight' => 64, 'active' => false],
-                ['label' => 'févr.', 'revenueHeight' => 128, 'expenseHeight' => 48, 'active' => false],
-                ['label' => 'mars', 'revenueHeight' => 176, 'expenseHeight' => 76, 'active' => true],
-                ['label' => 'avr.', 'revenueHeight' => 148, 'expenseHeight' => 66, 'active' => false],
-                ['label' => 'mai', 'revenueHeight' => 182, 'expenseHeight' => 88, 'active' => false],
-                ['label' => 'juin', 'revenueHeight' => 162, 'expenseHeight' => 58, 'active' => false],
+                ['label' => 'janv.', 'revenueHeight' => 10, 'expenseHeight' => 8, 'active' => false],
+                ['label' => 'févr.', 'revenueHeight' => 10, 'expenseHeight' => 8, 'active' => false],
+                ['label' => 'mars', 'revenueHeight' => 10, 'expenseHeight' => 8, 'active' => true],
             ],
             'breakdown' => [
-                ['label' => 'Dév', 'share' => '45%', 'color' => '#1A365D'],
-                ['label' => 'Hébergement', 'share' => '28%', 'color' => '#70d8c8'],
-                ['label' => 'SEO', 'share' => '15%', 'color' => '#515f74'],
-                ['label' => 'Autre', 'share' => '12%', 'color' => '#c4c6cf'],
+                ['label' => 'Aucune donnée', 'share' => '0%', 'color' => '#c4c6cf'],
             ],
             'aging' => [
-                ['label' => 'À jour (0-30 jours)', 'value' => 'FCFA 842 000', 'width' => 85, 'tone' => 'bg-[#70d8c8]'],
-                ['label' => '31-60 jours', 'value' => 'FCFA 120 000', 'width' => 40, 'tone' => 'bg-[#b9c7df]'],
-                ['label' => '61+ jours', 'value' => 'FCFA 45 000', 'width' => 15, 'tone' => 'bg-[#ba1a1a]'],
+                ['label' => 'À jour (0-30 jours)', 'value' => 'FCFA 0', 'width' => 8, 'tone' => 'bg-[#70d8c8]'],
+                ['label' => '31-60 jours', 'value' => 'FCFA 0', 'width' => 8, 'tone' => 'bg-[#b9c7df]'],
+                ['label' => '61+ jours', 'value' => 'FCFA 0', 'width' => 8, 'tone' => 'bg-[#ba1a1a]'],
             ],
             'transactions' => [
-                ['date' => '24 oct. 2024', 'entity' => 'Nexgen Corp', 'type' => 'Encaissement', 'amount_label' => 'FCFA 124 500', 'status' => 'Validé', 'badge' => 'success', 'initials' => 'NC'],
-                ['date' => '22 oct. 2024', 'entity' => 'Data Center Pro', 'type' => 'Dépense', 'amount_label' => 'FCFA 45 200', 'status' => 'En attente', 'badge' => 'pending', 'initials' => 'DC'],
-                ['date' => '20 oct. 2024', 'entity' => 'Skyline Ltd', 'type' => 'Encaissement', 'amount_label' => 'FCFA 210 000', 'status' => 'Validé', 'badge' => 'success', 'initials' => 'SL'],
+                ['date' => now()->locale('fr')->translatedFormat('d M Y'), 'entity' => 'Aucune transaction sur cette période', 'type' => '—', 'amount_label' => 'FCFA 0', 'status' => 'Surveillance', 'badge' => 'pending', 'initials' => 'NA'],
             ],
-            'insight' => 'Croissance projetée de 15 % au prochain trimestre selon le pipeline actuel et les tendances saisonnières.',
+            'insight' => 'Aucune donnée financière réelle n’est encore disponible pour la période sélectionnée.',
         ];
     }
 }

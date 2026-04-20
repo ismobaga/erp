@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Client;
+use App\Models\CompanySetting;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -294,8 +295,8 @@ class LedgerOverview extends Widget
 
     protected function transformProject(Project $project, string $accent, string $column): array
     {
-        $client = $project->client?->company_name ?: $project->client?->contact_name ?: 'Strategic account';
-        $assignee = $project->assignee?->name ?: 'Operations team';
+        $client = $project->client?->company_name ?: $project->client?->contact_name ?: 'Client non assigné';
+        $assignee = $project->assignee?->name ?: 'Équipe opérations';
         $progress = match ($project->status) {
             'planned' => 18,
             'active' => 58,
@@ -317,10 +318,10 @@ class LedgerOverview extends Widget
             'reference' => 'CMX-' . str_pad((string) $project->getKey(), 3, '0', STR_PAD_LEFT),
             'title' => $project->name,
             'client' => $client,
-            'description' => str($project->description ?: 'Structured delivery track for the enterprise ledger.')->limit(82)->toString(),
+            'description' => str($project->description ?: 'Parcours projet en cours de structuration.')->limit(82)->toString(),
             'assignee' => $assignee,
             'initials' => $this->initials($assignee),
-            'due' => optional($project->due_date)->format('M d, Y') ?? 'TBD',
+            'due' => optional($project->due_date)->format('M d, Y') ?? 'À planifier',
             'progress' => $progress,
             'accent' => $accent,
             'show_progress' => $column === 'in_progress',
@@ -340,9 +341,9 @@ class LedgerOverview extends Widget
         $efficiency = $total > 0 ? min(99, max(42, (int) round((($completed + ($active * 0.65)) / $total) * 100))) : 94;
 
         return [
-            'organization' => 'CROMMIX MALI S.A.',
+            'organization' => CompanySetting::query()->value('company_name') ?: config('app.name', 'ERP'),
             'efficiency' => $efficiency,
-            'headline' => $efficiency . '% Project Delivery Efficiency',
+            'headline' => $efficiency . '% d’efficacité sur le portefeuille projets',
             'active_contracts' => $active,
         ];
     }
@@ -383,7 +384,7 @@ class LedgerOverview extends Widget
 
         $actions = array_slice($actions, 0, 3);
 
-        return count($actions) >= 2 ? $actions : $this->placeholderActions();
+        return $actions ?: $this->placeholderActions();
     }
 
     protected function getTeam(): array
@@ -486,46 +487,18 @@ class LedgerOverview extends Widget
     {
         return [
             [
-                'reference' => '#INV-2024-081',
-                'entity' => 'Sahel Tech Solutions',
-                'meta' => 'Network deployment',
-                'category' => 'Invoice',
-                'category_bg' => '#d6e3ff',
-                'category_fg' => '#2d476f',
-                'value' => 'FCFA 2 450 000',
-                'status' => 'Settled',
-                'status_bg' => '#dff8f0',
-                'status_fg' => '#005048',
-                'status_dot' => '#43af9f',
-                'pillar' => '#8df5e4',
-            ],
-            [
-                'reference' => '#QT-2024-012',
-                'entity' => 'Bamako Logistics',
-                'meta' => 'Consulting audit',
-                'category' => 'Quote',
+                'reference' => '—',
+                'entity' => 'Aucune activité récente',
+                'meta' => 'Les écritures réelles apparaîtront ici dès leur création.',
+                'category' => 'Système',
                 'category_bg' => '#eff4ff',
                 'category_fg' => '#002045',
-                'value' => 'FCFA 1 120 000',
-                'status' => 'Draft',
+                'value' => 'FCFA 0',
+                'status' => 'Vide',
                 'status_bg' => '#eef0f4',
                 'status_fg' => '#43474e',
                 'status_dot' => '#74777f',
                 'pillar' => '#adc7f7',
-            ],
-            [
-                'reference' => '#EXP-004-PRJ',
-                'entity' => 'Mali Materials S.A.',
-                'meta' => 'Procurement - steel',
-                'category' => 'Expense',
-                'category_bg' => '#ffdad6',
-                'category_fg' => '#93000a',
-                'value' => 'FCFA 890 000',
-                'status' => 'Posted',
-                'status_bg' => '#fff1ef',
-                'status_fg' => '#93000a',
-                'status_dot' => '#ba1a1a',
-                'pillar' => '#ba1a1a',
             ],
         ];
     }
@@ -533,19 +506,17 @@ class LedgerOverview extends Widget
     protected function placeholderMilestones(): array
     {
         return [
-            ['name' => 'Sadiola Mine Phase 2', 'stage' => 'Site excavation', 'progress' => 75, 'color' => '#8df5e4'],
-            ['name' => 'Bamako Sky Tower', 'stage' => 'Structural foundation', 'progress' => 32, 'color' => '#adc7f7'],
-            ['name' => 'Industrial Hub C', 'stage' => 'Final commissioning', 'progress' => 94, 'color' => '#8df5e4'],
+            ['name' => 'Aucun projet actif', 'stage' => 'Le parcours projet s’alimentera automatiquement', 'progress' => 0, 'color' => '#adc7f7'],
         ];
     }
 
     protected function placeholderHealth(): array
     {
         return [
-            ['label' => 'Collection rate', 'value' => '98%', 'note' => 'Revenue converted to cash', 'progress' => 98, 'color' => '#8df5e4'],
-            ['label' => 'Active clients', 'value' => '124', 'note' => '87% engagement', 'progress' => 87, 'color' => '#adc7f7'],
-            ['label' => 'Admin users', 'value' => '12', 'note' => 'Secure system access', 'progress' => 42, 'color' => '#d5e3fc'],
-            ['label' => 'Overdue invoices', 'value' => '4', 'note' => 'Requires follow-up', 'progress' => 24, 'color' => '#ffb4ab'],
+            ['label' => 'Collection rate', 'value' => '0%', 'note' => 'Aucune donnée de recouvrement', 'progress' => 0, 'color' => '#8df5e4'],
+            ['label' => 'Active clients', 'value' => '0', 'note' => 'Aucun client actif', 'progress' => 0, 'color' => '#adc7f7'],
+            ['label' => 'Admin users', 'value' => '0', 'note' => 'Aucun utilisateur détecté', 'progress' => 0, 'color' => '#d5e3fc'],
+            ['label' => 'Overdue invoices', 'value' => '0', 'note' => 'Aucun retard à traiter', 'progress' => 0, 'color' => '#ffb4ab'],
         ];
     }
 
@@ -559,37 +530,8 @@ class LedgerOverview extends Widget
                 'badge_bg' => '#dce9ff',
                 'badge_fg' => '#002045',
                 'accent' => '#1a365d',
-                'count' => 2,
-                'items' => [
-                    [
-                        'category' => 'Logistics',
-                        'reference' => 'CMX-402',
-                        'title' => 'Mali North Expansion Phase II',
-                        'client' => 'Sahel Resources Ltd.',
-                        'description' => 'Execution planning for the second expansion corridor.',
-                        'assignee' => 'Amadou Keita',
-                        'initials' => 'AK',
-                        'due' => 'Oct 24, 2023',
-                        'progress' => 18,
-                        'accent' => '#1a365d',
-                        'show_progress' => false,
-                        'done' => false,
-                    ],
-                    [
-                        'category' => 'Consulting',
-                        'reference' => 'CMX-405',
-                        'title' => 'ISO Audit Preparation',
-                        'client' => 'Bamako Mining Group',
-                        'description' => 'Operational readiness and compliance preparation track.',
-                        'assignee' => 'Fatima Traoré',
-                        'initials' => 'FT',
-                        'due' => 'Nov 12, 2023',
-                        'progress' => 22,
-                        'accent' => '#1a365d',
-                        'show_progress' => false,
-                        'done' => false,
-                    ],
-                ],
+                'count' => 0,
+                'items' => [],
             ],
             [
                 'key' => 'in_progress',
@@ -598,37 +540,8 @@ class LedgerOverview extends Widget
                 'badge_bg' => '#e5eeff',
                 'badge_fg' => '#002045',
                 'accent' => '#455f88',
-                'count' => 2,
-                'items' => [
-                    [
-                        'category' => 'Supply Chain',
-                        'reference' => 'CMX-398',
-                        'title' => 'Heavy Equipment Procurement',
-                        'client' => 'Global Infra S.A.',
-                        'description' => 'Vendor alignment and contract execution in motion.',
-                        'assignee' => 'Moussa Sidibé',
-                        'initials' => 'MS',
-                        'due' => 'Sep 30, 2023',
-                        'progress' => 65,
-                        'accent' => '#455f88',
-                        'show_progress' => true,
-                        'done' => false,
-                    ],
-                    [
-                        'category' => 'Tech Infrastructure',
-                        'reference' => 'CMX-388',
-                        'title' => 'Data Center Cooling Upgrade',
-                        'client' => 'Mali Telecom',
-                        'description' => 'Infrastructure modernization is underway.',
-                        'assignee' => 'Sarah Kone',
-                        'initials' => 'SK',
-                        'due' => 'Oct 15, 2023',
-                        'progress' => 22,
-                        'accent' => '#455f88',
-                        'show_progress' => true,
-                        'done' => false,
-                    ],
-                ],
+                'count' => 0,
+                'items' => [],
             ],
             [
                 'key' => 'completed',
@@ -637,23 +550,8 @@ class LedgerOverview extends Widget
                 'badge_bg' => 'rgba(141, 245, 228, 0.2)',
                 'badge_fg' => '#005048',
                 'accent' => '#8df5e4',
-                'count' => 1,
-                'items' => [
-                    [
-                        'category' => 'Maintenance',
-                        'reference' => 'CMX-350',
-                        'title' => 'River Port Dredging Project',
-                        'client' => 'Ministry of Transport',
-                        'description' => 'Completed and signed off by all delivery stakeholders.',
-                        'assignee' => 'Ibrahim Diallo',
-                        'initials' => 'ID',
-                        'due' => 'Aug 12, 2023',
-                        'progress' => 100,
-                        'accent' => '#8df5e4',
-                        'show_progress' => false,
-                        'done' => true,
-                    ],
-                ],
+                'count' => 0,
+                'items' => [],
             ],
         ];
     }
@@ -661,10 +559,10 @@ class LedgerOverview extends Widget
     protected function placeholderBoardSummary(): array
     {
         return [
-            'organization' => 'CROMMIX MALI S.A.',
-            'efficiency' => 94,
-            'headline' => '94% Project Delivery Efficiency',
-            'active_contracts' => 12,
+            'organization' => CompanySetting::query()->value('company_name') ?: config('app.name', 'ERP'),
+            'efficiency' => 0,
+            'headline' => '0% d’efficacité sur le portefeuille projets',
+            'active_contracts' => 0,
         ];
     }
 
@@ -672,25 +570,15 @@ class LedgerOverview extends Widget
     {
         return [
             [
-                'tone' => 'danger',
-                'title' => 'Contract CMX-388 pending approval',
-                'note' => 'Due within the next operating cycle',
-            ],
-            [
-                'tone' => 'success',
-                'title' => 'Weekly stakeholder sync scheduled',
-                'note' => 'Today at 14:00 GMT',
+                'tone' => 'info',
+                'title' => 'Aucune action critique',
+                'note' => 'Les alertes opérationnelles réelles apparaîtront ici.',
             ],
         ];
     }
 
     protected function placeholderTeam(): array
     {
-        return [
-            ['name' => 'Fatima Traoré', 'initials' => 'FT', 'tone' => '#d5e3fc'],
-            ['name' => 'Moussa Sidibé', 'initials' => 'MS', 'tone' => '#e5eeff'],
-            ['name' => 'Sarah Kone', 'initials' => 'SK', 'tone' => '#dff8f0'],
-            ['name' => 'Ibrahim Diallo', 'initials' => 'ID', 'tone' => '#ffedd5'],
-        ];
+        return [];
     }
 }

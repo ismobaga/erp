@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Project;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -38,19 +39,19 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                 Stat::make('Portefeuille clients', number_format($clients))
                     ->description(number_format($activeClients) . ' relations actives')
                     ->color('primary')
-                    ->chart([7, 8, 10, 11, 13, 14, max(15, $clients)]),
+                    ->chart($this->countTrend('clients', 'created_at')),
                 Stat::make('Factures ouvertes', number_format($openInvoices))
                     ->description('Flux de recouvrement à surveiller')
                     ->color('warning')
-                    ->chart([12, 10, 11, 9, 8, 7, max(6, $openInvoices)]),
+                    ->chart($this->countTrend('invoices', 'issue_date', fn($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
                 Stat::make('Revenus encaissés', $this->money($settledRevenue))
                     ->description('Paiements confirmés dans le registre')
                     ->color('success')
-                    ->chart([2, 4, 3, 6, 8, 7, 9]),
+                    ->chart($this->sumTrend('payments', 'payment_date', 'amount')),
                 Stat::make('Projets actifs', number_format($activeProjects))
                     ->description('Rythme de livraison en cours')
                     ->color('info')
-                    ->chart([3, 4, 5, 4, 6, 7, max(4, $activeProjects)]),
+                    ->chart($this->countTrend('projects', 'created_at', fn($query) => $query->whereIn('status', ['active', 'in_progress']))),
             ];
         } catch (Throwable) {
             return $this->placeholderStats();
@@ -73,25 +74,64 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
         return 'FCFA ' . number_format($amount, 0, '.', ' ');
     }
 
+    protected function countTrend(string $table, string $dateColumn, ?callable $scope = null): array
+    {
+        if (!Schema::hasTable($table)) {
+            return array_fill(0, 7, 0);
+        }
+
+        return collect(range(6, 0))
+            ->map(function (int $offset) use ($table, $dateColumn, $scope): int {
+                $start = now()->copy()->subMonths($offset)->startOfMonth();
+                $end = now()->copy()->subMonths($offset)->endOfMonth();
+                $query = DB::table($table)->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()]);
+
+                if ($scope) {
+                    $scope($query);
+                }
+
+                return (int) $query->count();
+            })
+            ->all();
+    }
+
+    protected function sumTrend(string $table, string $dateColumn, string $amountColumn): array
+    {
+        if (!Schema::hasTable($table)) {
+            return array_fill(0, 7, 0);
+        }
+
+        return collect(range(6, 0))
+            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn): int {
+                $start = now()->copy()->subMonths($offset)->startOfMonth();
+                $end = now()->copy()->subMonths($offset)->endOfMonth();
+
+                return (int) round(((float) DB::table($table)
+                    ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
+                    ->sum($amountColumn)) / 1000);
+            })
+            ->all();
+    }
+
     protected function placeholderStats(): array
     {
         return [
-            Stat::make('Client portfolio', '1,284')
-                ->description('Editorial CRM view')
+            Stat::make('Portefeuille clients', '0')
+                ->description('Aucun client enregistré pour le moment')
                 ->color('primary')
-                ->chart([7, 9, 8, 10, 12, 14, 16]),
-            Stat::make('Open invoices', '42')
-                ->description('Collection flow under watch')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Factures ouvertes', '0')
+                ->description('Aucune facture en suivi actuellement')
                 ->color('warning')
-                ->chart([12, 11, 9, 10, 8, 7, 6]),
-            Stat::make('Settled revenue', 'FCFA 482M')
-                ->description('Confirmed payments in the ledger')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Revenus encaissés', 'FCFA 0')
+                ->description('Aucun paiement confirmé pour le moment')
                 ->color('success')
-                ->chart([2, 4, 5, 6, 7, 8, 9]),
-            Stat::make('Active projects', '18')
-                ->description('Delivery momentum this cycle')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Projets actifs', '0')
+                ->description('Aucun projet actif à afficher')
                 ->color('info')
-                ->chart([3, 4, 5, 6, 6, 7, 8]),
+                ->chart(array_fill(0, 7, 0)),
         ];
     }
 }

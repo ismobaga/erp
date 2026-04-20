@@ -94,19 +94,16 @@ class SecurityAccessOverview extends Widget
     protected function placeholderLogs(): array
     {
         return [
-            ['tone' => 'primary', 'initials' => 'SM', 'name' => 'Sarah Miller', 'detail' => 'London, GB • secure session', 'state' => 'SUCCESS', 'time' => '2 mins ago'],
-            ['tone' => 'danger', 'initials' => '??', 'name' => 'Failed Attempt', 'detail' => 'Blocked credential check', 'state' => 'BLOCKED', 'time' => '14 mins ago'],
-            ['tone' => 'tertiary', 'initials' => 'RK', 'name' => 'Robert Klein', 'detail' => 'Verified access event', 'state' => 'VERIFIED', 'time' => '1 hour ago'],
-            ['tone' => 'primary', 'initials' => 'AL', 'name' => 'Admin Ledger', 'detail' => 'System Process • Auth API', 'state' => 'INTERNAL', 'time' => '2 hours ago'],
+            ['tone' => 'primary', 'initials' => '--', 'name' => 'Aucun accès récent', 'detail' => 'Les événements de connexion apparaîtront ici.', 'state' => 'WAITING', 'time' => '—'],
         ];
     }
 
     protected function placeholderMetrics(): array
     {
         return [
-            'active_personnel' => '24',
-            'mfa_compliance' => '100%',
-            'pending_revocations' => '02',
+            'active_personnel' => '0',
+            'mfa_compliance' => '0%',
+            'pending_revocations' => '0',
         ];
     }
 }

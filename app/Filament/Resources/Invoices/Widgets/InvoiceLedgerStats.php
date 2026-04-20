@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -33,19 +34,19 @@ class InvoiceLedgerStats extends StatsOverviewWidget
                 Stat::make('Créances totales', $this->money($receivables))
                     ->description('Valeur confirmée des factures')
                     ->color('primary')
-                    ->chart([12, 14, 13, 18, 20, 22, 24]),
+                    ->chart($this->sumTrend('invoices', 'issue_date', 'total')),
                 Stat::make('Montants en retard', $this->money($overdueBalance))
                     ->description('Sommes demandant une action rapide')
                     ->color('danger')
-                    ->chart([9, 8, 10, 9, 7, 6, 5]),
+                    ->chart($this->sumTrend('invoices', 'issue_date', 'balance_due', fn($query) => $query->where('status', 'overdue'))),
                 Stat::make('Factures en attente', number_format($pendingCount))
                     ->description('Charge active de recouvrement')
                     ->color('warning')
-                    ->chart([3, 4, 6, 7, 8, 7, 9]),
+                    ->chart($this->countTrend('invoices', 'issue_date', fn($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
                 Stat::make('Devis liés', number_format($linkedQuotes))
                     ->description('Documents commerciaux d’origine')
                     ->color('success')
-                    ->chart([2, 3, 4, 5, 6, 7, 8]),
+                    ->chart($this->countTrend('quotes', 'issue_date')),
             ];
         } catch (Throwable) {
             return $this->placeholderStats();
@@ -57,25 +58,67 @@ class InvoiceLedgerStats extends StatsOverviewWidget
         return 'FCFA ' . number_format($amount, 0, '.', ' ');
     }
 
+    protected function countTrend(string $table, string $dateColumn, ?callable $scope = null): array
+    {
+        if (!Schema::hasTable($table)) {
+            return array_fill(0, 7, 0);
+        }
+
+        return collect(range(6, 0))
+            ->map(function (int $offset) use ($table, $dateColumn, $scope): int {
+                $start = now()->copy()->subMonths($offset)->startOfMonth();
+                $end = now()->copy()->subMonths($offset)->endOfMonth();
+                $query = DB::table($table)->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()]);
+
+                if ($scope) {
+                    $scope($query);
+                }
+
+                return (int) $query->count();
+            })
+            ->all();
+    }
+
+    protected function sumTrend(string $table, string $dateColumn, string $amountColumn, ?callable $scope = null): array
+    {
+        if (!Schema::hasTable($table)) {
+            return array_fill(0, 7, 0);
+        }
+
+        return collect(range(6, 0))
+            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $scope): int {
+                $start = now()->copy()->subMonths($offset)->startOfMonth();
+                $end = now()->copy()->subMonths($offset)->endOfMonth();
+                $query = DB::table($table)->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()]);
+
+                if ($scope) {
+                    $scope($query);
+                }
+
+                return (int) round(((float) $query->sum($amountColumn)) / 1000);
+            })
+            ->all();
+    }
+
     protected function placeholderStats(): array
     {
         return [
-            Stat::make('Total receivables', 'FCFA 428M')
-                ->description('Confirmed invoice value in the ledger')
+            Stat::make('Créances totales', 'FCFA 0')
+                ->description('Aucune facture disponible')
                 ->color('primary')
-                ->chart([12, 14, 13, 18, 20, 22, 24]),
-            Stat::make('Overdue exposure', 'FCFA 18M')
-                ->description('Amounts requiring immediate action')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Montants en retard', 'FCFA 0')
+                ->description('Aucun retard enregistré')
                 ->color('danger')
-                ->chart([9, 8, 10, 9, 7, 6, 5]),
-            Stat::make('Pending invoices', '24')
-                ->description('Active collection workload')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Factures en attente', '0')
+                ->description('Aucune charge de recouvrement')
                 ->color('warning')
-                ->chart([3, 4, 6, 7, 8, 7, 9]),
-            Stat::make('Linked quotes', '32')
-                ->description('Commercial source documents')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make('Devis liés', '0')
+                ->description('Aucun devis d’origine à afficher')
                 ->color('success')
-                ->chart([2, 3, 4, 5, 6, 7, 8]),
+                ->chart(array_fill(0, 7, 0)),
         ];
     }
 }

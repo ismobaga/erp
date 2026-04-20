@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Projects\Pages;
 
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -207,7 +208,7 @@ class ViewProjectDetails extends ViewRecord
                 'number' => $invoice->invoice_number,
                 'total' => $this->formatMoney((float) $invoice->total),
                 'status' => strtoupper(str_replace('_', ' ', $invoice->status)),
-                'meta' => 'Émise le ' . ($invoice->issue_date?->format('d/m/Y') ?? '—'),
+                'meta' => 'Émise le ' . ($invoice->issue_date ? now()->parse((string) $invoice->issue_date)->format('d/m/Y') : '—'),
             ])
             ->all();
     }
@@ -230,7 +231,7 @@ class ViewProjectDetails extends ViewRecord
                 'number' => $quote->quote_number,
                 'total' => $this->formatMoney((float) $quote->total),
                 'status' => strtoupper($quote->status),
-                'meta' => 'Valide jusqu’au ' . ($quote->valid_until?->format('d/m/Y') ?? '—'),
+                'meta' => 'Valide jusqu’au ' . ($quote->valid_until ? now()->parse((string) $quote->valid_until)->format('d/m/Y') : '—'),
             ])
             ->all();
     }
@@ -241,6 +242,67 @@ class ViewProjectDetails extends ViewRecord
         $project = $this->getRecord();
 
         $entries = [];
+
+        $entries[] = [
+            'title' => 'Création',
+            'meta' => 'Enregistré le ' . ($project->created_at?->format('d/m/Y H:i') ?? '—'),
+            'content' => 'Le projet a été créé pour le client ' . ($project->client?->company_name ?: $project->client?->contact_name ?: 'non renseigné') . '.',
+        ];
+
+        if ($project->start_date) {
+            $entries[] = [
+                'title' => 'Démarrage prévu',
+                'meta' => 'Calendrier opérationnel',
+                'content' => 'Date de début planifiée : ' . now()->parse((string) $project->start_date)->format('d/m/Y') . '.',
+            ];
+        }
+
+        if ($project->due_date) {
+            $entries[] = [
+                'title' => 'Échéance',
+                'meta' => 'Planning de livraison',
+                'content' => 'Date cible de livraison : ' . now()->parse((string) $project->due_date)->format('d/m/Y') . '.',
+            ];
+        }
+
+        $activityEntries = ActivityLog::query()
+            ->where('subject_type', Project::class)
+            ->where('subject_id', $project->getKey())
+            ->whereIn('action', ['project_approved', 'project_started', 'project_completed', 'project_on_hold'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function (ActivityLog $log): array {
+                $title = match ($log->action) {
+                    'project_approved' => 'Validation',
+                    'project_started' => 'Exécution',
+                    'project_completed' => 'Clôture',
+                    'project_on_hold' => 'Mise en pause',
+                    default => 'Activité projet',
+                };
+
+                $content = match ($log->action) {
+                    'project_approved' => 'Le projet a été approuvé dans le circuit de validation.',
+                    'project_started' => 'Le projet est passé en phase d’exécution.',
+                    'project_completed' => 'Le projet a été marqué comme terminé.',
+                    'project_on_hold' => 'Le projet a été mis en pause pour revue.',
+                    default => 'Une mise à jour a été enregistrée.',
+                };
+
+                if (filled(data_get($log->meta_json, 'notes'))) {
+                    $content .= ' ' . data_get($log->meta_json, 'notes');
+                }
+
+                return [
+                    'title' => $title,
+                    'meta' => $log->created_at?->format('d/m/Y H:i') ?? 'Journal système',
+                    'content' => $content,
+                ];
+            })
+            ->all();
+
+        $entries = [...$entries, ...$activityEntries];
+
         $rawNotes = trim((string) $project->notes);
 
         if ($rawNotes !== '') {

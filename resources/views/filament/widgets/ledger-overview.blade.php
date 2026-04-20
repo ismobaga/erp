@@ -18,6 +18,12 @@
                     </div>
                 </div>
 
+                @if (count($entries) === 1 && ($entries[0]['reference'] ?? null) === '—')
+                    <div class="mb-4 rounded-2xl border border-dashed border-[#c4c6cf] bg-white/70 px-4 py-3 text-sm text-[#57657a]">
+                        Aucune activité récente n’est encore disponible dans le registre.
+                    </div>
+                @endif
+
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-160 border-separate border-spacing-y-2">
                         <thead>
@@ -184,7 +190,7 @@
                         </div>
 
                         <div class="space-y-4">
-                            @foreach ($column['items'] as $item)
+                            @forelse ($column['items'] as $item)
                                 <article class="board-project-card" style="border-left: 4px solid {{ $item['accent'] }};">
                                     <div class="mb-3 flex items-start justify-between gap-3">
                                         <span
@@ -234,7 +240,11 @@
                                         </div>
                                     </div>
                                 </article>
-                            @endforeach
+                            @empty
+                                <div class="rounded-2xl border border-dashed border-[#c4c6cf] bg-white/80 p-4 text-sm text-[#57657a]">
+                                    Aucun projet actif dans cette colonne pour le moment.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 @endforeach

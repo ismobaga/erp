@@ -48,9 +48,9 @@ class FinanceTerminalOverview extends Widget
     protected function placeholderData(): array
     {
         return [
-            'readyToPay' => 'FCFA 1 284 502 400',
-            'approvedInvoices' => '142',
-            'flaggedReviews' => '08',
+            'readyToPay' => 'FCFA 0.00',
+            'approvedInvoices' => '0',
+            'flaggedReviews' => '0',
         ];
     }
 

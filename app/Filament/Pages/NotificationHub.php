@@ -141,16 +141,16 @@ class NotificationHub extends Page
     {
         $openAlerts = Schema::hasTable('invoices')
             ? Invoice::query()->whereIn('status', ['overdue', 'partially_paid'])->count()
-            : 42;
+            : 0;
         $exposure = Schema::hasTable('invoices')
             ? (float) Invoice::query()->where('balance_due', '>', 0)->sum('balance_due')
-            : 1200000;
+            : 0;
         $resolved = Schema::hasTable('activity_logs')
             ? ActivityLog::query()->whereDate('created_at', today())->count()
-            : 18;
+            : 0;
         $efficiency = Schema::hasTable('users')
-            ? min(99, max(80, User::query()->where('status', 'active')->count() * 8))
-            : 94;
+            ? min(99, max(0, User::query()->where('status', 'active')->count() * 8))
+            : 0;
 
         return [
             'open_alerts' => number_format($openAlerts),
@@ -163,35 +163,31 @@ class NotificationHub extends Page
     protected function placeholderOverdueInvoices(): array
     {
         return [
-            ['reference' => 'INV-8829', 'client' => 'Sterling Architecture', 'note' => 'Phase 1 invoice is critically overdue.', 'amount' => 'FCFA 142 500 000', 'age' => '45 days overdue'],
-            ['reference' => 'INV-9104', 'client' => 'Horizon Foundations', 'note' => 'Regional office payment stalled.', 'amount' => 'FCFA 64 200 000', 'age' => '12 days overdue'],
+            ['reference' => '—', 'client' => 'Aucune facture en retard', 'note' => 'Toutes les échéances sont à jour pour le moment.', 'amount' => 'FCFA 0', 'age' => 'À jour'],
         ];
     }
 
     protected function placeholderFlaggedPayments(): array
     {
         return [
-            ['title' => 'ACH Transfer TXN-998', 'client' => 'BuildCorp', 'note' => 'Transaction hash mismatch needs review.'],
-            ['title' => 'Petty Cash TXN-1021', 'client' => 'Field Desk', 'note' => 'Limit breach requires admin override.'],
+            ['title' => 'Aucun paiement signalé', 'client' => 'Système', 'note' => 'Les paiements à vérifier apparaîtront ici automatiquement.'],
         ];
     }
 
     protected function placeholderFeed(): array
     {
         return [
-            ['label' => 'INV-4412 reconciled', 'meta' => 'Admin Sarah J.', 'time' => '14m ago'],
-            ['label' => 'Reminder sent to Delta Projects', 'meta' => 'Automated System', 'time' => '1h ago'],
-            ['label' => 'Staff ID #455 activated', 'meta' => 'System Security', 'time' => '3h ago'],
+            ['label' => 'Aucune alerte critique récente', 'meta' => 'Système', 'time' => 'En attente d’activité'],
         ];
     }
 
     protected function placeholderHealth(): array
     {
         return [
-            'open_alerts' => '42',
-            'exposure' => 'FCFA 1 200 000',
-            'resolved' => '18',
-            'efficiency' => '94%',
+            'open_alerts' => '0',
+            'exposure' => 'FCFA 0',
+            'resolved' => '0',
+            'efficiency' => '0%',
         ];
     }
 

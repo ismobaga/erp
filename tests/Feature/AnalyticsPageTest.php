@@ -183,4 +183,30 @@ class AnalyticsPageTest extends TestCase
         $response->assertSee('Périodes ouvertes');
         $response->assertSee('Périodes clôturées');
     }
+
+    public function test_dashboard_uses_empty_states_instead_of_fake_sample_business_data(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $response = $this->actingAs($user)->get('/admin');
+
+        $response->assertOk();
+        $response->assertDontSee('Sahel Tech Solutions');
+        $response->assertDontSee('Mali North Expansion Phase II');
+        $response->assertDontSee('River Port Dredging Project');
+    }
+
+    public function test_notification_hub_uses_real_empty_states_when_no_alert_data_exists(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $response = $this->actingAs($user)->get('/admin/notification-hub');
+
+        $response->assertOk();
+        $response->assertSee('Aucune alerte critique récente');
+        $response->assertDontSee('Sterling Architecture');
+        $response->assertDontSee('BuildCorp');
+    }
 }
