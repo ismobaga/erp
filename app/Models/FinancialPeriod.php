@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AuditTrailService;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -66,22 +67,42 @@ class FinancialPeriod extends Model
 
     public function close(?int $userId = null, ?string $notes = null): void
     {
+        $resolvedNotes = $notes ?? $this->notes;
+
         $this->forceFill([
             'status' => 'closed',
             'closed_at' => now(),
             'closed_by' => $userId,
-            'notes' => $notes ?? $this->notes,
+            'notes' => $resolvedNotes,
         ])->save();
+
+        app(AuditTrailService::class)->log('financial_period_closed', $this, [
+            'name' => $this->name,
+            'code' => $this->code,
+            'starts_on' => $this->starts_on ? Carbon::parse($this->starts_on)->toDateString() : null,
+            'ends_on' => $this->ends_on ? Carbon::parse($this->ends_on)->toDateString() : null,
+            'notes' => $resolvedNotes,
+        ], $userId);
     }
 
     public function reopen(?int $userId = null, ?string $notes = null): void
     {
+        $resolvedNotes = $notes ?? $this->notes;
+
         $this->forceFill([
             'status' => 'open',
             'reopened_at' => now(),
             'reopened_by' => $userId,
-            'notes' => $notes ?? $this->notes,
+            'notes' => $resolvedNotes,
         ])->save();
+
+        app(AuditTrailService::class)->log('financial_period_reopened', $this, [
+            'name' => $this->name,
+            'code' => $this->code,
+            'starts_on' => $this->starts_on ? Carbon::parse($this->starts_on)->toDateString() : null,
+            'ends_on' => $this->ends_on ? Carbon::parse($this->ends_on)->toDateString() : null,
+            'notes' => $resolvedNotes,
+        ], $userId);
     }
 
     public static function findClosedFor(CarbonInterface|string|null $date): ?self

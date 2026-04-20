@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\FinancialPeriod;
@@ -47,6 +48,12 @@ class FinancialPeriodsTest extends TestCase
         $this->assertTrue($period->fresh()->isClosed());
         $this->assertSame($user->id, $period->fresh()->closed_by);
         $this->assertNotNull($period->fresh()->closed_at);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'action' => 'financial_period_closed',
+            'subject_type' => FinancialPeriod::class,
+            'subject_id' => $period->id,
+        ]);
 
         $period->fresh()->reopen($user->id, 'Adjustment required');
 
@@ -54,6 +61,12 @@ class FinancialPeriodsTest extends TestCase
         $this->assertSame($user->id, $period->fresh()->reopened_by);
         $this->assertNotNull($period->fresh()->reopened_at);
         $this->assertSame('Adjustment required', $period->fresh()->notes);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'action' => 'financial_period_reopened',
+            'subject_type' => FinancialPeriod::class,
+            'subject_id' => $period->id,
+        ]);
     }
 
     public function test_invoice_updates_are_blocked_when_the_accounting_period_is_closed(): void
