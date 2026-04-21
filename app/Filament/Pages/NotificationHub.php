@@ -3,15 +3,20 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\HasPermissionAccess;
+use App\Mail\InvoiceReminderMail;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\AuditTrailService;
+use App\Services\ReportExportService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -38,10 +43,52 @@ class NotificationHub extends Page
         return [
             Action::make('markAllRead')
                 ->label('Tout marquer comme lu')
-                ->action(fn() => Notification::make()->title('Toutes les alertes ont été marquées comme relues.')->success()->send()),
+                ->action(function (): void {
+                    /** @var \App\Models\User|null $user */
+                    $user = auth()->user();
+
+                    if (!$user) {
+                        return;
+                    }
+
+                    // Mark all unread Laravel database notifications as read
+                    $count = $user->unreadNotifications()->count();
+                    $user->unreadNotifications()->update(['read_at' => now()]);
+
+                    app(AuditTrailService::class)->log('notifications_marked_read', null, [
+                        'count' => $count,
+                    ]);
+
+                    Notification::make()
+                        ->title('Alertes marquées comme lues')
+                        ->body($count > 0
+                            ? $count . ' notification(s) ont été marquées comme lues.'
+                            : 'Aucune notification non lue à marquer.')
+                        ->success()
+                        ->send();
+                }),
+
             Action::make('exportSecurity')
                 ->label('Exporter le rapport de sécurité')
-                ->action(fn() => Notification::make()->title('Le rapport de sécurité a été ajouté à la file d’export.')->success()->send()),
+                ->action(function (): void {
+                    $userId = auth()->id();
+
+                    $report = app(ReportExportService::class)->generate(
+                        now()->subDays(30)->startOfDay(),
+                        now()->endOfDay(),
+                        ['audit' => true, 'revenue' => false, 'expenses' => false, 'payments' => false, 'taxes' => false],
+                        'csv',
+                        false,
+                        $userId,
+                    );
+
+                    app(AuditTrailService::class)->log('security_report_exported', null, [
+                        'path' => $report['path'],
+                        'generated_at' => $report['generatedAt'],
+                    ]);
+
+                    $this->redirect($report['downloadUrl'], navigate: false);
+                }),
         ];
     }
 
@@ -93,6 +140,48 @@ class NotificationHub extends Page
             ->all();
 
         return $items ?: $this->placeholderOverdueInvoices();
+    }
+
+    public function sendReminder(string $reference): void
+    {
+        $invoice = Invoice::query()
+            ->with('client')
+            ->where('invoice_number', $reference)
+            ->first();
+
+        if (!$invoice) {
+            Notification::make()->title('Facture introuvable.')->danger()->send();
+
+            return;
+        }
+
+        $client = $invoice->client;
+
+        if (!$client || blank($client->email)) {
+            Notification::make()
+                ->title('Aucun e-mail client')
+                ->body('Ce client n\'a pas d\'adresse e-mail enregistrée. Vérifiez sa fiche.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+
+        app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
+            'reference' => $reference,
+            'client_email' => $client->email,
+            'balance_due' => (float) $invoice->balance_due,
+            'due_date' => $invoice->due_date?->toDateString(),
+            'sent_by' => auth()->id(),
+        ]);
+
+        Notification::make()
+            ->title('Rappel de paiement envoyé')
+            ->body('Un rappel a été envoyé à ' . $client->email . ' pour la facture ' . $reference . '.')
+            ->success()
+            ->send();
     }
 
     protected function getFlaggedPayments(): array

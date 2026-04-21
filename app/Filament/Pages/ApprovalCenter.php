@@ -11,12 +11,15 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Project;
+use App\Services\AuditTrailService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Throwable;
 
 class ApprovalCenter extends Page
@@ -89,7 +92,115 @@ class ApprovalCenter extends Page
                 }),
             Action::make('exportQueue')
                 ->label('Exporter la file')
-                ->action(fn() => Notification::make()->title('L’export de la file de validation a été lancé.')->success()->send()),
+                ->action(function (): void {
+                    $handle = fopen('php://temp', 'r+');
+
+                    // Header row
+                    fputcsv($handle, ['File de validation – Exporté le ' . now()->format('d/m/Y H:i')], ';');
+                    fputcsv($handle, []);
+                    fputcsv($handle, ['Type', 'Référence', 'Sujet', 'Catégorie', 'Montant / Client', 'Statut', 'Note'], ';');
+
+                    if (Schema::hasTable('invoices')) {
+                        Invoice::query()
+                            ->with('client')
+                            ->whereIn('status', ['draft', 'overdue', 'partially_paid', 'sent'])
+                            ->latest()
+                            ->take(50)
+                            ->get()
+                            ->each(function (Invoice $invoice) use ($handle): void {
+                                fputcsv($handle, [
+                                    'Facture',
+                                    $invoice->invoice_number,
+                                    $invoice->client?->company_name ?: $invoice->client?->contact_name ?: '—',
+                                    'Invoice Review',
+                                    'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' '),
+                                    $invoice->status,
+                                    $invoice->status === 'overdue' ? 'Collections follow-up required' : 'Ready for sign-off',
+                                ], ';');
+                            });
+                    }
+
+                    if (Schema::hasTable('expenses')) {
+                        Expense::query()
+                            ->whereIn('approval_status', ['pending', 'review'])
+                            ->latest()
+                            ->take(50)
+                            ->get()
+                            ->each(function (Expense $expense) use ($handle): void {
+                                fputcsv($handle, [
+                                    'Dépense',
+                                    $expense->reference ?: ('EXP-' . str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
+                                    $expense->title,
+                                    $expense->category,
+                                    'FCFA ' . number_format((float) $expense->amount, 0, '.', ' '),
+                                    $expense->approval_status,
+                                    $expense->approval_status === 'review' ? 'Contrôle requis' : 'En attente de validation',
+                                ], ';');
+                            });
+                    }
+
+                    if (Schema::hasTable('projects')) {
+                        Project::query()
+                            ->with('client')
+                            ->whereIn('approval_status', ['pending', 'review'])
+                            ->latest()
+                            ->take(50)
+                            ->get()
+                            ->each(function (Project $project) use ($handle): void {
+                                fputcsv($handle, [
+                                    'Projet',
+                                    'PRJ-' . str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
+                                    $project->name,
+                                    'Feu vert projet',
+                                    $project->client?->company_name ?: 'Projet interne',
+                                    $project->approval_status,
+                                    $project->approval_status === 'review' ? 'Révision requise' : 'Prêt pour lancement',
+                                ], ';');
+                            });
+                    }
+
+                    if (Schema::hasTable('payments')) {
+                        Payment::query()
+                            ->with(['client', 'invoice'])
+                            ->where(fn($q) => $q->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
+                            ->latest()
+                            ->take(50)
+                            ->get()
+                            ->each(function (Payment $payment) use ($handle): void {
+                                fputcsv($handle, [
+                                    'Paiement',
+                                    $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
+                                    $payment->client?->company_name ?: $payment->client?->contact_name ?: '—',
+                                    'Exception paiement',
+                                    'FCFA ' . number_format((float) $payment->amount, 0, '.', ' '),
+                                    'flagged',
+                                    'Référence ou facture à rapprocher',
+                                ], ';');
+                            });
+                    }
+
+                    rewind($handle);
+                    $csv = stream_get_contents($handle);
+                    fclose($handle);
+
+                    $folder = 'approvals/' . now()->format('Y/m');
+                    $fileName = 'file-validation-' . now()->format('Ymd-His') . '-' . (auth()->id() ?? 'system') . '.csv';
+                    $path = $folder . '/' . $fileName;
+                    Storage::disk('local')->put($path, $csv);
+
+                    app(AuditTrailService::class)->log('approval_queue_exported', null, [
+                        'path' => $path,
+                        'exported_by' => auth()->id(),
+                    ]);
+
+                    $downloadUrl = URL::temporarySignedRoute(
+                        'reports.download',
+                        now()->addMinutes(30),
+                        ['report' => encrypt($path)],
+                    );
+
+                    $this->redirect($downloadUrl, navigate: false);
+                }),
         ];
     }
 

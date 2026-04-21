@@ -18,7 +18,8 @@
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div class="pl-3">
                                 <h3 class="text-lg font-black text-[#002045]">{{ $invoice['reference'] }} ·
-                                    {{ $invoice['client'] }}</h3>
+                                    {{ $invoice['client'] }}
+                                </h3>
                                 <p class="mt-1 text-sm text-[#57657a]">{{ $invoice['note'] }}</p>
                                 <div class="mt-3 flex flex-wrap gap-3">
                                     <span class="text-2xl font-black text-[#ba1a1a]">{{ $invoice['amount'] }}</span>
@@ -26,9 +27,10 @@
                                         class="rounded-full bg-[#eff4ff] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#43474e]">{{ $invoice['age'] }}</span>
                                 </div>
                             </div>
-                            <span
-                                class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">Send
-                                reminder</span>
+                            <button type="button" wire:click="sendReminder('{{ $invoice['reference'] }}')"
+                                class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">
+                                Send reminder
+                            </button>
                         </div>
                     </article>
                 @endforeach

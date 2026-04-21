@@ -7,6 +7,8 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
+use App\Services\AuditTrailService;
+use App\Services\ReportExportService;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -54,10 +56,51 @@ class FinancialInsights extends Page
         return [
             Action::make('exportData')
                 ->label(__('erp.actions.export_data'))
-                ->action(fn() => Notification::make()->title(__('erp.reports.export_ready'))->success()->send()),
+                ->action(function (): void {
+                    $context = $this->resolvePeriodContext();
+                    $userId = auth()->id();
+
+                    $report = app(ReportExportService::class)->generate(
+                        $context['start'],
+                        $context['end'],
+                        [
+                            'revenue' => true,
+                            'expenses' => true,
+                            'payments' => true,
+                            'taxes' => true,
+                            'audit' => false,
+                        ],
+                        'pdf',
+                        false,
+                        $userId,
+                    );
+
+                    app(AuditTrailService::class)->log('financial_insights_exported', null, [
+                        'period' => $this->period,
+                        'path' => $report['path'],
+                        'generated_at' => $report['generatedAt'],
+                    ]);
+
+                    $this->redirect($report['downloadUrl'], navigate: false);
+                }),
+
             Action::make('refreshMetrics')
                 ->label(__('erp.actions.refresh_metrics'))
-                ->action(fn() => Notification::make()->title(__('erp.reports.metrics_refreshed'))->success()->send()),
+                ->action(function (): void {
+                    // Re-render forces getViewData() to re-query all KPIs from the database.
+                    // We also log the manual refresh for audit visibility.
+                    app(AuditTrailService::class)->log('financial_insights_refreshed', null, [
+                        'period' => $this->period,
+                        'refreshed_by' => auth()->id(),
+                    ]);
+
+                    $this->dispatch('$refresh');
+
+                    Notification::make()
+                        ->title(__('erp.reports.metrics_refreshed'))
+                        ->success()
+                        ->send();
+                }),
         ];
     }
 
