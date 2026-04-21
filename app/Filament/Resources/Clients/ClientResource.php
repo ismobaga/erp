@@ -6,8 +6,10 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Clients\Pages\CreateClient;
 use App\Filament\Resources\Clients\Pages\EditClient;
 use App\Filament\Resources\Clients\Pages\ListClients;
+use App\Filament\Resources\Clients\Pages\ViewClientDetails;
 use App\Models\Client;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -172,6 +174,7 @@ class ClientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(fn(Client $client): string => static::getUrl('details', ['record' => $client]))
             ->columns([
                 TextColumn::make('identity')
                     ->label('Client')
@@ -193,6 +196,11 @@ class ClientResource extends Resource
                     ->label('Mis à jour'),
             ])
             ->recordActions([
+                Action::make('details')
+                    ->label(__('erp.actions.details'))
+                    ->icon(Heroicon::OutlinedEye)
+                    ->color('gray')
+                    ->url(fn(Client $client): string => static::getUrl('details', ['record' => $client])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -213,6 +221,7 @@ class ClientResource extends Resource
         return [
             'index' => ListClients::route('/'),
             'create' => CreateClient::route('/create'),
+            'details' => ViewClientDetails::route('/{record}/details'),
             'edit' => EditClient::route('/{record}/edit'),
         ];
     }
