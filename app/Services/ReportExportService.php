@@ -2,22 +2,20 @@
 
 namespace App\Services;
 
+use App\Jobs\GenerateScheduledReportJob;
 use App\Models\ActivityLog;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\ReportSchedule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 
 class ReportExportService
 {
-    private const SCHEDULE_CACHE_KEY = 'erp.report.schedules';
-
     public function generate(Carbon $start, Carbon $end, array $selectedModules, string $format = 'pdf', bool $includeCharts = true, ?int $userId = null): array
     {
         $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts, $userId);
@@ -47,41 +45,63 @@ class ReportExportService
         $nextRun = Carbon::parse((string) $validated['nextExecutionAt']);
 
         return [
-            'id' => (string) Str::uuid(),
             'ownerId' => $userId,
             'description' => 'Export ' . strtoupper((string) $validated['exportFormat']) . ' financier',
             'frequency' => (string) $validated['scheduleFrequency'],
-            'nextExecution' => $nextRun->format('d M Y - H:i'),
             'nextExecutionAt' => $nextRun->toDateTimeString(),
-            'status' => __('erp.reports.scheduled_statuses.active'),
-            'statusClasses' => 'bg-green-100 text-green-800',
             'email' => (string) $validated['scheduleEmail'],
             'exportFormat' => (string) $validated['exportFormat'],
             'startDate' => (string) $validated['startDate'],
             'endDate' => (string) $validated['endDate'],
             'selectedModules' => array_map(static fn(mixed $value): bool => (bool) $value, (array) $validated['selectedModules']),
             'includeCharts' => (bool) ($validated['includeCharts'] ?? true),
-            'lastGenerated' => __('erp.reports.scheduled_statuses.never'),
-            'lastPath' => null,
         ];
     }
 
     public function persistScheduledPlan(array $plan): array
     {
-        $plans = Cache::get(self::SCHEDULE_CACHE_KEY, []);
-        array_unshift($plans, $plan);
-        $plans = array_slice($plans, 0, 24);
+        $schedule = ReportSchedule::create([
+            'owner_id' => $plan['ownerId'] ?? null,
+            'description' => $plan['description'],
+            'frequency' => $plan['frequency'],
+            'export_format' => $plan['exportFormat'],
+            'start_date' => $plan['startDate'] ?: null,
+            'end_date' => $plan['endDate'] ?: null,
+            'selected_modules' => $plan['selectedModules'],
+            'include_charts' => $plan['includeCharts'],
+            'schedule_email' => $plan['email'] ?? null,
+            'next_execution_at' => Carbon::parse($plan['nextExecutionAt']),
+            'status' => 'active',
+        ]);
 
-        Cache::forever(self::SCHEDULE_CACHE_KEY, $plans);
-
-        return $plans;
+        return $this->loadScheduledPlans($plan['ownerId'] ?? null);
     }
 
     public function loadScheduledPlans(?int $userId = null, array $defaults = []): array
     {
-        $plans = collect(Cache::get(self::SCHEDULE_CACHE_KEY, []))
-            ->filter(fn(array $plan): bool => ($plan['ownerId'] ?? null) === $userId)
-            ->values()
+        $plans = ReportSchedule::query()
+            ->forOwner($userId)
+            ->orderByDesc('created_at')
+            ->take(24)
+            ->get()
+            ->map(fn(ReportSchedule $s): array => [
+                'id' => $s->id,
+                'ownerId' => $s->owner_id,
+                'description' => $s->description,
+                'frequency' => $s->frequency,
+                'nextExecution' => $s->nextExecutionLabel(),
+                'nextExecutionAt' => $s->next_execution_at->toDateTimeString(),
+                'status' => $s->statusLabel(),
+                'statusClasses' => $s->statusClasses(),
+                'email' => (string) $s->schedule_email,
+                'exportFormat' => $s->export_format,
+                'startDate' => $s->start_date?->toDateString() ?? '',
+                'endDate' => $s->end_date?->toDateString() ?? '',
+                'selectedModules' => $s->selected_modules ?? [],
+                'includeCharts' => $s->include_charts,
+                'lastGenerated' => $s->lastGeneratedLabel(),
+                'lastPath' => $s->last_path,
+            ])
             ->all();
 
         return count($plans) > 0 ? $plans : $defaults;
@@ -89,39 +109,13 @@ class ReportExportService
 
     public function runDueScheduledExports(): int
     {
-        $plans = Cache::get(self::SCHEDULE_CACHE_KEY, []);
+        $schedules = ReportSchedule::due()->get();
         $processed = 0;
 
-        foreach ($plans as $index => $plan) {
-            $nextExecutionAt = isset($plan['nextExecutionAt']) ? Carbon::parse((string) $plan['nextExecutionAt']) : null;
-
-            if ($nextExecutionAt === null || $nextExecutionAt->isFuture()) {
-                continue;
-            }
-
-            $result = $this->generate(
-                Carbon::parse((string) $plan['startDate'])->startOfDay(),
-                Carbon::parse((string) $plan['endDate'])->endOfDay(),
-                (array) ($plan['selectedModules'] ?? []),
-                (string) ($plan['exportFormat'] ?? 'pdf'),
-                (bool) ($plan['includeCharts'] ?? true),
-                isset($plan['ownerId']) ? (int) $plan['ownerId'] : null,
-            );
-
-            $nextRun = $this->nextExecutionAt($nextExecutionAt, (string) ($plan['frequency'] ?? 'Hebdomadaire'));
-
-            $plan['status'] = __('erp.reports.scheduled_statuses.recent');
-            $plan['statusClasses'] = 'bg-sky-100 text-sky-800';
-            $plan['nextExecutionAt'] = $nextRun->toDateTimeString();
-            $plan['nextExecution'] = $nextRun->format('d M Y - H:i');
-            $plan['lastGenerated'] = (string) $result['generatedAt'];
-            $plan['lastPath'] = $result['path'];
-
-            $plans[$index] = $plan;
+        foreach ($schedules as $schedule) {
+            GenerateScheduledReportJob::dispatch($schedule->id);
             $processed++;
         }
-
-        Cache::forever(self::SCHEDULE_CACHE_KEY, $plans);
 
         return $processed;
     }
@@ -426,15 +420,6 @@ class ReportExportService
             ])
             ->values()
             ->all();
-    }
-
-    protected function nextExecutionAt(Carbon $current, string $frequency): Carbon
-    {
-        return match ($frequency) {
-            'Quotidienne' => $current->copy()->addDay(),
-            'Mensuelle' => $current->copy()->addMonth(),
-            default => $current->copy()->addWeek(),
-        };
     }
 
     protected function formatMoney(float $amount): string

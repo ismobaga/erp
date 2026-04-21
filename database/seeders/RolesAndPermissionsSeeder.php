@@ -57,6 +57,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'settings.view',
             'settings.update',
             'reports.view',
+            'ledger.view',
+            'ledger.create',
+            'ledger.post',
+            'ledger.void',
+            'dunning.view',
+            'dunning.send',
         ];
 
         foreach ($permissions as $permission) {
@@ -96,6 +102,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'documents.view',
             'documents.create',
             'reports.view',
+            'ledger.view',
+            'ledger.create',
+            'ledger.post',
+            'ledger.void',
+            'dunning.view',
+            'dunning.send',
         ])->get());
 
         $projectManager->syncPermissions(Permission::whereIn('name', [
@@ -109,6 +121,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'documents.view',
             'documents.create',
             'reports.view',
+            'ledger.view',
+            'dunning.view',
+            'dunning.send',
         ])->get());
 
         $staff->syncPermissions(Permission::whereIn('name', [

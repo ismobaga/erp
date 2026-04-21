@@ -18,9 +18,19 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Vue d’ensemble opérationnelle';
+    protected ?string $heading = null;
 
-    protected ?string $description = 'Résumé en temps réel des finances, projets et équipes.';
+    protected ?string $description = null;
+
+    protected function getHeading(): ?string
+    {
+        return __('erp.dashboard.operational_overview');
+    }
+
+    protected function getDescription(): ?string
+    {
+        return __('erp.dashboard.operational_overview_desc');
+    }
 
     protected function getStats(): array
     {
@@ -36,20 +46,20 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
             $activeProjects = Project::query()->whereIn('status', ['active', 'in_progress'])->count();
 
             return [
-                Stat::make('Portefeuille clients', number_format($clients))
-                    ->description(number_format($activeClients) . ' relations actives')
+                Stat::make(__('erp.dashboard.client_portfolio'), number_format($clients))
+                    ->description(__('erp.dashboard.active_relations', ['count' => number_format($activeClients)]))
                     ->color('primary')
                     ->chart($this->countTrend('clients', 'created_at')),
-                Stat::make('Factures ouvertes', number_format($openInvoices))
-                    ->description('Flux de recouvrement à surveiller')
+                Stat::make(__('erp.dashboard.open_invoices'), number_format($openInvoices))
+                    ->description(__('erp.dashboard.open_invoices_note'))
                     ->color('warning')
                     ->chart($this->countTrend('invoices', 'issue_date', fn($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
-                Stat::make('Revenus encaissés', $this->money($settledRevenue))
-                    ->description('Paiements confirmés dans le registre')
+                Stat::make(__('erp.dashboard.collected_revenue'), $this->money($settledRevenue))
+                    ->description(__('erp.dashboard.collected_revenue_note'))
                     ->color('success')
                     ->chart($this->sumTrend('payments', 'payment_date', 'amount')),
-                Stat::make('Projets actifs', number_format($activeProjects))
-                    ->description('Rythme de livraison en cours')
+                Stat::make(__('erp.dashboard.active_projects'), number_format($activeProjects))
+                    ->description(__('erp.dashboard.active_projects_note'))
                     ->color('info')
                     ->chart($this->countTrend('projects', 'created_at', fn($query) => $query->whereIn('status', ['active', 'in_progress']))),
             ];
@@ -116,20 +126,20 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
     protected function placeholderStats(): array
     {
         return [
-            Stat::make('Portefeuille clients', '0')
-                ->description('Aucun client enregistré pour le moment')
+            Stat::make(__('erp.dashboard.client_portfolio'), '0')
+                ->description(__('erp.dashboard.no_clients'))
                 ->color('primary')
                 ->chart(array_fill(0, 7, 0)),
-            Stat::make('Factures ouvertes', '0')
-                ->description('Aucune facture en suivi actuellement')
+            Stat::make(__('erp.dashboard.open_invoices'), '0')
+                ->description(__('erp.dashboard.no_invoices'))
                 ->color('warning')
                 ->chart(array_fill(0, 7, 0)),
-            Stat::make('Revenus encaissés', 'FCFA 0')
-                ->description('Aucun paiement confirmé pour le moment')
+            Stat::make(__('erp.dashboard.collected_revenue'), 'FCFA 0')
+                ->description(__('erp.dashboard.no_payments'))
                 ->color('success')
                 ->chart(array_fill(0, 7, 0)),
-            Stat::make('Projets actifs', '0')
-                ->description('Aucun projet actif à afficher')
+            Stat::make(__('erp.dashboard.active_projects'), '0')
+                ->description(__('erp.dashboard.no_projects'))
                 ->color('info')
                 ->chart(array_fill(0, 7, 0)),
         ];
