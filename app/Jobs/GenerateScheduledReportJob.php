@@ -52,6 +52,7 @@ class GenerateScheduledReportJob implements ShouldQueue
             'last_executed_at' => now(),
             'last_path' => $result['path'],
             'next_execution_at' => $schedule->nextRun(),
+            'status' => 'recent',
         ])->save();
 
         $auditTrail->log('scheduled_report_generated', null, [
