@@ -99,6 +99,11 @@ class Invoice extends Model
         return $this->hasMany(CreditNote::class);
     }
 
+    public function dunningLogs(): HasMany
+    {
+        return $this->hasMany(DunningLog::class);
+    }
+
     public function recalculateTotals(): void
     {
         $subtotal = (float) $this->items()->sum('line_total');

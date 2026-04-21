@@ -21,12 +21,12 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
 
     protected ?string $description = null;
 
-    protected function getHeading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    protected function getHeading(): ?string
     {
         return __('erp.dashboard.accounting_periods');
     }
 
-    protected function getDescription(): string|\Illuminate\Contracts\Support\Htmlable|null
+    protected function getDescription(): ?string
     {
         return __('erp.dashboard.accounting_periods_desc');
     }

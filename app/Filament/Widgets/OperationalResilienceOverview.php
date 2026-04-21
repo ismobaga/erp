@@ -14,12 +14,12 @@ class OperationalResilienceOverview extends StatsOverviewWidget
 
     protected ?string $description = null;
 
-    protected function getHeading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    protected function getHeading(): ?string
     {
         return __('erp.dashboard.resilience');
     }
 
-    protected function getDescription(): string|\Illuminate\Contracts\Support\Htmlable|null
+    protected function getDescription(): ?string
     {
         return __('erp.dashboard.resilience_desc');
     }

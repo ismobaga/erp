@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\RunAutomatedDunning;
 use App\Models\ActivityLog;
 use App\Services\OperationalResilienceService;
 use App\Services\ReportExportService;
@@ -68,3 +69,4 @@ Schedule::command('reports:run-scheduled-exports')->everyThirtyMinutes();
 Schedule::command('erp:monitor-health')->everyFifteenMinutes();
 Schedule::command('reports:cleanup-exports')->dailyAt('02:00');
 Schedule::command('erp:prune-audit-logs')->dailyAt('02:30');
+Schedule::command('erp:run-dunning')->dailyAt('08:00');
