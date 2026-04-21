@@ -262,6 +262,7 @@ return [
         'journal_entry' => 'Écriture comptable',
         'journal_lines' => "Lignes d'écriture",
         'entry_number' => "Numéro d'écriture",
+        'entry_number_placeholder' => 'Attribué automatiquement',
         'account_code' => 'Code de compte',
         'account_name' => 'Intitulé du compte',
         'account_type' => 'Type de compte',

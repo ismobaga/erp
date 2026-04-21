@@ -515,7 +515,7 @@ class LedgerOverview extends Widget
         return [
             ['label' => __('erp.dashboard.health_collection_rate'), 'value' => '0%', 'note' => __('erp.dashboard.no_collection_data'), 'progress' => 0, 'color' => '#8df5e4'],
             ['label' => __('erp.dashboard.health_active_clients'), 'value' => '0', 'note' => __('erp.dashboard.no_active_clients'), 'progress' => 0, 'color' => '#adc7f7'],
-            ['label' => __('erp.dashboard.health_admin_users'), 'value' => '0', 'note' => 'Aucun utilisateur détecté', 'progress' => 0, 'color' => '#d5e3fc'],
+            ['label' => __('erp.dashboard.health_admin_users'), 'value' => '0', 'note' => __('erp.dashboard.no_users'), 'progress' => 0, 'color' => '#d5e3fc'],
             ['label' => __('erp.dashboard.health_overdue_invoices'), 'value' => '0', 'note' => __('erp.dashboard.no_overdue'), 'progress' => 0, 'color' => '#ffb4ab'],
         ];
     }

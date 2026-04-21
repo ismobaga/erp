@@ -262,6 +262,7 @@ return [
         'journal_entry' => 'Journal Entry',
         'journal_lines' => 'Entry Lines',
         'entry_number' => 'Entry number',
+        'entry_number_placeholder' => 'Assigned automatically',
         'account_code' => 'Account code',
         'account_name' => 'Account name',
         'account_type' => 'Account type',

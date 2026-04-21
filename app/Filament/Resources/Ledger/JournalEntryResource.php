@@ -76,7 +76,7 @@ class JournalEntryResource extends Resource
                                 TextInput::make('entry_number')
                                     ->label(__('erp.ledger.entry_number'))
                                     ->readOnly()
-                                    ->placeholder('Assigned automatically'),
+                                    ->placeholder(__('erp.ledger.entry_number_placeholder')),
                                 DatePicker::make('entry_date')
                                     ->label(__('erp.common.date'))
                                     ->default(now())
