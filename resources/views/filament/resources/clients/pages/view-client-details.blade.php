@@ -29,7 +29,7 @@
                     <p class="text-sm text-[#43474e] dark:text-slate-300">Référence #CLT-{{ str_pad((string) $client->id, 4, '0', STR_PAD_LEFT) }}</p>
                 </div>
 
-                <a href="{{ url('/admin/clients/' . $client->id . '/edit') }}"
+                <a href="{{ \App\Filament\Resources\Clients\ClientResource::getUrl('edit', ['record' => $client]) }}"
                     class="inline-flex items-center justify-center rounded-xl bg-[#002045] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#002045]/20 transition hover:opacity-90">
                     Modifier la fiche
                 </a>

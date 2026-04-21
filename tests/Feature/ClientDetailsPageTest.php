@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Clients\ClientResource;
 use App\Models\Client;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -38,7 +39,7 @@ class ClientDetailsPageTest extends TestCase
             'updated_by' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->get('/admin/clients/' . $client->id . '/details');
+        $response = $this->actingAs($user)->get(ClientResource::getUrl('details', ['record' => $client]));
 
         $response->assertOk();
         $response->assertSeeText('Fiche client');
