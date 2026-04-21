@@ -202,6 +202,8 @@ class GrandLivre extends Page
             $row = $rows->get($type);
             $debit  = $row ? (float) $row->total_debit  : 0.0;
             $credit = $row ? (float) $row->total_credit : 0.0;
+            // Assets and expenses normally carry debit balances (net = debit − credit);
+            // liabilities, equity and revenue carry credit balances (net = credit − debit).
             $net    = ($type === 'asset' || $type === 'expense') ? $debit - $credit : $credit - $debit;
 
             $result[] = [
@@ -242,7 +244,7 @@ class GrandLivre extends Page
             return '—';
         }
 
-        $translated = (string) __('erp.ledger.source_types.' . $sourceType, [], null);
+        $translated = (string) __('erp.ledger.source_types.' . $sourceType, []);
 
         return $translated !== '' ? $translated : $sourceType;
     }

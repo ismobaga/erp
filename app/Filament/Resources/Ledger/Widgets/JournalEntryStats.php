@@ -81,7 +81,7 @@ class JournalEntryStats extends Widget
             $count  = (int) $row->cnt;
             $pct    = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
             $colors = $sourceColors[$key] ?? ['bg' => '#eff4ff', 'fg' => '#002045'];
-            $label  = (string) __('erp.ledger.source_types.' . $key, [], null);
+            $label  = (string) __('erp.ledger.source_types.' . $key, []);
 
             if ($label === '') {
                 $label = ucfirst(str_replace('_', ' ', $key));
