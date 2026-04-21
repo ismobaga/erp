@@ -174,7 +174,7 @@ class ClientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->recordUrl(fn(Client $record): string => static::getUrl('details', ['record' => $record]))
+            ->recordUrl(fn(Client $client): string => static::getUrl('details', ['record' => $client]))
             ->columns([
                 TextColumn::make('identity')
                     ->label('Client')
@@ -200,7 +200,7 @@ class ClientResource extends Resource
                     ->label(__('erp.actions.details'))
                     ->icon(Heroicon::OutlinedEye)
                     ->color('gray')
-                    ->url(fn(Client $record): string => static::getUrl('details', ['record' => $record])),
+                    ->url(fn(Client $client): string => static::getUrl('details', ['record' => $client])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
