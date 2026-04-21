@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Clients\Pages;
 use App\Filament\Resources\Clients\ClientResource;
 use App\Models\Client;
 use Filament\Actions\Action;
-use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -27,7 +26,6 @@ class ViewClientDetails extends ViewRecord
                 ->label('Retour à la liste')
                 ->color('gray')
                 ->url(ClientResource::getUrl('index')),
-            EditAction::make()->label('Modifier'),
         ];
     }
 
