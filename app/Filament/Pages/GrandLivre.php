@@ -43,10 +43,6 @@ class GrandLivre extends Page
         $this->statusFilter = (string) request()->query('status', 'all');
     }
 
-    public function updatedPeriod(): void {}
-
-    public function updatedStatusFilter(): void {}
-
     protected function getViewData(): array
     {
         try {
@@ -164,7 +160,7 @@ class GrandLivre extends Page
                 'status'       => $e->status,
                 'status_label' => $e->statusLabel(),
                 'source_type'  => $e->source_type,
-                'source_label' => $e->source_type ? ((string) __('erp.ledger.source_types.' . $e->source_type, [], null) ?: $e->source_type) : '—',
+                'source_label' => $this->sourceLabel($e->source_type),
                 'total_debit'  => $this->money($e->totalDebit()),
                 'total_credit' => $this->money($e->totalCredit()),
                 'balanced'     => $e->isBalanced(),
@@ -227,13 +223,28 @@ class GrandLivre extends Page
 
     protected function applyPeriod(mixed $query): void
     {
+        $now       = now();
+        $lastMonth = $now->copy()->subMonth();
+        $lastYear  = $now->copy()->subYear();
+
         match ($this->period) {
-            'current_month' => $query->whereMonth('entry_date', now()->month)->whereYear('entry_date', now()->year),
-            'last_month'    => $query->whereMonth('entry_date', now()->subMonth()->month)->whereYear('entry_date', now()->subMonth()->year),
-            'current_year'  => $query->whereYear('entry_date', now()->year),
-            'last_year'     => $query->whereYear('entry_date', now()->subYear()->year),
+            'current_month' => $query->whereMonth('entry_date', $now->month)->whereYear('entry_date', $now->year),
+            'last_month'    => $query->whereMonth('entry_date', $lastMonth->month)->whereYear('entry_date', $lastMonth->year),
+            'current_year'  => $query->whereYear('entry_date', $now->year),
+            'last_year'     => $query->whereYear('entry_date', $lastYear->year),
             default         => null,
         };
+    }
+
+    protected function sourceLabel(?string $sourceType): string
+    {
+        if ($sourceType === null) {
+            return '—';
+        }
+
+        $translated = (string) __('erp.ledger.source_types.' . $sourceType, [], null);
+
+        return $translated !== '' ? $translated : $sourceType;
     }
 
     protected function applyStatus(mixed $query): void
