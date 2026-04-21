@@ -61,9 +61,9 @@ class LedgerOverview extends Widget
                     ->get()
                     ->map(fn(Invoice $invoice): array => [
                         'reference' => $invoice->invoice_number,
-                        'entity' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Client account',
+                        'entity' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: __('erp.common.account_client'),
                         'meta' => optional($invoice->issue_date)->format('M d, Y') ?? 'Invoice issued',
-                        'category' => 'Invoice',
+                        'category' => __('erp.common.invoice'),
                         'category_bg' => '#d6e3ff',
                         'category_fg' => '#2d476f',
                         'value' => $this->money((float) $invoice->total),
@@ -83,9 +83,9 @@ class LedgerOverview extends Widget
                     ->get()
                     ->map(fn(Quote $quote): array => [
                         'reference' => $quote->quote_number,
-                        'entity' => $quote->client?->company_name ?: $quote->client?->contact_name ?: 'Client account',
+                        'entity' => $quote->client?->company_name ?: $quote->client?->contact_name ?: __('erp.common.account_client'),
                         'meta' => optional($quote->issue_date)->format('M d, Y') ?? 'Proposal prepared',
-                        'category' => 'Quote',
+                        'category' => __('erp.common.quote'),
                         'category_bg' => '#eff4ff',
                         'category_fg' => '#002045',
                         'value' => $this->money((float) $quote->total),
@@ -105,13 +105,13 @@ class LedgerOverview extends Widget
                     ->get()
                     ->map(fn(Payment $payment): array => [
                         'reference' => $payment->reference ?: ('PAY-' . $payment->getKey()),
-                        'entity' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Client account',
+                        'entity' => $payment->client?->company_name ?: $payment->client?->contact_name ?: __('erp.common.account_client'),
                         'meta' => optional($payment->payment_date)->format('M d, Y') ?? 'Payment recorded',
-                        'category' => 'Payment',
+                        'category' => __('erp.common.payment'),
                         'category_bg' => '#d5e3fc',
                         'category_fg' => '#3a485b',
                         'value' => $this->money((float) $payment->amount),
-                        'status' => 'Recorded',
+                        'status' => __('erp.common.recorded'),
                         'status_bg' => '#dff8f0',
                         'status_fg' => '#005048',
                         'status_dot' => '#43af9f',
@@ -128,11 +128,11 @@ class LedgerOverview extends Widget
                         'reference' => $expense->reference ?: ('EXP-' . $expense->getKey()),
                         'entity' => $expense->vendor ?: $expense->title,
                         'meta' => optional($expense->expense_date)->format('M d, Y') ?? 'Expense booked',
-                        'category' => 'Expense',
+                        'category' => __('erp.common.expense'),
                         'category_bg' => '#ffdad6',
                         'category_fg' => '#93000a',
                         'value' => $this->money((float) $expense->amount),
-                        'status' => 'Posted',
+                        'status' => __('erp.common.posted'),
                         'status_bg' => '#fff1ef',
                         'status_fg' => '#93000a',
                         'status_dot' => '#ba1a1a',
@@ -203,30 +203,30 @@ class LedgerOverview extends Widget
 
         return [
             [
-                'label' => 'Collection rate',
+                'label' => __('erp.dashboard.health_collection_rate'),
                 'value' => $collectionRate . '%',
-                'note' => 'Revenue converted to cash',
+                'note' => __('erp.dashboard.health_collection_rate_note'),
                 'progress' => $collectionRate,
                 'color' => '#8df5e4',
             ],
             [
-                'label' => 'Active clients',
+                'label' => __('erp.dashboard.health_active_clients'),
                 'value' => number_format($activeClients),
-                'note' => $engagement . '% engagement',
+                'note' => __('erp.dashboard.health_engagement_note', ['rate' => $engagement]),
                 'progress' => min(100, max(18, $engagement)),
                 'color' => '#adc7f7',
             ],
             [
-                'label' => 'Admin users',
+                'label' => __('erp.dashboard.health_admin_users'),
                 'value' => number_format($users),
-                'note' => 'Secure system access',
+                'note' => __('erp.dashboard.health_admin_users_note'),
                 'progress' => min(100, max(12, $users * 10)),
                 'color' => '#d5e3fc',
             ],
             [
-                'label' => 'Overdue invoices',
+                'label' => __('erp.dashboard.health_overdue_invoices'),
                 'value' => number_format($overdue),
-                'note' => 'Requires follow-up',
+                'note' => __('erp.dashboard.health_overdue_note'),
                 'progress' => min(100, max(10, $overdue * 12)),
                 'color' => '#ffb4ab',
             ],
@@ -242,7 +242,7 @@ class LedgerOverview extends Widget
         $columns = [
             [
                 'key' => 'planned',
-                'label' => 'Planned',
+                'label' => __('erp.dashboard.board_planned'),
                 'dot' => '#002045',
                 'badge_bg' => '#dce9ff',
                 'badge_fg' => '#002045',
@@ -251,7 +251,7 @@ class LedgerOverview extends Widget
             ],
             [
                 'key' => 'in_progress',
-                'label' => 'In Progress',
+                'label' => __('erp.dashboard.board_in_progress'),
                 'dot' => '#455f88',
                 'badge_bg' => '#e5eeff',
                 'badge_fg' => '#002045',
@@ -260,7 +260,7 @@ class LedgerOverview extends Widget
             ],
             [
                 'key' => 'completed',
-                'label' => 'Completed',
+                'label' => __('erp.dashboard.board_completed'),
                 'dot' => '#70d8c8',
                 'badge_bg' => 'rgba(141, 245, 228, 0.2)',
                 'badge_fg' => '#005048',
@@ -295,8 +295,8 @@ class LedgerOverview extends Widget
 
     protected function transformProject(Project $project, string $accent, string $column): array
     {
-        $client = $project->client?->company_name ?: $project->client?->contact_name ?: 'Client non assigné';
-        $assignee = $project->assignee?->name ?: 'Équipe opérations';
+        $client = $project->client?->company_name ?: $project->client?->contact_name ?: __('erp.resources.project.not_assigned_client');
+        $assignee = $project->assignee?->name ?: __('erp.resources.project.ops_team');
         $progress = match ($project->status) {
             'planned' => 18,
             'active' => 58,
@@ -307,10 +307,10 @@ class LedgerOverview extends Widget
         };
 
         $category = match ($column) {
-            'planned' => 'Planning',
-            'in_progress' => 'Execution',
-            'completed' => 'Delivered',
-            default => 'Delivery',
+            'planned' => __('erp.dashboard.board_column_planning'),
+            'in_progress' => __('erp.dashboard.board_column_execution'),
+            'completed' => __('erp.dashboard.board_column_delivered'),
+            default => __('erp.dashboard.board_column_delivery'),
         };
 
         return [
@@ -318,10 +318,10 @@ class LedgerOverview extends Widget
             'reference' => 'CMX-' . str_pad((string) $project->getKey(), 3, '0', STR_PAD_LEFT),
             'title' => $project->name,
             'client' => $client,
-            'description' => str($project->description ?: 'Parcours projet en cours de structuration.')->limit(82)->toString(),
+            'description' => str($project->description ?: __('erp.resources.project.in_progress_hint'))->limit(82)->toString(),
             'assignee' => $assignee,
             'initials' => $this->initials($assignee),
-            'due' => optional($project->due_date)->format('M d, Y') ?? 'À planifier',
+            'due' => optional($project->due_date)->format('M d, Y') ?? __('erp.common.to_plan'),
             'progress' => $progress,
             'accent' => $accent,
             'show_progress' => $column === 'in_progress',
@@ -343,7 +343,7 @@ class LedgerOverview extends Widget
         return [
             'organization' => CompanySetting::query()->value('company_name') ?: config('app.name', 'ERP'),
             'efficiency' => $efficiency,
-            'headline' => $efficiency . '% d’efficacité sur le portefeuille projets',
+            'headline' => __('erp.dashboard.efficiency_headline', ['rate' => $efficiency]),
             'active_contracts' => $active,
         ];
     }
@@ -365,7 +365,7 @@ class LedgerOverview extends Widget
                 $actions[] = [
                     'tone' => $project->due_date && $project->due_date->isPast() ? 'danger' : 'info',
                     'title' => $project->name,
-                    'note' => 'Deadline ' . optional($project->due_date)->format('M d, Y'),
+                    'note' => __('erp.dashboard.deadline', ['date' => optional($project->due_date)->format('M d, Y')]),
                 ];
             }
         }
@@ -376,8 +376,8 @@ class LedgerOverview extends Widget
             if ($overdue > 0) {
                 $actions[] = [
                     'tone' => 'danger',
-                    'title' => number_format($overdue) . ' overdue invoices need follow-up',
-                    'note' => 'Collections queue requires attention',
+                    'title' => __('erp.dashboard.overdue_followup', ['count' => number_format($overdue)]),
+                    'note' => __('erp.dashboard.collections_attention'),
                 ];
             }
         }
@@ -488,13 +488,13 @@ class LedgerOverview extends Widget
         return [
             [
                 'reference' => '—',
-                'entity' => 'Aucune activité récente',
-                'meta' => 'Les écritures réelles apparaîtront ici dès leur création.',
-                'category' => 'Système',
+                'entity' => __('erp.common.no_recent_activity'),
+                'meta' => __('erp.common.no_recent_activity_hint'),
+                'category' => __('erp.common.system'),
                 'category_bg' => '#eff4ff',
                 'category_fg' => '#002045',
                 'value' => 'FCFA 0',
-                'status' => 'Vide',
+                'status' => __('erp.common.empty'),
                 'status_bg' => '#eef0f4',
                 'status_fg' => '#43474e',
                 'status_dot' => '#74777f',
@@ -506,17 +506,17 @@ class LedgerOverview extends Widget
     protected function placeholderMilestones(): array
     {
         return [
-            ['name' => 'Aucun projet actif', 'stage' => 'Le parcours projet s’alimentera automatiquement', 'progress' => 0, 'color' => '#adc7f7'],
+            ['name' => __('erp.resources.project.no_active_project'), 'stage' => __('erp.resources.project.project_feed_hint'), 'progress' => 0, 'color' => '#adc7f7'],
         ];
     }
 
     protected function placeholderHealth(): array
     {
         return [
-            ['label' => 'Collection rate', 'value' => '0%', 'note' => 'Aucune donnée de recouvrement', 'progress' => 0, 'color' => '#8df5e4'],
-            ['label' => 'Active clients', 'value' => '0', 'note' => 'Aucun client actif', 'progress' => 0, 'color' => '#adc7f7'],
-            ['label' => 'Admin users', 'value' => '0', 'note' => 'Aucun utilisateur détecté', 'progress' => 0, 'color' => '#d5e3fc'],
-            ['label' => 'Overdue invoices', 'value' => '0', 'note' => 'Aucun retard à traiter', 'progress' => 0, 'color' => '#ffb4ab'],
+            ['label' => __('erp.dashboard.health_collection_rate'), 'value' => '0%', 'note' => __('erp.dashboard.no_collection_data'), 'progress' => 0, 'color' => '#8df5e4'],
+            ['label' => __('erp.dashboard.health_active_clients'), 'value' => '0', 'note' => __('erp.dashboard.no_active_clients'), 'progress' => 0, 'color' => '#adc7f7'],
+            ['label' => __('erp.dashboard.health_admin_users'), 'value' => '0', 'note' => 'Aucun utilisateur détecté', 'progress' => 0, 'color' => '#d5e3fc'],
+            ['label' => __('erp.dashboard.health_overdue_invoices'), 'value' => '0', 'note' => __('erp.dashboard.no_overdue'), 'progress' => 0, 'color' => '#ffb4ab'],
         ];
     }
 
@@ -525,7 +525,7 @@ class LedgerOverview extends Widget
         return [
             [
                 'key' => 'planned',
-                'label' => 'Planned',
+                'label' => __('erp.dashboard.board_planned'),
                 'dot' => '#002045',
                 'badge_bg' => '#dce9ff',
                 'badge_fg' => '#002045',
@@ -535,7 +535,7 @@ class LedgerOverview extends Widget
             ],
             [
                 'key' => 'in_progress',
-                'label' => 'In Progress',
+                'label' => __('erp.dashboard.board_in_progress'),
                 'dot' => '#455f88',
                 'badge_bg' => '#e5eeff',
                 'badge_fg' => '#002045',
@@ -545,7 +545,7 @@ class LedgerOverview extends Widget
             ],
             [
                 'key' => 'completed',
-                'label' => 'Completed',
+                'label' => __('erp.dashboard.board_completed'),
                 'dot' => '#70d8c8',
                 'badge_bg' => 'rgba(141, 245, 228, 0.2)',
                 'badge_fg' => '#005048',

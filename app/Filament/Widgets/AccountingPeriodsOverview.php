@@ -17,9 +17,19 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected ?string $heading = 'Périodes comptables';
+    protected ?string $heading = null;
 
-    protected ?string $description = 'Suivi des périodes ouvertes, clôturées et de la fenêtre active.';
+    protected ?string $description = null;
+
+    protected function getHeading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    {
+        return __('erp.dashboard.accounting_periods');
+    }
+
+    protected function getDescription(): string|\Illuminate\Contracts\Support\Htmlable|null
+    {
+        return __('erp.dashboard.accounting_periods_desc');
+    }
 
     protected function getStats(): array
     {
@@ -31,24 +41,24 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
             $openCount = FinancialPeriod::query()->open()->count();
             $closedCount = FinancialPeriod::query()->closed()->count();
             $currentPeriod = FinancialPeriod::query()->current(now())->first();
-            $currentLabel = $currentPeriod?->name ?? 'Aucune période active';
-            $currentStatus = $currentPeriod?->isClosed() ? 'Clôturée' : 'Ouverte';
+            $currentLabel = $currentPeriod?->name ?? __('erp.dashboard.no_active_period');
+            $currentStatus = $currentPeriod?->isClosed() ? __('erp.ledger.statuses.voided') : __('erp.common.active');
 
             return [
-                Stat::make('Périodes ouvertes', number_format($openCount))
-                    ->description('Fenêtres encore modifiables')
+                Stat::make(__('erp.dashboard.open_periods'), number_format($openCount))
+                    ->description(__('erp.dashboard.open_periods_note'))
                     ->color('success')
                     ->chart([1, 1, 2, 2, max(1, $openCount)]),
-                Stat::make('Périodes clôturées', number_format($closedCount))
-                    ->description('Historique sécurisé et verrouillé')
+                Stat::make(__('erp.dashboard.closed_periods'), number_format($closedCount))
+                    ->description(__('erp.dashboard.closed_periods_note'))
                     ->color('danger')
                     ->chart([0, 1, 1, 2, max(1, $closedCount)]),
-                Stat::make('Période active', $currentLabel)
-                    ->description('Statut : ' . $currentStatus)
+                Stat::make(__('erp.dashboard.active_period'), $currentLabel)
+                    ->description(__('erp.dashboard.period_status', ['status' => $currentStatus]))
                     ->color($currentPeriod?->isClosed() ? 'warning' : 'primary')
                     ->chart([2, 3, 3, 4, 4]),
-                Stat::make('Référence du jour', Carbon::now()->format('d/m/Y'))
-                    ->description('Point de contrôle comptable')
+                Stat::make(__('erp.dashboard.date_reference'), Carbon::now()->format('d/m/Y'))
+                    ->description(__('erp.dashboard.accounting_checkpoint'))
                     ->color('info')
                     ->chart([1, 2, 2, 3, 3]),
             ];
@@ -60,20 +70,20 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
     protected function placeholderStats(): array
     {
         return [
-            Stat::make('Périodes ouvertes', '0')
-                ->description('Fenêtres encore modifiables')
+            Stat::make(__('erp.dashboard.open_periods'), '0')
+                ->description(__('erp.dashboard.open_periods_note'))
                 ->color('success')
                 ->chart([1, 1, 1, 1, 1]),
-            Stat::make('Périodes clôturées', '0')
-                ->description('Historique sécurisé et verrouillé')
+            Stat::make(__('erp.dashboard.closed_periods'), '0')
+                ->description(__('erp.dashboard.closed_periods_note'))
                 ->color('danger')
                 ->chart([0, 0, 0, 0, 0]),
-            Stat::make('Période active', 'Aucune période active')
-                ->description('Statut : À configurer')
+            Stat::make(__('erp.dashboard.active_period'), __('erp.dashboard.no_active_period'))
+                ->description(__('erp.dashboard.period_to_configure'))
                 ->color('warning')
                 ->chart([1, 1, 1, 1, 1]),
-            Stat::make('Référence du jour', Carbon::now()->format('d/m/Y'))
-                ->description('Point de contrôle comptable')
+            Stat::make(__('erp.dashboard.date_reference'), Carbon::now()->format('d/m/Y'))
+                ->description(__('erp.dashboard.accounting_checkpoint'))
                 ->color('info')
                 ->chart([1, 2, 2, 3, 3]),
         ];
