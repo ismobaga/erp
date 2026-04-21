@@ -274,7 +274,30 @@ class InvoiceResource extends Resource
                 Action::make('sendReminder')
                     ->label(__('erp.actions.send_reminder'))
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
-                    ->action(fn(Invoice $record) => Notification::make()->title(__('erp.resources.invoice.reminder_prepared', ['invoice' => $record->invoice_number]))->success()->send()),
+                    ->action(function (Invoice $record): void {
+                        $client = $record->client;
+                        if (!$client || blank($client->email)) {
+                            Notification::make()
+                                ->title('Aucun e-mail client')
+                                ->body('Ce client n\'a pas d\'adresse e-mail enregistrée. Vérifiez sa fiche.')
+                                ->warning()
+                                ->send();
+                            return;
+                        }
+                        \Mail::to($client->email)->queue(new \App\Mail\InvoiceReminderMail($record));
+                        app(\App\Services\AuditTrailService::class)->log('invoice_reminder_sent', $record, [
+                            'reference' => $record->invoice_number,
+                            'client_email' => $client->email,
+                            'balance_due' => (float) $record->balance_due,
+                            'due_date' => optional($record->due_date)->format('Y-m-d'),
+                            'sent_by' => auth()->id(),
+                        ]);
+                        Notification::make()
+                            ->title('Rappel de paiement envoyé')
+                            ->body('Un rappel a été envoyé à ' . $client->email . ' pour la facture ' . $record->invoice_number . '.')
+                            ->success()
+                            ->send();
+                    }),
                 Action::make('exportPdf')
                     ->label(__('erp.actions.export_pdf'))
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
