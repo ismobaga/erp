@@ -10,10 +10,14 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Service;
 use BackedEnum;
+use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Services\AuditTrailService;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
@@ -213,6 +217,28 @@ class QuoteResource extends Resource
                     ->label('Mis à jour'),
             ])
             ->recordActions([
+                Action::make('convertToInvoice')
+                    ->label('Convertir en facture')
+                    ->icon('heroicon-o-document-check')
+                    ->color('success')
+                    ->visible(fn(Quote $record): bool =>
+                        in_array($record->status, ['draft', 'sent', 'accepted', 'expired'], true)
+                        && !$record->invoice()->exists()
+                        && (auth()->user()?->can('invoices.create') ?? false))
+                    ->requiresConfirmation()
+                    ->modalHeading('Convertir le devis en facture')
+                    ->modalDescription('Une nouvelle facture sera créée à partir de ce devis. Le devis sera marqué comme accepté.')
+                    ->action(function (Quote $record): void {
+                        $invoice = $record->convertToInvoice(auth()->id());
+
+                        Notification::make()
+                            ->title('Facture créée')
+                            ->body('La facture ' . $invoice->invoice_number . ' a été créée à partir du devis ' . $record->quote_number . '.')
+                            ->success()
+                            ->send();
+
+                        redirect(InvoiceResource::getUrl('edit', ['record' => $invoice]));
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

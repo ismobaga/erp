@@ -64,7 +64,46 @@ Artisan::command('erp:monitor-health', function (OperationalResilienceService $s
     $this->info('Health check complete. Failed jobs: ' . $summary['failed_jobs'] . '; Open alerts: ' . $summary['open_alerts'] . '.');
 })->purpose('Evaluate operational resilience thresholds and raise alerts');
 
+Artisan::command('invoices:send-due-reminders', function () {
+    $targetDate = now()->addDay()->toDateString();
+
+    $invoices = \App\Models\Invoice::query()
+        ->with('client')
+        ->where('due_date', $targetDate)
+        ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
+        ->where('balance_due', '>', 0)
+        ->get();
+
+    $sent = 0;
+    $skipped = 0;
+
+    foreach ($invoices as $invoice) {
+        $client = $invoice->client;
+
+        if (!$client || blank($client->email)) {
+            $skipped++;
+            continue;
+        }
+
+        \Illuminate\Support\Facades\Mail::to($client->email)
+            ->queue(new \App\Mail\InvoiceReminderMail($invoice));
+
+        app(\App\Services\AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
+            'reference' => $invoice->invoice_number,
+            'client_email' => $client->email,
+            'balance_due' => (float) $invoice->balance_due,
+            'due_date' => $targetDate,
+            'sent_by' => 'scheduler',
+        ]);
+
+        $sent++;
+    }
+
+    $this->info($sent . ' reminder(s) queued for invoices due tomorrow. ' . $skipped . ' skipped (no client email).');
+})->purpose('Queue payment reminder emails for invoices due tomorrow');
+
 Schedule::command('erp:backup-run')->dailyAt('01:00');
+Schedule::command('invoices:send-due-reminders')->dailyAt('08:00');
 Schedule::command('reports:run-scheduled-exports')->everyThirtyMinutes();
 Schedule::command('erp:monitor-health')->everyFifteenMinutes();
 Schedule::command('reports:cleanup-exports')->dailyAt('02:00');
