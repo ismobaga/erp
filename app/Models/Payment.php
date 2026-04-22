@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AuditTrailService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,10 @@ use Illuminate\Validation\ValidationException;
     'notes',
     'allow_overpayment',
     'recorded_by',
+    'is_flagged',
+    'flagged_at',
+    'flagged_reason',
+    'flagged_by',
 ])]
 class Payment extends Model
 {
@@ -26,7 +31,40 @@ class Payment extends Model
             'payment_date' => 'date',
             'amount' => 'decimal:2',
             'allow_overpayment' => 'boolean',
+            'is_flagged' => 'boolean',
+            'flagged_at' => 'datetime',
         ];
+    }
+
+    public function flag(string $reason, int $userId): void
+    {
+        $this->forceFill([
+            'is_flagged' => true,
+            'flagged_at' => now(),
+            'flagged_reason' => $reason,
+            'flagged_by' => $userId,
+        ])->saveQuietly();
+
+        app(AuditTrailService::class)->log('payment_flagged', $this, [
+            'reference' => $this->reference ?: 'N/A',
+            'reason' => $reason,
+            'flagged_by' => $userId,
+        ]);
+    }
+
+    public function unflag(int $userId): void
+    {
+        $this->forceFill([
+            'is_flagged' => false,
+            'flagged_at' => null,
+            'flagged_reason' => null,
+            'flagged_by' => null,
+        ])->saveQuietly();
+
+        app(AuditTrailService::class)->log('payment_unflagged', $this, [
+            'reference' => $this->reference ?: 'N/A',
+            'unflagged_by' => $userId,
+        ]);
     }
 
     protected static function booted(): void

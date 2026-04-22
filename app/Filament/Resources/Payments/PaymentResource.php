@@ -28,8 +28,10 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -182,10 +184,22 @@ class PaymentResource extends Resource
                         __('erp.resources.payment.reconciliation.flagged') => 'danger',
                         default => 'warning',
                     }),
+                IconColumn::make('is_flagged')
+                    ->label('Signalé')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-flag')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('danger')
+                    ->falseColor('gray'),
             ])
             ->filters([
                 SelectFilter::make('payment_method')
                     ->options(trans('erp.payment_methods')),
+                TernaryFilter::make('is_flagged')
+                    ->label('Signalement')
+                    ->trueLabel('Signalés uniquement')
+                    ->falseLabel('Non signalés uniquement')
+                    ->placeholder('Tous'),
             ])
             ->recordActions([
                 Action::make('reconcile')
@@ -206,10 +220,37 @@ class PaymentResource extends Resource
                         $notification->send();
                     }),
                 Action::make('flag')
-                    ->label(__('erp.actions.flag'))
+                    ->label(fn(Payment $record): string => $record->is_flagged ? 'Retirer le signalement' : __('erp.actions.flag'))
+                    ->color(fn(Payment $record): string => $record->is_flagged ? 'warning' : 'danger')
                     ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
-                    ->color('danger')
-                    ->action(fn(Payment $record) => Notification::make()->title(__('erp.resources.payment.flagged_notification', ['reference' => $record->reference ?: __('erp.common.transaction')]))->warning()->send()),
+                    ->form(fn(Payment $record): array => $record->is_flagged ? [] : [
+                        Textarea::make('reason')
+                            ->label('Motif du signalement')
+                            ->placeholder('Ex: paiement en double, montant suspect...')
+                            ->required()
+                            ->maxLength(500),
+                    ])
+                    ->requiresConfirmation(fn(Payment $record): bool => $record->is_flagged)
+                    ->modalHeading(fn(Payment $record): string => $record->is_flagged ? 'Retirer le signalement ?' : 'Signaler ce paiement')
+                    ->action(function (Payment $record, array $data): void {
+                        $userId = (int) auth()->id();
+
+                        if ($record->is_flagged) {
+                            $record->unflag($userId);
+                            Notification::make()
+                                ->title('Signalement retiré')
+                                ->body('Le paiement ' . ($record->reference ?: __('erp.common.transaction')) . ' n\'est plus signalé.')
+                                ->success()
+                                ->send();
+                        } else {
+                            $record->flag($data['reason'] ?? '', $userId);
+                            Notification::make()
+                                ->title(__('erp.resources.payment.flagged_notification', ['reference' => $record->reference ?: __('erp.common.transaction')]))
+                                ->body('Motif : ' . ($data['reason'] ?? ''))
+                                ->warning()
+                                ->send();
+                        }
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

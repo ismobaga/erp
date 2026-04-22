@@ -69,7 +69,7 @@ Artisan::command('invoices:send-due-reminders', function () {
 
     $invoices = \App\Models\Invoice::query()
         ->with('client')
-        ->where('due_date', $targetDate)
+        ->whereDate('due_date', $targetDate)
         ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
         ->where('balance_due', '>', 0)
         ->get();
