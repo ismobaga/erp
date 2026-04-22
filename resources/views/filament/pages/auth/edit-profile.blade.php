@@ -222,7 +222,7 @@
                                 <p class="text-[11px] font-medium text-[#57657a]">Alertes de clôture</p>
                             </div>
                         </div>
-                        <button type="button" wire:click="$set('prefNotifications', {{ $prefNotifications ? 'false' : 'true' }})"
+                        <button type="button" wire:click="$set('prefNotifications', {{ json_encode(!$prefNotifications) }})"
                             class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 {{ $prefNotifications ? 'bg-[#002045]' : 'bg-[#c4c6cf]/60' }}">
                             <span
                                 class="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 {{ $prefNotifications ? 'translate-x-5' : 'translate-x-0.5' }}">

@@ -115,7 +115,7 @@ class EditProfile extends BaseEditProfile
             return;
         }
 
-        $user->update(['password' => $this->newPassword]);
+        $user->update(['password' => Hash::make($this->newPassword)]);
 
         $this->currentPassword    = '';
         $this->newPassword        = '';
@@ -145,17 +145,17 @@ class EditProfile extends BaseEditProfile
                 $device = $isTablet ? 'tablet' : ($isMobile ? 'mobile' : 'desktop');
 
                 $browser = 'Navigateur';
-                if (str_contains($ua, 'Chrome'))  $browser = 'Chrome';
-                if (str_contains($ua, 'Firefox')) $browser = 'Firefox';
-                if (str_contains($ua, 'Safari') && ! str_contains($ua, 'Chrome')) $browser = 'Safari';
-                if (str_contains($ua, 'Edge'))    $browser = 'Edge';
+                if (str_contains($ua, 'Edge'))         $browser = 'Edge';
+                elseif (str_contains($ua, 'Chrome'))   $browser = 'Chrome';
+                elseif (str_contains($ua, 'Firefox'))  $browser = 'Firefox';
+                elseif (str_contains($ua, 'Safari'))   $browser = 'Safari';
 
                 $os = 'OS inconnu';
-                if (str_contains($ua, 'Windows')) $os = 'Windows';
-                if (str_contains($ua, 'Mac'))     $os = 'macOS';
-                if (str_contains($ua, 'Linux'))   $os = 'Linux';
-                if (str_contains($ua, 'Android')) $os = 'Android';
-                if (str_contains($ua, 'iOS') || str_contains($ua, 'iPhone') || str_contains($ua, 'iPad')) $os = 'iOS';
+                if (str_contains($ua, 'Android'))      $os = 'Android';
+                elseif (str_contains($ua, 'iOS') || str_contains($ua, 'iPhone') || str_contains($ua, 'iPad')) $os = 'iOS';
+                elseif (str_contains($ua, 'Windows'))  $os = 'Windows';
+                elseif (str_contains($ua, 'Mac'))      $os = 'macOS';
+                elseif (str_contains($ua, 'Linux'))    $os = 'Linux';
 
                 $lastActivity = $row->last_activity;
                 $diff         = now()->timestamp - $lastActivity;
