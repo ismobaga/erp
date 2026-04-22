@@ -289,10 +289,11 @@
                     @endforeach
                 </div>
 
-                <button
-                    class="mt-6 w-full rounded-2xl border-2 border-[#002045] px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#002045] transition hover:bg-[#002045] hover:text-white">
-                    View complete audit log
-                </button>
+                <a href="{{ \App\Filament\Pages\NotificationHub::getUrl() }}"
+                    wire:navigate
+                    class="mt-6 block w-full rounded-2xl border-2 border-[#002045] px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-[#002045] transition hover:bg-[#002045] hover:text-white">
+                    Voir le journal d'audit complet
+                </a>
             </section>
         </div>
     </div>
