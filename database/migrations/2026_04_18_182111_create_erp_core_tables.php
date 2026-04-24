@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -119,7 +118,7 @@ return new class extends Migration
 
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
+            $table->foreignId('invoice_id')->nullable()->constrained('invoices')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->date('payment_date');
             $table->decimal('amount', 15, 2);
@@ -127,6 +126,10 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('allow_overpayment')->default(false);
+            $table->boolean('is_flagged')->default(false);
+            $table->timestamp('flagged_at')->nullable();
+            $table->string('flagged_reason')->nullable();
+            $table->foreignId('flagged_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('recorded_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
@@ -142,6 +145,10 @@ return new class extends Migration
             $table->string('vendor')->nullable();
             $table->string('reference')->nullable();
             $table->string('attachment_path')->nullable();
+            $table->string('approval_status')->default('pending');
+            $table->text('approval_notes')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
             $table->foreignId('recorded_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
@@ -153,6 +160,10 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('status')->default('planned');
+            $table->string('approval_status')->default('pending');
+            $table->text('approval_notes')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
             $table->date('start_date')->nullable();
             $table->date('due_date')->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
@@ -167,8 +178,10 @@ return new class extends Migration
             $table->string('attachable_type');
             $table->unsignedBigInteger('attachable_id');
             $table->string('file_name');
+            $table->string('category')->nullable();
             $table->string('file_path');
             $table->string('mime_type')->nullable();
+            $table->unsignedBigInteger('size_bytes')->nullable();
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
@@ -183,6 +196,10 @@ return new class extends Migration
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->json('meta_json')->nullable();
             $table->timestamps();
+
+            $table->index('action');
+            $table->index('created_at');
+            $table->index(['subject_type', 'subject_id']);
         });
     }
 
