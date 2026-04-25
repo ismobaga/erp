@@ -62,6 +62,8 @@ class LedgerAccountResource extends Resource
                             ->schema([
                                 TextInput::make('code')
                                     ->label(__('erp.ledger.account_code'))
+                                    ->default(fn(): string => static::generateLedgerCode())
+                                    ->helperText('Code généré automatiquement selon le type du compte, modifiable si nécessaire.')
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(20),
@@ -74,7 +76,10 @@ class LedgerAccountResource extends Resource
                                     ->options(trans('erp.ledger.account_types'))
                                     ->native(false)
                                     ->required()
-                                    ->live(),
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set): void {
+                                        $set('code', static::generateLedgerCode((string) $state));
+                                    }),
                                 Select::make('normal_balance')
                                     ->label(__('erp.ledger.normal_balance'))
                                     ->options(trans('erp.ledger.normal_balances'))
@@ -154,9 +159,54 @@ class LedgerAccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListLedgerAccounts::route('/'),
+            'index' => ListLedgerAccounts::route('/'),
             'create' => CreateLedgerAccount::route('/create'),
-            'edit'   => EditLedgerAccount::route('/{record}/edit'),
+            'edit' => EditLedgerAccount::route('/{record}/edit'),
         ];
+    }
+
+    public static function generateLedgerCode(?string $type = null): string
+    {
+        $leadingDigit = match ($type) {
+            'asset' => '1',
+            'liability' => '2',
+            'equity' => '3',
+            'revenue' => '4',
+            'expense' => '5',
+            default => null,
+        };
+
+        $query = LedgerAccount::query();
+
+        if ($leadingDigit !== null) {
+            $query->where('code', 'like', $leadingDigit . '%');
+        }
+
+        $max = $query
+            ->pluck('code')
+            ->reduce(function (int $carry, ?string $code) use ($leadingDigit): int {
+                if (!filled($code) || !ctype_digit($code)) {
+                    return $carry;
+                }
+
+                if ($leadingDigit !== null && !str_starts_with($code, $leadingDigit)) {
+                    return $carry;
+                }
+
+                return max($carry, (int) $code);
+            }, 0);
+
+        if ($max > 0) {
+            return (string) ($max + 10);
+        }
+
+        return match ($leadingDigit) {
+            '1' => '1010',
+            '2' => '2010',
+            '3' => '3010',
+            '4' => '4010',
+            '5' => '5010',
+            default => '9010',
+        };
     }
 }

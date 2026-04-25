@@ -23,6 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 
 class FinancialPeriodResource extends Resource
 {
@@ -61,12 +62,18 @@ class FinancialPeriodResource extends Resource
                                 TextInput::make('code')
                                     ->label('Code')
                                     ->placeholder('2026-04')
+                                    ->default(fn(): string => static::generatePeriodCode())
+                                    ->helperText('Code généré automatiquement selon la date de début, modifiable si nécessaire.')
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(100),
                                 DatePicker::make('starts_on')
                                     ->label('Début')
                                     ->native(false)
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set): void {
+                                        $set('code', static::generatePeriodCode($state));
+                                    })
                                     ->required(),
                                 DatePicker::make('ends_on')
                                     ->label('Fin')
@@ -169,5 +176,12 @@ class FinancialPeriodResource extends Resource
             'create' => CreateFinancialPeriod::route('/create'),
             'edit' => EditFinancialPeriod::route('/{record}/edit'),
         ];
+    }
+
+    public static function generatePeriodCode(mixed $startsOn = null): string
+    {
+        $date = $startsOn ? Carbon::parse($startsOn) : now();
+
+        return $date->format('Y-m');
     }
 }

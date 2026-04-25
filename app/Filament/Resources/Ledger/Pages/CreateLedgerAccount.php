@@ -8,4 +8,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateLedgerAccount extends CreateRecord
 {
     protected static string $resource = LedgerAccountResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['code'] = $data['code'] ?: LedgerAccountResource::generateLedgerCode($data['type'] ?? null);
+
+        return $data;
+    }
 }
