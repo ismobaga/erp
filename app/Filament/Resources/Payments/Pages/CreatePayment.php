@@ -21,6 +21,7 @@ class CreatePayment extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['recorded_by'] = auth()->id();
+        $data['reference'] = $data['reference'] ?: PaymentResource::generatePaymentReference($data['payment_date'] ?? null);
 
         return $data;
     }

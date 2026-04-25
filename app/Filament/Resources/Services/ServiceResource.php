@@ -25,6 +25,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class ServiceResource extends Resource
 {
@@ -58,7 +59,10 @@ class ServiceResource extends Resource
                             ->schema([
                                 TextInput::make('code')
                                     ->label('Code service')
-                                    ->placeholder('ARC-PLAN-2024')
+                                    ->placeholder('SVC-0001')
+                                    ->default(fn(): string => static::generateServiceCode())
+                                    ->helperText('Code généré automatiquement, modifiable si nécessaire.')
+                                    ->required()
                                     ->maxLength(255),
                                 TextInput::make('name')
                                     ->label('Nom du service')
@@ -146,5 +150,36 @@ class ServiceResource extends Resource
             'create' => CreateService::route('/create'),
             'edit' => EditService::route('/{record}/edit'),
         ];
+    }
+
+    public static function generateServiceCode(): string
+    {
+        $prefix = 'SVC';
+
+        $max = Service::query()
+            ->where('code', 'like', $prefix . '-%')
+            ->pluck('code')
+            ->reduce(function (int $carry, ?string $code) use ($prefix): int {
+                if (!filled($code)) {
+                    return $carry;
+                }
+
+                $normalized = Str::upper((string) $code);
+                $expectedPrefix = $prefix . '-';
+
+                if (!str_starts_with($normalized, $expectedPrefix)) {
+                    return $carry;
+                }
+
+                $suffix = substr($normalized, strlen($expectedPrefix));
+
+                if (!ctype_digit($suffix)) {
+                    return $carry;
+                }
+
+                return max($carry, (int) $suffix);
+            }, 0);
+
+        return $prefix . '-' . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

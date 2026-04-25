@@ -29,6 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class ExpenseResource extends Resource
 {
@@ -73,6 +74,10 @@ class ExpenseResource extends Resource
                                 DatePicker::make('expense_date')
                                     ->label('Date')
                                     ->default(now())
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set): void {
+                                        $set('reference', static::generateExpenseReference($state));
+                                    })
                                     ->required(),
                                 TextInput::make('vendor')
                                     ->label('Fournisseur'),
@@ -86,7 +91,10 @@ class ExpenseResource extends Resource
                                     ])
                                     ->native(false),
                                 TextInput::make('reference')
-                                    ->label('Référence'),
+                                    ->label('Référence')
+                                    ->placeholder('EXP-20260424-0001')
+                                    ->default(fn(): string => static::generateExpenseReference())
+                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.'),
                                 TextInput::make('amount')
                                     ->label('Montant')
                                     ->numeric()
@@ -248,5 +256,31 @@ class ExpenseResource extends Resource
             'create' => CreateExpense::route('/create'),
             'edit' => EditExpense::route('/{record}/edit'),
         ];
+    }
+
+    public static function generateExpenseReference(mixed $expenseDate = null): string
+    {
+        $date = $expenseDate ? Carbon::parse($expenseDate) : now();
+        $prefix = 'EXP-' . $date->format('Ymd') . '-';
+
+        $max = Expense::query()
+            ->whereNotNull('reference')
+            ->where('reference', 'like', $prefix . '%')
+            ->pluck('reference')
+            ->reduce(function (int $carry, ?string $reference) use ($prefix): int {
+                if (!filled($reference) || !str_starts_with($reference, $prefix)) {
+                    return $carry;
+                }
+
+                $suffix = substr($reference, strlen($prefix));
+
+                if (!ctype_digit($suffix)) {
+                    return $carry;
+                }
+
+                return max($carry, (int) $suffix);
+            }, 0);
+
+        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

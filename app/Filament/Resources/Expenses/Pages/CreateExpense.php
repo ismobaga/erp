@@ -22,6 +22,7 @@ class CreateExpense extends CreateRecord
     {
         $data['recorded_by'] = auth()->id();
         $data['approval_status'] ??= 'pending';
+        $data['reference'] = $data['reference'] ?: ExpenseResource::generateExpenseReference($data['expense_date'] ?? null);
 
         return $data;
     }

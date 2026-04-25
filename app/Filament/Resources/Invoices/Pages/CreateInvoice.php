@@ -22,7 +22,7 @@ class CreateInvoice extends CreateRecord
     {
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
-        $data['invoice_number'] = $data['invoice_number'] ?: InvoiceResource::generateInvoiceNumber();
+        $data['invoice_number'] = $data['invoice_number'] ?: InvoiceResource::generateInvoiceNumber($data['issue_date'] ?? now());
 
         return $data;
     }

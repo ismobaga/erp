@@ -18,6 +18,13 @@ class CreateService extends CreateRecord
         return 'Créer un service';
     }
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['code'] = $data['code'] ?: ServiceResource::generateServiceCode();
+
+        return $data;
+    }
+
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()

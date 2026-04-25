@@ -34,6 +34,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class PaymentResource extends Resource
 {
@@ -68,6 +69,10 @@ class PaymentResource extends Resource
                                 DatePicker::make('payment_date')
                                     ->label('Date du paiement')
                                     ->default(now())
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set): void {
+                                        $set('reference', static::generatePaymentReference($state));
+                                    })
                                     ->required(),
                                 Select::make('invoice_id')
                                     ->label('Facture liée')
@@ -105,7 +110,9 @@ class PaymentResource extends Resource
                                     ->required(),
                                 TextInput::make('reference')
                                     ->label('Référence')
-                                    ->placeholder('BT-9902-XQ')
+                                    ->placeholder('PAY-20260424-0001')
+                                    ->default(fn(): string => static::generatePaymentReference())
+                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.')
                                     ->columnSpanFull(),
                                 TextInput::make('amount')
                                     ->label('Montant reçu')
@@ -313,5 +320,31 @@ class PaymentResource extends Resource
             'create' => CreatePayment::route('/create'),
             'edit' => EditPayment::route('/{record}/edit'),
         ];
+    }
+
+    public static function generatePaymentReference(mixed $paymentDate = null): string
+    {
+        $date = $paymentDate ? Carbon::parse($paymentDate) : now();
+        $prefix = 'PAY-' . $date->format('Ymd') . '-';
+
+        $max = Payment::query()
+            ->whereNotNull('reference')
+            ->where('reference', 'like', $prefix . '%')
+            ->pluck('reference')
+            ->reduce(function (int $carry, ?string $reference) use ($prefix): int {
+                if (!filled($reference) || !str_starts_with($reference, $prefix)) {
+                    return $carry;
+                }
+
+                $suffix = substr($reference, strlen($prefix));
+
+                if (!ctype_digit($suffix)) {
+                    return $carry;
+                }
+
+                return max($carry, (int) $suffix);
+            }, 0);
+
+        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

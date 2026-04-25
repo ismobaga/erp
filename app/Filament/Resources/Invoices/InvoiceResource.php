@@ -71,6 +71,7 @@ class InvoiceResource extends Resource
                                     ->label('Numéro de facture')
                                     ->placeholder('Attribué automatiquement à l’enregistrement')
                                     ->helperText('Attribué automatiquement selon la séquence fiscale active et figé après émission.')
+                                    ->default(fn(): string => static::generateInvoiceNumber())
                                     ->readOnly()
                                     ->dehydrated(false),
                                 Select::make('client_id')
@@ -105,7 +106,11 @@ class InvoiceResource extends Resource
                                     }),
                                 DatePicker::make('issue_date')
                                     ->default(now())
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Set $set): void {
+                                        $set('invoice_number', static::generateInvoiceNumber($state));
+                                    }),
                                 DatePicker::make('due_date')
                                     ->default(now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))),
                             ]),
@@ -361,9 +366,9 @@ class InvoiceResource extends Resource
         ];
     }
 
-    public static function generateInvoiceNumber(): string
+    public static function generateInvoiceNumber(mixed $issueDate = null): string
     {
-        return app(InvoiceNumberService::class)->generate(now());
+        return app(InvoiceNumberService::class)->generate($issueDate ?? now());
     }
 
     protected static function calculateTotals(array $items, float $discount, float $tax): array
