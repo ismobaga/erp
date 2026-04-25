@@ -1,32 +1,10 @@
-<!doctype html>
-<html lang="fr">
+@extends('crommix-blog::layouts.public')
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Crommix Forge · Blog</title>
+@section('title', 'Crommix Forge · Blog')
+@section('meta_description', 'Articles opérationnels, retours terrain et stratégies de croissance.')
+
+@push('styles')
     <style>
-        :root {
-            --bg: #f5f7fb;
-            --ink: #0b1c30;
-            --muted: #4e5a70;
-            --primary: #002045;
-            --primary-soft: #dce9ff;
-            --line: #c8d6ef;
-            --accent: #43af9f;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-            background: radial-gradient(1200px 520px at 5% -20%, #c6dbff 0%, transparent 55%), var(--bg);
-            color: var(--ink);
-        }
-
         .hero {
             background: linear-gradient(140deg, #001838, #002c60 60%, #1a365d 100%);
             color: #fff;
@@ -34,7 +12,8 @@
             border-bottom: 6px solid #8df5e4;
         }
 
-        .wrap {
+        .hero-wrap,
+        .list-wrap {
             max-width: 1040px;
             margin: 0 auto;
         }
@@ -57,7 +36,7 @@
 
         .card {
             background: #fff;
-            border: 1px solid var(--line);
+            border: 1px solid #c8d6ef;
             border-radius: 18px;
             padding: 22px;
             margin-bottom: 14px;
@@ -69,8 +48,8 @@
             font-size: 11px;
             letter-spacing: .08em;
             text-transform: uppercase;
-            background: var(--primary-soft);
-            color: var(--primary);
+            background: #dce9ff;
+            color: #002045;
             border-radius: 999px;
             padding: 5px 10px;
             font-weight: 700;
@@ -83,7 +62,7 @@
         }
 
         .title a {
-            color: var(--primary);
+            color: #002045;
             text-decoration: none;
         }
 
@@ -93,7 +72,7 @@
 
         .meta {
             margin: 0 0 12px;
-            color: var(--muted);
+            color: #4e5a70;
             font-size: 13px;
         }
 
@@ -104,11 +83,11 @@
         }
 
         .empty {
-            border: 1px dashed var(--line);
+            border: 1px dashed #c8d6ef;
             border-radius: 16px;
             padding: 24px;
             text-align: center;
-            color: var(--muted);
+            color: #4e5a70;
             background: #fff;
         }
 
@@ -116,17 +95,17 @@
             margin-top: 18px;
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
     <header class="hero">
-        <div class="wrap">
+        <div class="hero-wrap">
             <h1>Journal Crommix Forge</h1>
             <p>Articles opérationnels, retours terrain et stratégies de croissance pour structurer vos opérations.</p>
         </div>
     </header>
 
-    <main class="list wrap">
+    <main class="list list-wrap">
         @forelse($posts as $post)
             <article class="card">
                 <span class="eyebrow">Article</span>
@@ -147,6 +126,4 @@
 
         {{ $posts->links() }}
     </main>
-</body>
-
-</html>
+@endsection

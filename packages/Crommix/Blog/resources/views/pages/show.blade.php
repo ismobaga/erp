@@ -1,35 +1,10 @@
-<!doctype html>
-<html lang="fr">
+@extends('crommix-blog::layouts.public')
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ $page->seo_title ?: $page->title }}</title>
-    @if(filled($page->seo_description))
-        <meta name="description" content="{{ $page->seo_description }}" />
-    @endif
+@section('title', $page->seo_title ?: $page->title)
+@section('meta_description', $page->seo_description ?: 'Page publique Crommix Forge')
+
+@push('styles')
     <style>
-        :root {
-            --bg: #f3f7ff;
-            --ink: #0b1c30;
-            --muted: #4f6180;
-            --primary: #002045;
-            --primary-soft: #dce9ff;
-            --line: #bdd0f1;
-            --accent: #43af9f;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-            margin: 0;
-            color: var(--ink);
-            background: linear-gradient(180deg, #f7fbff 0%, var(--bg) 60%, #eef5ff 100%);
-        }
-
         .hero {
             padding: 84px 24px 72px;
             background:
@@ -78,7 +53,7 @@
             background: #fff;
             margin-top: -34px;
             border-radius: 20px;
-            border: 1px solid var(--line);
+            border: 1px solid #bdd0f1;
             padding: 28px;
             line-height: 1.82;
             box-shadow: 0 22px 42px rgba(0, 32, 69, 0.12);
@@ -90,8 +65,8 @@
             font-size: 11px;
             letter-spacing: .08em;
             text-transform: uppercase;
-            background: var(--primary-soft);
-            color: var(--primary);
+            background: #dce9ff;
+            color: #002045;
             padding: 5px 10px;
             border-radius: 999px;
             font-weight: 700;
@@ -101,9 +76,9 @@
             color: #20314d;
         }
     </style>
-</head>
+@endpush
 
-<body>
+@section('content')
     <section class="hero">
         <div class="wrap">
             <h1>{{ $page->hero_title ?: $page->title }}</h1>
@@ -116,6 +91,4 @@
         <span class="badge">Page publique</span>
         {!! nl2br(e($page->content)) !!}
     </section>
-</body>
-
-</html>
+@endsection

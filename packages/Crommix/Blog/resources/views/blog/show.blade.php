@@ -1,34 +1,10 @@
-<!doctype html>
-<html lang="fr">
+@extends('crommix-blog::layouts.public')
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ $post->seo_title ?: $post->title }}</title>
-    @if(filled($post->seo_description))
-        <meta name="description" content="{{ $post->seo_description }}" />
-    @endif
+@section('title', $post->seo_title ?: $post->title)
+@section('meta_description', $post->seo_description ?: 'Article de blog Crommix Forge')
+
+@push('styles')
     <style>
-        :root {
-            --bg: #f5f7fb;
-            --ink: #0b1c30;
-            --muted: #4e5a70;
-            --primary: #002045;
-            --line: #c8d6ef;
-            --accent: #8df5e4;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-            background: radial-gradient(900px 420px at 90% -20%, #dce9ff 0%, transparent 55%), var(--bg);
-            color: var(--ink);
-        }
-
         .wrap {
             max-width: 900px;
             margin: 0 auto;
@@ -38,14 +14,14 @@
         .back {
             display: inline-flex;
             margin-bottom: 16px;
-            color: var(--primary);
+            color: #002045;
             text-decoration: none;
             font-weight: 700;
         }
 
         article {
             background: #fff;
-            border: 1px solid var(--line);
+            border: 1px solid #c8d6ef;
             border-radius: 20px;
             padding: 28px;
             box-shadow: 0 18px 36px rgba(0, 32, 69, 0.1);
@@ -57,7 +33,7 @@
             letter-spacing: .08em;
             text-transform: uppercase;
             background: #dce9ff;
-            color: var(--primary);
+            color: #002045;
             border-radius: 999px;
             padding: 5px 10px;
             font-weight: 700;
@@ -71,7 +47,7 @@
 
         .meta {
             font-size: 13px;
-            color: var(--muted);
+            color: #4e5a70;
             margin: 0 0 18px;
         }
 
@@ -83,14 +59,14 @@
         .divider {
             height: 3px;
             border-radius: 999px;
-            background: linear-gradient(90deg, #43af9f, var(--accent), transparent);
+            background: linear-gradient(90deg, #43af9f, #8df5e4, transparent);
             margin-bottom: 18px;
         }
     </style>
-</head>
+@endpush
 
-<body>
-    <div class="wrap">
+@section('content')
+    <main class="wrap">
         <a class="back" href="{{ route('blog.index') }}">← Retour au blog</a>
         <article>
             <span class="kicker">Article</span>
@@ -104,7 +80,5 @@
             </p>
             <div class="content">{!! nl2br(e($post->content)) !!}</div>
         </article>
-    </div>
-</body>
-
-</html>
+    </main>
+@endsection
