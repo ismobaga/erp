@@ -4,17 +4,17 @@
             <section class="architectural-card xl:col-span-2">
                 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Architectural
-                            Ledger</p>
-                        <h3 class="mt-1 text-2xl font-black tracking-[-0.02em] text-[#002045]">Recent Ledger Activity
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Grand livre
+                            architectural</p>
+                        <h3 class="mt-1 text-2xl font-black tracking-[-0.02em] text-[#002045]">Activité récente du grand livre
                         </h3>
-                        <p class="text-sm text-[#43474e]">A premium operational view of invoices, quotes, payments, and
-                            expenses.</p>
+                        <p class="text-sm text-[#43474e]">Une vue opérationnelle premium des factures, devis, paiements et
+                            dépenses.</p>
                     </div>
 
                     <div
                         class="inline-flex items-center rounded-full bg-[#eff4ff] px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-[#002045]">
-                        Live snapshot
+                        Instantané en direct
                     </div>
                 </div>
 
@@ -30,16 +30,16 @@
                             <tr>
                                 <th
                                     class="px-4 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#002045]">
-                                    Reference</th>
+                                    Référence</th>
                                 <th
                                     class="px-4 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#002045]">
-                                    Category</th>
+                                    Catégorie</th>
                                 <th
                                     class="px-4 py-2 text-right text-[10px] font-black uppercase tracking-[0.2em] text-[#002045]">
-                                    Value</th>
+                                    Montant</th>
                                 <th
                                     class="px-4 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] text-[#002045]">
-                                    Status</th>
+                                    Statut</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,12 +90,12 @@
                     class="rounded-[1.25rem] bg-[linear-gradient(135deg,#002045_0%,#1a365d_100%)] p-6 text-white shadow-[0_16px_40px_rgba(11,28,48,0.16)]">
                     <div class="mb-5 flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">Delivery wing
+                            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">Pôle delivery
                             </p>
-                            <h3 class="text-lg font-black">Active Milestones</h3>
+                            <h3 class="text-lg font-black">Jalons actifs</h3>
                         </div>
                         <span
-                            class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8df5e4]">Projects</span>
+                            class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8df5e4]">Projets</span>
                     </div>
 
                     <div class="space-y-5">
@@ -122,8 +122,8 @@
 
                 <section class="architectural-card">
                     <div class="mb-5">
-                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">System health</p>
-                        <h3 class="text-lg font-black tracking-[-0.02em] text-[#002045]">Commercial pulse</h3>
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Santé système</p>
+                        <h3 class="text-lg font-black tracking-[-0.02em] text-[#002045]">Pouls commercial</h3>
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
@@ -154,9 +154,9 @@
             <div class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <div class="mb-2 flex gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#86a0cd]">
-                        <span>Projects</span>
+                        <span>Projets</span>
                         <span>/</span>
-                        <span class="text-[#002045]">Delivery Board</span>
+                        <span class="text-[#002045]">Tableau de livraison</span>
                     </div>
                     <h3 class="text-3xl font-black tracking-[-0.03em] text-[#002045]">
                         {{ $boardSummary['organization'] }}</h3>
@@ -205,18 +205,18 @@
                                         <h5 class="text-base font-black leading-tight text-[#002045]">{{ $item['title'] }}</h5>
                                         @if ($item['done'])
                                             <span
-                                                class="rounded-full bg-[#dff8f0] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#005048]">Done</span>
+                                                class="rounded-full bg-[#dff8f0] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#005048]">Terminé</span>
                                         @endif
                                     </div>
 
-                                    <p class="mt-2 text-xs font-medium text-[#43474e]">Client: {{ $item['client'] }}</p>
+                                    <p class="mt-2 text-xs font-medium text-[#43474e]">Client : {{ $item['client'] }}</p>
                                     <p class="mt-2 text-xs text-[#57657a]">{{ $item['description'] }}</p>
 
                                     @if ($item['show_progress'])
                                         <div class="mt-4 space-y-1.5">
                                             <div
                                                 class="flex justify-between text-[10px] font-black uppercase tracking-[0.14em] text-[#74777f]">
-                                                <span>Progress</span>
+                                                <span>Progression</span>
                                                 <span class="text-[#002045]">{{ $item['progress'] }}%</span>
                                             </div>
                                             <div class="h-1.5 overflow-hidden rounded-full bg-[#e5eeff]">
@@ -235,7 +235,7 @@
                                         </div>
                                         <div class="text-right">
                                             <p class="text-[10px] font-black uppercase tracking-[0.12em] text-[#74777f]">
-                                                {{ $item['done'] ? 'Finished' : 'Deadline' }}</p>
+                                                {{ $item['done'] ? 'Terminé' : 'Échéance' }}</p>
                                             <p class="text-[11px] font-black text-[#002045]">{{ $item['due'] }}</p>
                                         </div>
                                     </div>
@@ -255,7 +255,7 @@
             <section class="metric-hero xl:col-span-8">
                 <div class="relative z-10 flex w-full items-end justify-between gap-6">
                     <div>
-                        <p class="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#8df5e4]">Board performance
+                        <p class="mb-4 text-xs font-black uppercase tracking-[0.24em] text-[#8df5e4]">Performance du tableau
                         </p>
                         <h3 class="max-w-xl text-4xl font-black tracking-[-0.03em] text-white xl:text-5xl">
                             {{ $boardSummary['headline'] }}</h3>
@@ -264,7 +264,7 @@
                     <div class="text-right text-white">
                         <div class="text-6xl font-black tracking-[-0.04em]">{{ $boardSummary['active_contracts'] }}
                         </div>
-                        <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Active contracts
+                        <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Contrats actifs
                         </div>
                     </div>
                 </div>
@@ -272,8 +272,8 @@
 
             <section class="architectural-card xl:col-span-4 bg-[#dce9ff]/55">
                 <div class="mb-5">
-                    <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Critical actions</p>
-                    <h3 class="text-lg font-black tracking-[-0.02em] text-[#002045]">Operational review</h3>
+                    <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Actions critiques</p>
+                    <h3 class="text-lg font-black tracking-[-0.02em] text-[#002045]">Revue opérationnelle</h3>
                 </div>
 
                 <div class="space-y-3">

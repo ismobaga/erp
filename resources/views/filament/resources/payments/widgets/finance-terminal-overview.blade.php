@@ -6,41 +6,42 @@
                 <span class="rounded-full bg-white/10 p-2 text-[#8df5e4]">
                     <x-filament::icon icon="heroicon-o-shield-check" class="h-5 w-5" />
                 </span>
-                <span class="text-[10px] font-black uppercase tracking-[0.24em]">Restricted finance terminal —
-                    authorized access only</span>
+                <span class="text-[10px] font-black uppercase tracking-[0.24em]">Terminal financier restreint —
+                    accès autorisé uniquement</span>
             </div>
-            <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">Ledger
-                secure v4.0</span>
+            <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">Grand
+                livre
+                sécurisé v4.0</span>
         </div>
 
         <div class="grid gap-6 xl:grid-cols-12">
-            <section class="metric-hero xl:col-span-8 min-h-[15rem]">
+            <section class="metric-hero xl:col-span-8 min-h-60">
                 <div class="relative z-10 flex h-full flex-col justify-between">
                     <div>
-                        <p class="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/65">Total ready to
-                            pay</p>
+                        <p class="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/65">Total prêt à
+                            payer</p>
                         <h3 class="text-4xl font-black tracking-[-0.03em] text-white xl:text-5xl">{{ $readyToPay }}</h3>
                     </div>
 
                     <div class="flex flex-wrap gap-3">
                         <span
-                            class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">Batch
-                            process all</span>
+                            class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">Traiter
+                            tout le lot</span>
                         <span
-                            class="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">Export
-                            ledger report</span>
+                            class="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">Exporter
+                            le rapport du grand livre</span>
                     </div>
                 </div>
             </section>
 
             <div class="space-y-6 xl:col-span-4">
                 <div class="architectural-card border-l-4 border-[#43af9f]">
-                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Approved invoices</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Factures approuvées</p>
                     <p class="mt-2 text-3xl font-black text-[#0b1c30]">{{ $approvedInvoices }}</p>
                 </div>
 
                 <div class="architectural-card border-l-4 border-[#ba1a1a]">
-                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Flagged reviews</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Revues signalées</p>
                     <p class="mt-2 text-3xl font-black text-[#0b1c30]">{{ $flaggedReviews }}</p>
                 </div>
             </div>
