@@ -17,10 +17,16 @@
                         <p class="text-4xl font-black">{{ $summary['volume'] }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#8df5e4]">Éléments signalés
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#8df5e4]">Éléments en attente
                         </p>
                         <p class="text-4xl font-black">{{ $summary['flagged'] }}</p>
                     </div>
+                    @if (($summary['critical'] ?? 0) > 0)
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#f28b82]">Critiques</p>
+                            <p class="text-4xl font-black text-[#f28b82]">{{ $summary['critical'] }}</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -36,13 +42,13 @@
                 </div>
 
                 <div class="architectural-card">
-                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Capacité mensuelle</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">Traitement mensuel</p>
                     <div class="mt-3 h-2 overflow-hidden rounded-full bg-[#dce9ff]">
-                        <div class="h-full rounded-full bg-[#43af9f]" style="width: {{ $summary['capacity'] }}%"></div>
+                        <div class="h-full rounded-full {{ $summary['capacity'] >= 70 ? 'bg-[#43af9f]' : ($summary['capacity'] >= 40 ? 'bg-[#b45309]' : 'bg-[#ba1a1a]') }}"
+                            style="width: {{ max(4, $summary['capacity']) }}%"></div>
                     </div>
-                    <p class="mt-2 text-xs text-[#57657a]">{{ $summary['capacity'] }}% de la capacité trimestrielle
-                        d'approbation
-                        atteinte.</p>
+                    <p class="mt-2 text-xs text-[#57657a]">{{ $summary['capacity'] }}% des dossiers résolus ce mois-ci.
+                    </p>
                 </div>
             </div>
         </section>
@@ -58,35 +64,49 @@
                     éléments actifs</span>
             </div>
 
-            @foreach ($items as $item)
+            @forelse ($items as $item)
                 <div class="architectural-card flex items-center justify-between gap-6 overflow-hidden"
                     style="border-left: 4px solid {{ $item['tone'] === 'danger' ? '#ba1a1a' : ($item['tone'] === 'success' ? '#43af9f' : '#002045') }};">
-                    <div class="flex items-center gap-4">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eff4ff] text-[#002045]">
-                            <span class="material-symbols-outlined">{{ $item['icon'] }}</span>
+                    <div class="flex min-w-0 flex-1 items-center gap-4">
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
+                                {{ $item['tone'] === 'danger' ? 'bg-[#ba1a1a]/10 text-[#ba1a1a]' : ($item['tone'] === 'success' ? 'bg-[#43af9f]/10 text-[#005048]' : 'bg-[#eff4ff] text-[#002045]') }}">
+                            <span class="material-symbols-outlined text-[1.1rem]">{{ $item['icon'] }}</span>
                         </div>
-                        <div>
-                            <p class="text-sm font-black text-[#002045]">{{ $item['subject'] }}</p>
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-sm font-black text-[#002045]">{{ $item['subject'] }}</p>
+                                @if ($item['tone'] === 'danger')
+                                    <span
+                                        class="rounded-full bg-[#ba1a1a]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#ba1a1a]">Urgent</span>
+                                @endif
+                            </div>
                             <p class="text-xs text-[#57657a]">{{ $item['reference'] }} · {{ $item['category'] }}</p>
-                            <p class="mt-1 text-xs text-[#74777f]">{{ $item['note'] }}</p>
+                            <p class="mt-0.5 truncate text-xs text-[#74777f]">{{ $item['note'] }}</p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex shrink-0 items-center gap-4">
                         <p
-                            class="text-lg font-black {{ $item['tone'] === 'danger' ? 'text-[#ba1a1a]' : 'text-[#0b1c30]' }}">
+                            class="text-base font-black {{ $item['tone'] === 'danger' ? 'text-[#ba1a1a]' : 'text-[#0b1c30]' }}">
                             {{ $item['amount'] }}
                         </p>
                         @if ($item['url'])
                             <a href="{{ $item['url'] }}"
-                                class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">{{ $item['cta'] }}</a>
+                                class="rounded-xl {{ $item['tone'] === 'danger' ? 'bg-[#ba1a1a] text-white' : 'bg-[#8df5e4] text-[#00201c]' }} px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em]">{{ $item['cta'] }}</a>
                         @else
                             <span
                                 class="rounded-xl bg-[#8df5e4] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#00201c]">{{ $item['cta'] }}</span>
                         @endif
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <div class="architectural-card flex flex-col items-center justify-center gap-3 py-12 text-center">
+                    <span class="material-symbols-outlined text-4xl text-[#43af9f]">task_alt</span>
+                    <p class="text-sm font-black text-[#002045]">File d'approbation vide</p>
+                    <p class="text-xs text-[#57657a]">Aucun élément ne requiert d'action pour le moment.</p>
+                </div>
+            @endforelse
         </section>
 
         <section class="grid gap-6 md:grid-cols-3">

@@ -112,10 +112,10 @@ class ApprovalCenter extends Page
                                     'Facture',
                                     $invoice->invoice_number,
                                     $invoice->client?->company_name ?: $invoice->client?->contact_name ?: '—',
-                                    'Invoice Review',
+                                    'Révision facture',
                                     'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' '),
                                     $invoice->status,
-                                    $invoice->status === 'overdue' ? 'Collections follow-up required' : 'Ready for sign-off',
+                                    $invoice->status === 'overdue' ? 'Relance recouvrement requise' : 'Prêt pour validation',
                                 ], ';');
                             });
                     }
@@ -243,11 +243,32 @@ class ApprovalCenter extends Page
             ? Project::query()->whereIn('approval_status', ['pending', 'review'])->count()
             : 0;
 
+        $criticalOverdue = Invoice::query()->where('status', 'overdue')->count();
+        $criticalExpenses = Schema::hasTable('expenses')
+            ? Expense::query()->where('approval_status', 'review')->count()
+            : 0;
+        $criticalProjects = Schema::hasTable('projects')
+            ? Project::query()->where('approval_status', 'review')->count()
+            : 0;
+
+        $resolvedThisMonth = Invoice::query()
+            ->where('status', 'paid')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->count();
+        $pendingTotal = $pendingExpenses + $pendingProjects + Invoice::query()
+            ->whereIn('status', ['draft', 'sent', 'overdue', 'partially_paid'])
+            ->count();
+        $capacity = ($resolvedThisMonth + $pendingTotal) > 0
+            ? (int) round($resolvedThisMonth / ($resolvedThisMonth + $pendingTotal) * 100)
+            : 0;
+
         return [
             'volume' => $this->money($invoiceVolume),
             'flagged' => $flagged + $pendingExpenses + $pendingProjects,
+            'critical' => $criticalOverdue + $criticalExpenses + $criticalProjects,
             'avg_time' => '4.2h',
-            'capacity' => 75,
+            'capacity' => $capacity,
         ];
     }
 
@@ -265,12 +286,12 @@ class ApprovalCenter extends Page
                 ->map(fn(Invoice $invoice): array => [
                     'tone' => $invoice->status === 'overdue' ? 'danger' : ($invoice->status === 'draft' ? 'info' : 'success'),
                     'icon' => $invoice->status === 'overdue' ? 'warning' : 'description',
-                    'subject' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Client account',
+                    'subject' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Compte client',
                     'reference' => $invoice->invoice_number,
-                    'category' => 'Invoice Review',
+                    'category' => 'Révision facture',
                     'amount' => $this->money((float) $invoice->balance_due),
-                    'note' => $invoice->status === 'overdue' ? 'Collections follow-up required' : 'Ready for management sign-off',
-                    'cta' => $invoice->status === 'overdue' ? 'Review now' : 'Approve',
+                    'note' => $invoice->status === 'overdue' ? 'Relance recouvrement requise' : 'Prêt pour validation managériale',
+                    'cta' => $invoice->status === 'overdue' ? 'Examiner' : 'Valider',
                     'url' => InvoiceResource::getUrl('edit', ['record' => $invoice]),
                 ])
                 ->all();
@@ -333,7 +354,7 @@ class ApprovalCenter extends Page
                 ->map(fn(Payment $payment): array => [
                     'tone' => 'danger',
                     'icon' => 'payments',
-                    'subject' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Ledger transfer',
+                    'subject' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Transfert grand livre',
                     'reference' => $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
                     'category' => 'Exception paiement',
                     'amount' => $this->money((float) $payment->amount),
@@ -346,7 +367,15 @@ class ApprovalCenter extends Page
             $items = [...$items, ...$paymentItems];
         }
 
-        return count($items) > 0 ? array_slice($items, 0, 6) : $this->placeholderQueue();
+        if (count($items) > 0) {
+            usort($items, function (array $a, array $b): int {
+                $priority = ['danger' => 0, 'info' => 1, 'success' => 2];
+                return ($priority[$a['tone']] ?? 1) <=> ($priority[$b['tone']] ?? 1);
+            });
+            return array_slice($items, 0, 6);
+        }
+
+        return $this->placeholderQueue();
     }
 
     protected function getDepartmentBreakdown(): array
@@ -362,7 +391,7 @@ class ApprovalCenter extends Page
             ->take(3)
             ->get()
             ->map(fn($row): array => [
-                'name' => $row->category ?: 'General Operations',
+                'name' => $row->category ?: 'Opérations générales',
                 'count' => (int) $row->aggregate,
             ])
             ->all() ?: $this->placeholderDepartments();
@@ -373,6 +402,7 @@ class ApprovalCenter extends Page
         return [
             'volume' => 'FCFA 248 500 000',
             'flagged' => 3,
+            'critical' => 1,
             'avg_time' => '4.2h',
             'capacity' => 75,
         ];
@@ -382,14 +412,25 @@ class ApprovalCenter extends Page
     {
         return [
             [
+                'tone' => 'danger',
+                'icon' => 'warning',
+                'subject' => 'Helix Design Group',
+                'reference' => 'DOUBLON-REF',
+                'category' => 'Consultation',
+                'amount' => 'FCFA 45 000 000',
+                'note' => 'Référence dupliquée — correction requise',
+                'cta' => 'Corriger',
+                'url' => null,
+            ],
+            [
                 'tone' => 'info',
                 'icon' => 'description',
                 'subject' => 'Stark Architectural Ltd.',
                 'reference' => 'INV-2023-8902',
-                'category' => 'Material Supply',
+                'category' => 'Fourniture matériaux',
                 'amount' => 'FCFA 12 450 000',
-                'note' => 'Ready for management sign-off',
-                'cta' => 'Approve',
+                'note' => 'Prêt pour validation managériale',
+                'cta' => 'Valider',
                 'url' => null,
             ],
             [
@@ -397,21 +438,10 @@ class ApprovalCenter extends Page
                 'icon' => 'receipt_long',
                 'subject' => 'Elena Rodriguez',
                 'reference' => 'EXP-901-TRV',
-                'category' => 'Client Relations',
+                'category' => 'Relations clients',
                 'amount' => 'FCFA 1 120 450',
-                'note' => 'Expense claim awaiting approval',
-                'cta' => 'Approve',
-                'url' => null,
-            ],
-            [
-                'tone' => 'danger',
-                'icon' => 'warning',
-                'subject' => 'Helix Design Group',
-                'reference' => 'DUPLICATE REF',
-                'category' => 'Consulting',
-                'amount' => 'FCFA 45 000 000',
-                'note' => 'Duplicate reference requires override',
-                'cta' => 'Override',
+                'note' => 'Note de frais en attente d\'approbation',
+                'cta' => 'Approuver',
                 'url' => null,
             ],
         ];
@@ -420,8 +450,8 @@ class ApprovalCenter extends Page
     protected function placeholderDepartments(): array
     {
         return [
-            ['name' => 'Design Engineering', 'count' => 4],
-            ['name' => 'Site Operations', 'count' => 6],
+            ['name' => 'Ingénierie & Design', 'count' => 4],
+            ['name' => 'Opérations terrain', 'count' => 6],
             ['name' => 'Administration', 'count' => 2],
         ];
     }
