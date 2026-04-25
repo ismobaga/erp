@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'client_id',
@@ -58,6 +59,11 @@ class Project extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function noteRecords(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
     }
 
     public function approve(User $user, ?string $notes = null): void

@@ -6,9 +6,11 @@ use App\Filament\Resources\Projects\ProjectResource;
 use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Invoice;
+use App\Models\Note;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Quote;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
@@ -22,6 +24,8 @@ class ViewProjectDetails extends ViewRecord
     protected string $view = 'filament.resources.projects.pages.view-project-details';
 
     public ?string $internalNote = '';
+    public ?string $noteDate = null;
+    public ?int $noteUserId = null;
 
     public function getTitle(): string|Htmlable
     {
@@ -43,25 +47,48 @@ class ViewProjectDetails extends ViewRecord
     {
         $validated = $this->validate([
             'internalNote' => ['required', 'string', 'min:3', 'max:4000'],
+            'noteDate' => ['required', 'date'],
+            'noteUserId' => ['required', 'integer', 'exists:users,id'],
         ], [], [
             'internalNote' => 'note interne',
+            'noteDate' => 'date de la note',
+            'noteUserId' => 'auteur',
         ]);
 
-        $user = auth()->user();
+        $creator = auth()->user();
 
-        abort_unless((bool) $user, 403);
+        abort_unless((bool) $creator, 403);
 
         /** @var Project $project */
         $project = $this->getRecord();
-        $project->addInternalNote($user, $validated['internalNote']);
+
+        Note::create([
+            'notable_type' => Project::class,
+            'notable_id' => $project->getKey(),
+            'user_id' => $validated['noteUserId'],
+            'created_by' => $creator->getKey(),
+            'noted_at' => $validated['noteDate'],
+            'body' => $validated['internalNote'],
+        ]);
 
         $this->record = $project->fresh(['client', 'service', 'assignee', 'approver']);
         $this->internalNote = '';
+        $this->noteDate = null;
+        $this->noteUserId = null;
 
         Notification::make()
             ->title('Note interne enregistrée.')
             ->success()
             ->send();
+    }
+
+    public function getAvailableUsers(): array
+    {
+        return User::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn(User $u): array => ['id' => $u->getKey(), 'name' => $u->name])
+            ->all();
     }
 
     public function getProgressPercentage(): int
@@ -319,6 +346,23 @@ class ViewProjectDetails extends ViewRecord
                     'content' => $content !== '' ? $content : $block,
                 ];
             }
+        }
+
+        // Structured notes from the notes table
+        $structuredNotes = Note::query()
+            ->with('author')
+            ->where('notable_type', Project::class)
+            ->where('notable_id', $project->getKey())
+            ->orderByDesc('noted_at')
+            ->orderByDesc('id')
+            ->get();
+
+        foreach ($structuredNotes as $note) {
+            $entries[] = [
+                'title' => 'Note interne',
+                'meta' => $note->noted_at->format('d/m/Y') . ' — ' . ($note->author?->name ?? 'Inconnu'),
+                'content' => $note->body,
+            ];
         }
 
         if ($project->approval_notes) {

@@ -360,6 +360,31 @@
                         de gestion du projet.</p>
 
                     <form wire:submit="saveInternalNote" class="space-y-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="noteDate"
+                                    class="mb-2 block text-sm font-medium text-[#002045] dark:text-white">Date de la note</label>
+                                <input type="date" id="noteDate" wire:model.defer="noteDate"
+                                    class="block w-full rounded-xl border border-[#c4c6cf]/30 bg-[#f8f9ff] px-3 py-2.5 text-sm text-[#0b1c30] shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:bg-slate-800 dark:text-white" />
+                                @error('noteDate')
+                                    <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label for="noteUserId"
+                                    class="mb-2 block text-sm font-medium text-[#002045] dark:text-white">Auteur</label>
+                                <select id="noteUserId" wire:model.defer="noteUserId"
+                                    class="block w-full rounded-xl border border-[#c4c6cf]/30 bg-[#f8f9ff] px-3 py-2.5 text-sm text-[#0b1c30] shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-white/10 dark:bg-slate-800 dark:text-white">
+                                    <option value="">— Sélectionner un utilisateur —</option>
+                                    @foreach ($this->getAvailableUsers() as $u)
+                                        <option value="{{ $u['id'] }}" @selected((int) $noteUserId === $u['id'])>{{ $u['name'] }}</option>
+                                    @endforeach
+                                </select>
+                                @error('noteUserId')
+                                    <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
                         <div>
                             <label for="internalNote"
                                 class="mb-2 block text-sm font-medium text-[#002045] dark:text-white">Nouvelle
