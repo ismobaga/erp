@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Ledger\Pages\CreateLedgerAccount;
 use App\Filament\Resources\Ledger\Pages\EditLedgerAccount;
 use App\Filament\Resources\Ledger\Pages\ListLedgerAccounts;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\LedgerAccount;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -154,6 +155,13 @@ class LedgerAccountResource extends Resource
             ->recordAction('edit')
             ->actions([EditAction::make(), DeleteAction::make()])
             ->bulkActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

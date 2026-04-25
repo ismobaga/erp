@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Quotes\Pages\CreateQuote;
 use App\Filament\Resources\Quotes\Pages\EditQuote;
 use App\Filament\Resources\Quotes\Pages\ListQuotes;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Service;
@@ -251,7 +252,9 @@ class QuoteResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

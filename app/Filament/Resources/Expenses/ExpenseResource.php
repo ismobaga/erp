@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Expenses\Pages\CreateExpense;
 use App\Filament\Resources\Expenses\Pages\EditExpense;
 use App\Filament\Resources\Expenses\Pages\ListExpenses;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Expense;
 use App\Models\FinancialPeriod;
 use BackedEnum;
@@ -246,7 +247,9 @@ class ExpenseResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

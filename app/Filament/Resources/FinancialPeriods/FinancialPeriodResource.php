@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\FinancialPeriods\Pages\CreateFinancialPeriod;
 use App\Filament\Resources\FinancialPeriods\Pages\EditFinancialPeriod;
 use App\Filament\Resources\FinancialPeriods\Pages\ListFinancialPeriods;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\FinancialPeriod;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -166,7 +167,9 @@ class FinancialPeriodResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -7,6 +7,7 @@ use App\Filament\Resources\Clients\Pages\CreateClient;
 use App\Filament\Resources\Clients\Pages\EditClient;
 use App\Filament\Resources\Clients\Pages\ListClients;
 use App\Filament\Resources\Clients\Pages\ViewClientDetails;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -213,7 +214,9 @@ class ClientResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

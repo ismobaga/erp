@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Services;
 
 use App\Filament\Concerns\HasPermissionAccess;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Filament\Resources\Services\Pages\CreateService;
 use App\Filament\Resources\Services\Pages\EditService;
 use App\Filament\Resources\Services\Pages\ListServices;
@@ -140,7 +141,9 @@ class ServiceResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
     'code',
@@ -20,6 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class LedgerAccount extends Model
 {
+    public function noteRecords(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
+    }
+
     protected function casts(): array
     {
         return [

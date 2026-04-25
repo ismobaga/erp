@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\CreditNotes\Pages\CreateCreditNote;
 use App\Filament\Resources\CreditNotes\Pages\EditCreditNote;
 use App\Filament\Resources\CreditNotes\Pages\ListCreditNotes;
+use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\CreditNote;
 use App\Models\FinancialPeriod;
 use App\Models\Invoice;
@@ -216,7 +217,9 @@ class CreditNoteResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            NotesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
     'quote_number',
@@ -26,6 +27,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Quote extends Model
 {
+    public function noteRecords(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
+    }
+
     protected function casts(): array
     {
         return [

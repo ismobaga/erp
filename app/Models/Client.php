@@ -6,6 +6,7 @@ use App\Services\TaxProfileResolver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
     'type',
@@ -23,6 +24,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Client extends Model
 {
+    public function noteRecords(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);

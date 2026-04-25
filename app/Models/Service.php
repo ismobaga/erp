@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -16,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 ])]
 class Service extends Model
 {
+    public function noteRecords(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
+    }
+
     protected function casts(): array
     {
         return [
