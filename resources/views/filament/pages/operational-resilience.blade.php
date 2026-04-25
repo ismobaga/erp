@@ -34,8 +34,16 @@
                     @forelse ($backups as $item)
                         <div class="rounded-xl bg-slate-50 p-3">
                             <p class="text-sm font-bold text-slate-800">{{ $item['label'] }}</p>
-                            <p class="text-xs text-slate-500">{{ $item['path'] }}</p>
-                            <p class="text-[10px] uppercase tracking-widest text-slate-400">{{ $item['time'] }}</p>
+                            <p class="truncate text-xs text-slate-500" title="{{ $item['path'] }}">{{ $item['path'] }}</p>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p class="text-[10px] uppercase tracking-widest text-slate-400">{{ $item['time'] }}</p>
+                                @if ($item['downloadUrl'] ?? null)
+                                    <a href="{{ $item['downloadUrl'] }}"
+                                        class="text-xs font-semibold text-[#002045] hover:underline dark:text-[#8df5e4]">
+                                        Télécharger
+                                    </a>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <p class="text-sm text-slate-500">Aucune archive récente.</p>

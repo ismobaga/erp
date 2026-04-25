@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
 class OperationalResilienceService
@@ -170,19 +171,36 @@ class OperationalResilienceService
         ];
     }
 
+    public function backupDownloadUrl(string $path): string
+    {
+        return URL::temporarySignedRoute(
+            'backups.download',
+            now()->addMinutes(30),
+            ['backup' => encrypt($path)]
+        );
+    }
+
     public function backupFeed(): array
     {
+        $disk = (string) config('erp.resilience.backups.disk', 'local');
+
         return ActivityLog::query()
             ->whereIn('action', ['system_backup_created', 'system_backup_restored'])
             ->latest()
             ->take(6)
             ->get()
-            ->map(fn(ActivityLog $log): array => [
-                'action' => $log->action,
-                'label' => ucfirst(str_replace('_', ' ', $log->action)),
-                'path' => (string) data_get($log->meta_json, 'path', 'n/a'),
-                'time' => $log->created_at?->diffForHumans() ?? 'recently',
-            ])
+            ->map(function (ActivityLog $log) use ($disk): array {
+                $path = (string) data_get($log->meta_json, 'path', '');
+                $fileExists = $path !== '' && Storage::disk($disk)->exists($path);
+
+                return [
+                    'action' => $log->action,
+                    'label' => ucfirst(str_replace('_', ' ', $log->action)),
+                    'path' => $path ?: 'n/a',
+                    'time' => $log->created_at?->diffForHumans() ?? 'recently',
+                    'downloadUrl' => $fileExists ? $this->backupDownloadUrl($path) : null,
+                ];
+            })
             ->all();
     }
 
@@ -213,6 +231,11 @@ class OperationalResilienceService
                 'time' => $log->created_at?->diffForHumans() ?? 'recently',
             ])
             ->all();
+    }
+
+    public function latestBackupSummaryPublic(): array
+    {
+        return $this->latestBackupSummary();
     }
 
     protected function latestBackupPath(): ?string

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentDownloadController;
+use App\Http\Controllers\BackupDownloadController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
 use App\Models\CompanySetting;
@@ -44,4 +45,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/reports/download', ReportExportDownloadController::class)
         ->name('reports.download');
+
+    Route::get('/backups/download', BackupDownloadController::class)
+        ->middleware(['signed', 'throttle:10,1'])
+        ->name('backups.download');
 });

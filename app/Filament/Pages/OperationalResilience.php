@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Redirect;
 
 class OperationalResilience extends Page
 {
@@ -54,6 +55,26 @@ class OperationalResilience extends Page
                         ->body('Jobs échoués: ' . $summary['failed_jobs'] . ' · Alertes: ' . $summary['open_alerts'])
                         ->success()
                         ->send();
+                }),
+            Action::make('downloadLatestBackup')
+                ->label('Télécharger la sauvegarde')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->visible(fn(): bool => auth()->user()?->can('reports.delete') ?? false)
+                ->action(function (): mixed {
+                    $service = app(OperationalResilienceService::class);
+                    $summary = $service->latestBackupSummaryPublic();
+
+                    if (blank($summary['path'])) {
+                        Notification::make()
+                            ->title('Aucune sauvegarde disponible.')
+                            ->warning()
+                            ->send();
+
+                        return null;
+                    }
+
+                    return Redirect::away($service->backupDownloadUrl($summary['path']));
                 }),
         ];
     }
