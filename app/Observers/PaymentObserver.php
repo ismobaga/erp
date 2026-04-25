@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Payment;
 use App\Services\LedgerPostingService;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class PaymentObserver
@@ -19,8 +20,13 @@ class PaymentObserver
     {
         try {
             $this->posting->postPayment($payment, $payment->recorded_by);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // Best-effort – do not block payment recording
+            Log::error('PaymentObserver: failed to post journal entry', [
+                'payment_id' => $payment->id,
+                'invoice_id' => $payment->invoice_id,
+                'exception' => $e->getMessage(),
+            ]);
         }
     }
 }

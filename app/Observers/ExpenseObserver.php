@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Expense;
 use App\Services\LedgerPostingService;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ExpenseObserver
@@ -27,8 +28,12 @@ class ExpenseObserver
 
         try {
             $this->posting->postExpense($expense, $expense->approved_by);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // Best-effort
+            Log::error('ExpenseObserver: failed to post journal entry', [
+                'expense_id' => $expense->id,
+                'exception' => $e->getMessage(),
+            ]);
         }
     }
 }

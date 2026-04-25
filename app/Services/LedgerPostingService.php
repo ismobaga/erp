@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
 use App\Models\Payment;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LedgerPostingService
@@ -18,17 +19,17 @@ class LedgerPostingService
      * These can be overridden via config erp.ledger.accounts.
      */
     private const DEFAULTS = [
-        'cash'                => '1010',
+        'cash' => '1010',
         'accounts_receivable' => '1100',
-        'accounts_payable'    => '2100',
-        'tax_payable'         => '2200',
-        'sales_revenue'       => '4100',
-        'expense_travel'      => '5100',
-        'expense_supplies'    => '5200',
-        'expense_operations'  => '5300',
-        'expense_payroll'     => '5400',
-        'expense_compliance'  => '5500',
-        'expense_other'       => '5900',
+        'accounts_payable' => '2100',
+        'tax_payable' => '2200',
+        'sales_revenue' => '4100',
+        'expense_travel' => '5100',
+        'expense_supplies' => '5200',
+        'expense_operations' => '5300',
+        'expense_payroll' => '5400',
+        'expense_compliance' => '5500',
+        'expense_other' => '5900',
     ];
 
     // -------------------------------------------------------------------------
@@ -61,15 +62,27 @@ class LedgerPostingService
         $revenueAmount = $total - $taxAmount;
 
         $lines = [
-            ['account_id' => $ar->id, 'debit' => $total, 'credit' => 0,
-                'description' => 'Receivable: ' . $invoice->invoice_number],
-            ['account_id' => $revenue->id, 'debit' => 0, 'credit' => $revenueAmount,
-                'description' => 'Revenue: ' . $invoice->invoice_number],
+            [
+                'account_id' => $ar->id,
+                'debit' => $total,
+                'credit' => 0,
+                'description' => 'Receivable: ' . $invoice->invoice_number
+            ],
+            [
+                'account_id' => $revenue->id,
+                'debit' => 0,
+                'credit' => $revenueAmount,
+                'description' => 'Revenue: ' . $invoice->invoice_number
+            ],
         ];
 
         if ($taxAmount > 0 && $tax) {
-            $lines[] = ['account_id' => $tax->id, 'debit' => 0, 'credit' => $taxAmount,
-                'description' => 'Tax: ' . $invoice->invoice_number];
+            $lines[] = [
+                'account_id' => $tax->id,
+                'debit' => 0,
+                'credit' => $taxAmount,
+                'description' => 'Tax: ' . $invoice->invoice_number
+            ];
         }
 
         return $this->createAndPost(
@@ -115,10 +128,18 @@ class LedgerPostingService
             sourceType: 'payment',
             sourceId: $payment->id,
             lines: [
-                ['account_id' => $cash->id, 'debit' => $amount, 'credit' => 0,
-                    'description' => 'Cash: ' . $reference],
-                ['account_id' => $ar->id, 'debit' => 0, 'credit' => $amount,
-                    'description' => 'Receivable: ' . $reference],
+                [
+                    'account_id' => $cash->id,
+                    'debit' => $amount,
+                    'credit' => 0,
+                    'description' => 'Cash: ' . $reference
+                ],
+                [
+                    'account_id' => $ar->id,
+                    'debit' => 0,
+                    'credit' => $amount,
+                    'description' => 'Receivable: ' . $reference
+                ],
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($payment->payment_date),
@@ -157,10 +178,18 @@ class LedgerPostingService
             sourceType: 'expense',
             sourceId: $expense->id,
             lines: [
-                ['account_id' => $expenseAccount->id, 'debit' => $amount, 'credit' => 0,
-                    'description' => $expense->title],
-                ['account_id' => $ap->id, 'debit' => 0, 'credit' => $amount,
-                    'description' => 'Payable: ' . $reference],
+                [
+                    'account_id' => $expenseAccount->id,
+                    'debit' => $amount,
+                    'credit' => 0,
+                    'description' => $expense->title
+                ],
+                [
+                    'account_id' => $ap->id,
+                    'debit' => 0,
+                    'credit' => $amount,
+                    'description' => 'Payable: ' . $reference
+                ],
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($expense->expense_date),
@@ -197,10 +226,18 @@ class LedgerPostingService
             sourceType: 'credit_note',
             sourceId: $creditNote->id,
             lines: [
-                ['account_id' => $revenue->id, 'debit' => $amount, 'credit' => 0,
-                    'description' => 'Revenue reversal: ' . $creditNote->credit_number],
-                ['account_id' => $ar->id, 'debit' => 0, 'credit' => $amount,
-                    'description' => 'Receivable credit: ' . $creditNote->credit_number],
+                [
+                    'account_id' => $revenue->id,
+                    'debit' => $amount,
+                    'credit' => 0,
+                    'description' => 'Revenue reversal: ' . $creditNote->credit_number
+                ],
+                [
+                    'account_id' => $ar->id,
+                    'debit' => 0,
+                    'credit' => $amount,
+                    'description' => 'Receivable credit: ' . $creditNote->credit_number
+                ],
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($creditNote->issue_date),
@@ -220,25 +257,27 @@ class LedgerPostingService
         ?int $userId,
         ?int $financialPeriodId,
     ): JournalEntry {
-        $entry = JournalEntry::create([
-            'entry_number' => $this->generateEntryNumber($date),
-            'entry_date' => $date,
-            'description' => $description,
-            'status' => 'draft',
-            'source_type' => $sourceType,
-            'source_id' => $sourceId,
-            'financial_period_id' => $financialPeriodId,
-            'created_by' => $userId,
-        ]);
+        return DB::transaction(function () use ($date, $description, $sourceType, $sourceId, $lines, $userId, $financialPeriodId): JournalEntry {
+            $entry = JournalEntry::create([
+                'entry_number' => $this->generateEntryNumber($date),
+                'entry_date' => $date,
+                'description' => $description,
+                'status' => 'draft',
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'financial_period_id' => $financialPeriodId,
+                'created_by' => $userId,
+            ]);
 
-        foreach ($lines as $line) {
-            $entry->lines()->create($line);
-        }
+            foreach ($lines as $line) {
+                $entry->lines()->create($line);
+            }
 
-        $entry->load('lines');
-        $entry->post($userId);
+            $entry->load('lines');
+            $entry->post($userId);
 
-        return $entry;
+            return $entry;
+        });
     }
 
     private function account(string $key): ?LedgerAccount

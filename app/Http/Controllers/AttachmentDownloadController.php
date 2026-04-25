@@ -6,7 +6,6 @@ use App\Models\Attachment;
 use App\Services\AuditTrailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentDownloadController
@@ -24,7 +23,15 @@ class AttachmentDownloadController
         $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
         $normalizedPath = ltrim((string) $attachment->file_path, '/');
 
-        abort_unless(Str::startsWith($normalizedPath, $directory . '/'), 403);
+        $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
+        $allowedDir   = realpath(Storage::disk($disk)->path($directory));
+
+        abort_unless(
+            $realFilePath !== false
+            && $allowedDir !== false
+            && str_starts_with($realFilePath, $allowedDir . DIRECTORY_SEPARATOR),
+            403
+        );
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
 
         app(\App\Services\AuditTrailService::class)->log('document_downloaded', $attachment, [

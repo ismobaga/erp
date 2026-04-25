@@ -43,6 +43,13 @@ class Expense extends Model
                 ]);
             }
 
+            $allowedCategories = ['travel', 'supplies', 'operations', 'payroll', 'compliance', 'other'];
+            if (!in_array((string) $expense->category, $allowedCategories, true)) {
+                throw ValidationException::withMessages([
+                    'category' => 'Invalid expense category. Allowed: ' . implode(', ', $allowedCategories) . '.',
+                ]);
+            }
+
             FinancialPeriod::ensureDateIsOpen($expense->expense_date, 'expense');
         });
 

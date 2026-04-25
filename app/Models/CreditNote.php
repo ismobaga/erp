@@ -33,6 +33,23 @@ class CreditNote extends Model
         static::saving(function (CreditNote $creditNote): void {
             FinancialPeriod::ensureDateIsOpen($creditNote->issue_date, 'credit note');
 
+            if (blank($creditNote->credit_number)) {
+                throw ValidationException::withMessages([
+                    'credit_number' => 'A credit note number is required.',
+                ]);
+            }
+
+            $duplicate = static::query()
+                ->where('credit_number', $creditNote->credit_number)
+                ->when($creditNote->exists, fn($q) => $q->whereKeyNot($creditNote->getKey()))
+                ->exists();
+
+            if ($duplicate) {
+                throw ValidationException::withMessages([
+                    'credit_number' => 'This credit note number is already in use.',
+                ]);
+            }
+
             if ((float) $creditNote->amount <= 0) {
                 throw ValidationException::withMessages([
                     'amount' => 'Credit note amount must be positive.',

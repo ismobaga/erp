@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'quote_id',
@@ -28,6 +29,9 @@ class QuoteItem extends Model
     protected static function booted(): void
     {
         static::saving(function (QuoteItem $item): void {
+            if ((float) $item->quantity <= 0) {
+                throw ValidationException::withMessages(['quantity' => 'La quantité doit être supérieure à zéro.']);
+            }
             $item->line_total = (float) $item->quantity * (float) $item->unit_price;
         });
 

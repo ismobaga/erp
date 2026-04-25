@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +53,7 @@ class OperationalResilienceService
         }
 
         Storage::disk($disk)->makeDirectory($directory);
-        Storage::disk($disk)->put($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        Storage::disk($disk)->put($path, Crypt::encryptString(json_encode($payload, JSON_UNESCAPED_SLASHES)));
 
         $this->pruneOldBackups();
 
@@ -68,7 +69,7 @@ class OperationalResilienceService
             throw new RuntimeException('No backup archive is available to restore.');
         }
 
-        $payload = json_decode(Storage::disk($disk)->get($path), true, 512, JSON_THROW_ON_ERROR);
+        $payload = json_decode(Crypt::decryptString(Storage::disk($disk)->get($path)), true, 512, JSON_THROW_ON_ERROR);
         $data = (array) ($payload['data'] ?? []);
 
         Schema::disableForeignKeyConstraints();

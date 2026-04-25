@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Invoice;
 use App\Services\LedgerPostingService;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class InvoiceObserver
@@ -28,9 +29,14 @@ class InvoiceObserver
 
         try {
             $this->posting->postInvoice($invoice, $invoice->updated_by ?? $invoice->created_by);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // Posting is best-effort; do not block invoice operations if ledger
             // accounts are missing or the period is not configured yet.
+            Log::error('InvoiceObserver: failed to post journal entry', [
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'exception' => $e->getMessage(),
+            ]);
         }
     }
 }

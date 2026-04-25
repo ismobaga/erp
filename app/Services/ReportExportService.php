@@ -18,6 +18,12 @@ class ReportExportService
 {
     public function generate(Carbon $start, Carbon $end, array $selectedModules, string $format = 'pdf', bool $includeCharts = true, ?int $userId = null): array
     {
+        $format = match (strtolower($format)) {
+            'csv' => 'csv',
+            'pdf' => 'pdf',
+            default => throw new \InvalidArgumentException("Unsupported report format: {$format}. Allowed: csv, pdf."),
+        };
+
         $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts, $userId);
         $path = $this->storeExport($report, $format, $userId);
         $generatedAt = now()->format('d/m/Y H:i');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanySetting;
 use App\Models\Invoice;
+use App\Services\AuditTrailService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -16,6 +17,11 @@ class InvoicePdfController extends Controller
         abort_unless(auth()->user()?->canAny(['invoices.view', 'reports.view']), 403);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
+
+        app(AuditTrailService::class)->log('invoice_pdf_accessed', $invoice, [
+            'invoice_number' => $invoice->invoice_number,
+            'download' => $request->boolean('download'),
+        ], auth()->id());
 
         $company = CompanySetting::query()->first();
         $companyName = $company?->company_name ?: 'CROMMIX MALI S.A.';
