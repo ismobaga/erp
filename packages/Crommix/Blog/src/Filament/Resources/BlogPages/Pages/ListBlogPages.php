@@ -10,10 +10,15 @@ class ListBlogPages extends ListRecords
 {
     protected static string $resource = BlogPageResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Pages publiques';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->label('Nouvelle page'),
         ];
     }
 }

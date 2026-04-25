@@ -2,12 +2,14 @@
 
 namespace Crommix\Blog;
 
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -23,7 +25,20 @@ class BlogPanelProvider extends PanelProvider
             ->id('blog')
             ->path('blog-admin')
             ->login()
-            ->brandName('Blog Studio')
+            ->brandName('Crommix Forge · Blog')
+            ->font('Inter')
+            ->darkMode()
+            ->defaultThemeMode(ThemeMode::System)
+            ->sidebarCollapsibleOnDesktop()
+            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->colors([
+                'primary' => Color::hex('#002045'),
+                'gray' => Color::Slate,
+                'info' => Color::hex('#1a365d'),
+                'success' => Color::hex('#43af9f'),
+                'warning' => Color::hex('#b98a06'),
+                'danger' => Color::hex('#ba1a1a'),
+            ])
             ->discoverResources(in: __DIR__ . '/Filament/Resources', for: 'Crommix\\Blog\\Filament\\Resources')
             ->discoverPages(in: __DIR__ . '/Filament/Pages', for: 'Crommix\\Blog\\Filament\\Pages')
             ->middleware([

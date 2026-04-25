@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateBlogPage extends CreateRecord
 {
     protected static string $resource = BlogPageResource::class;
+
+    public function getTitle(): string
+    {
+        return 'Créer une page';
+    }
 }

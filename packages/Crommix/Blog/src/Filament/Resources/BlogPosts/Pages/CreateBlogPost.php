@@ -9,6 +9,11 @@ class CreateBlogPost extends CreateRecord
 {
     protected static string $resource = BlogPostResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Créer un article';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['author_id'] = $data['author_id'] ?? auth()->id();

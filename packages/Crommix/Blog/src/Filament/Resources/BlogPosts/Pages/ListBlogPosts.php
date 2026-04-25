@@ -10,10 +10,15 @@ class ListBlogPosts extends ListRecords
 {
     protected static string $resource = BlogPostResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Articles du blog';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->label('Nouvel article'),
         ];
     }
 }

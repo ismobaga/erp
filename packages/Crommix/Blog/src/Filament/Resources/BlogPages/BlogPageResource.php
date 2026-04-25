@@ -10,6 +10,7 @@ use Crommix\Blog\Models\BlogPage;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -30,9 +31,11 @@ class BlogPageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWindow;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Blog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Marketing';
 
-    protected static ?string $navigationLabel = 'Pages';
+    protected static ?string $navigationLabel = 'Pages publiques';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -41,10 +44,13 @@ class BlogPageResource extends Resource
         return $schema->components([
             Grid::make(['lg' => 12])
                 ->schema([
-                    Section::make('Page')
+                    Section::make('Structure de page')
+                        ->description('Créez des pages vitrines, landing produits ou contenus institutionnels.')
+                        ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                         ->columnSpan(['lg' => 8])
                         ->schema([
                             TextInput::make('title')
+                                ->label('Titre')
                                 ->required()
                                 ->maxLength(255)
                                 ->live(onBlur: true)
@@ -56,36 +62,54 @@ class BlogPageResource extends Resource
                                     $set('slug', Str::slug($state));
                                 }),
                             TextInput::make('slug')
+                                ->label('Slug URL')
                                 ->required()
                                 ->maxLength(255)
-                                ->unique(ignoreRecord: true),
-                            TextInput::make('hero_title')->maxLength(255),
-                            Textarea::make('hero_subtitle')->rows(2),
+                                ->unique(ignoreRecord: true)
+                                ->helperText('Utilisé dans l’URL publique de la page.'),
+                            TextInput::make('hero_title')
+                                ->label('Titre hero')
+                                ->maxLength(255),
+                            Textarea::make('hero_subtitle')
+                                ->label('Sous-titre hero')
+                                ->rows(2),
                             Textarea::make('content')
+                                ->label('Contenu')
                                 ->rows(18)
+                                ->placeholder('Décrivez votre offre, vos bénéfices et appels à action...')
                                 ->required(),
                         ]),
-                    Section::make('Publication')
+                    Section::make('Publication et SEO')
+                        ->description('Pilotez la visibilité web et les métadonnées.')
+                        ->extraAttributes(['class' => 'ledger-summary-card'])
                         ->columnSpan(['lg' => 4])
                         ->schema([
                             Select::make('status')
+                                ->label('Statut')
                                 ->options([
-                                    'draft' => 'Draft',
-                                    'published' => 'Published',
+                                    'draft' => 'Brouillon',
+                                    'published' => 'Publié',
                                 ])
+                                ->native(false)
                                 ->default('draft')
                                 ->required(),
                             DateTimePicker::make('published_at')
+                                ->label('Date de publication')
                                 ->seconds(false),
                             Select::make('template')
+                                ->label('Template')
                                 ->options([
-                                    'default' => 'Default',
-                                    'landing' => 'Landing',
+                                    'default' => 'Standard',
+                                    'landing' => 'Landing produit',
                                 ])
+                                ->native(false)
                                 ->default('default')
                                 ->required(),
-                            TextInput::make('seo_title')->maxLength(255),
-                            Textarea::make('seo_description')->rows(3),
+                            TextInput::make('seo_title')->label('Titre SEO')->maxLength(255),
+                            Textarea::make('seo_description')->label('Description SEO')->rows(3),
+                            Placeholder::make('public_url_hint')
+                                ->label('Aperçu URL')
+                                ->content('/pages/{slug}'),
                         ]),
                 ]),
         ]);
@@ -95,18 +119,27 @@ class BlogPageResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('slug')->searchable(),
-                TextColumn::make('template')->badge(),
-                TextColumn::make('status')->badge(),
-                TextColumn::make('published_at')->dateTime('d/m/Y H:i')->sortable(),
-                TextColumn::make('updated_at')->since()->label('Updated'),
+                TextColumn::make('title')->label('Page')->searchable()->sortable(),
+                TextColumn::make('slug')->label('Slug')->searchable(),
+                TextColumn::make('template')
+                    ->label('Template')
+                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => $state === 'landing' ? 'Landing produit' : 'Standard'),
+                TextColumn::make('status')
+                    ->label('Statut')
+                    ->badge()
+                    ->formatStateUsing(fn(string $state): string => $state === 'published' ? 'Publié' : 'Brouillon')
+                    ->color(fn(string $state): string => $state === 'published' ? 'success' : 'gray'),
+                TextColumn::make('published_at')->label('Publication')->dateTime('d/m/Y H:i')->sortable(),
+                TextColumn::make('updated_at')->since()->label('Mis à jour'),
             ])
             ->filters([
-                SelectFilter::make('status')->options([
-                    'draft' => 'Draft',
-                    'published' => 'Published',
-                ]),
+                SelectFilter::make('status')
+                    ->label('Statut')
+                    ->options([
+                        'draft' => 'Brouillon',
+                        'published' => 'Publié',
+                    ]),
             ])
             ->recordActions([
                 EditAction::make(),

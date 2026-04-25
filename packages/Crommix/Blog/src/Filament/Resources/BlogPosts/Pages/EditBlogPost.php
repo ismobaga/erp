@@ -10,10 +10,15 @@ class EditBlogPost extends EditRecord
 {
     protected static string $resource = BlogPostResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Modifier l\'article';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('Supprimer'),
         ];
     }
 }
