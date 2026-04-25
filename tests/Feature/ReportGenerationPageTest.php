@@ -131,7 +131,7 @@ class ReportGenerationPageTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(ReportGeneration::class)
-            ->assertSet('scheduledPlans.0.status', __('erp.reports.scheduled_statuses.recent'));
+            ->assertSet('scheduledPlans.0.status', __('erp.reports.scheduled_statuses.active'));
     }
 
     public function test_accountant_ready_csv_export_contains_ledger_and_audit_sections(): void

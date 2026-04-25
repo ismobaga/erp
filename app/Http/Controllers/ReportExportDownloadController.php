@@ -17,7 +17,11 @@ class ReportExportDownloadController extends Controller
         $encryptedPath = (string) $request->query('report', '');
         abort_unless($encryptedPath !== '', 404);
 
-        $path = decrypt($encryptedPath);
+        try {
+            $path = decrypt($encryptedPath);
+        } catch (\Throwable) {
+            abort(403);
+        }
 
         abort_unless(is_string($path) && str_starts_with($path, 'reports/'), 403);
         abort_unless(Storage::disk('local')->exists($path), 404);

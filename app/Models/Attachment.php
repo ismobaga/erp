@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'attachable_type',
@@ -19,6 +20,18 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 ])]
 class Attachment extends Model
 {
+    protected static function booted(): void
+    {
+        static::deleting(function (self $attachment): void {
+            $disk = (string) config('erp.documents.disk', 'local');
+            $path = ltrim((string) $attachment->file_path, '/');
+
+            if ($path !== '' && Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

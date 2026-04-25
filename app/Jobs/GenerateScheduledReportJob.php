@@ -20,7 +20,8 @@ class GenerateScheduledReportJob implements ShouldQueue
 
     public function __construct(
         public readonly int $scheduleId,
-    ) {}
+    ) {
+    }
 
     public function handle(ReportExportService $exportService, AuditTrailService $auditTrail): void
     {
@@ -52,8 +53,8 @@ class GenerateScheduledReportJob implements ShouldQueue
             'last_executed_at' => now(),
             'last_path' => $result['path'],
             'next_execution_at' => $schedule->nextRun(),
+            'status' => 'active',
         ])->save();
-            $schedule->forceFill(['status' => 'processed'])->save();
 
         $auditTrail->log('scheduled_report_generated', null, [
             'schedule_id' => $schedule->id,

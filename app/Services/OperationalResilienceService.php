@@ -71,18 +71,28 @@ class OperationalResilienceService
 
         $payload = json_decode(Crypt::decryptString(Storage::disk($disk)->get($path)), true, 512, JSON_THROW_ON_ERROR);
         $data = (array) ($payload['data'] ?? []);
+        $knownTables = $this->backupTables();
+
+        // Never run a destructive restore unless the archive shape is valid.
+        $hasValidPayload = is_array($payload)
+            && is_array($data)
+            && count(array_intersect(array_keys($data), $knownTables)) > 0;
+
+        if (!$hasValidPayload) {
+            throw new RuntimeException('Backup archive is invalid or incomplete.');
+        }
 
         Schema::disableForeignKeyConstraints();
 
         try {
-            DB::transaction(function () use ($data): void {
-                foreach (array_reverse($this->backupTables()) as $table) {
+            DB::transaction(function () use ($data, $knownTables): void {
+                foreach (array_reverse($knownTables) as $table) {
                     if (Schema::hasTable($table)) {
                         DB::table($table)->delete();
                     }
                 }
 
-                foreach ($this->backupTables() as $table) {
+                foreach ($knownTables as $table) {
                     if (!Schema::hasTable($table)) {
                         continue;
                     }

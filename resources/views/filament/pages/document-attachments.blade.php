@@ -95,8 +95,18 @@
                                         <td class="px-6 py-5 text-right font-mono text-sm text-[#002045] dark:text-white">
                                             {{ $document['size'] }}</td>
                                         <td class="px-6 py-5">
-                                            <a href="{{ $document['downloadUrl'] }}"
-                                                class="font-semibold text-[#002045] hover:underline dark:text-[#8df5e4]">Télécharger</a>
+                                            <div class="flex items-center gap-3">
+                                                <a href="{{ $document['downloadUrl'] }}"
+                                                    class="font-semibold text-[#002045] hover:underline dark:text-[#8df5e4]">Télécharger</a>
+                                                @if ($document['canDelete'])
+                                                    <button type="button"
+                                                        wire:click="deleteDocument({{ $document['id'] }})"
+                                                        wire:confirm="Supprimer ce document ? Cette action est irréversible."
+                                                        class="font-semibold text-rose-600 hover:underline dark:text-rose-400">
+                                                        Supprimer
+                                                    </button>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

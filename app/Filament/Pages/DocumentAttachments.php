@@ -112,6 +112,31 @@ class DocumentAttachments extends Page
             ->send();
     }
 
+    public function deleteDocument(int $documentId): void
+    {
+        $user = auth()->user();
+        abort_unless((bool) $user, 403);
+
+        $attachment = Attachment::query()->findOrFail($documentId);
+        $canDelete = ($user->can('documents.delete') ?? false) || ((int) $attachment->uploaded_by === (int) $user->getKey());
+        abort_unless($canDelete, 403);
+
+        $attachmentName = $attachment->file_name;
+
+        $attachment->delete();
+
+        app(\App\Services\AuditTrailService::class)->log('document_deleted', $attachment, [
+            'name' => $attachmentName,
+            'disk' => (string) config('erp.documents.disk', 'local'),
+            'path' => $attachment->file_path,
+        ], $user->getKey());
+
+        Notification::make()
+            ->title('Document supprimé.')
+            ->success()
+            ->send();
+    }
+
     protected function getViewData(): array
     {
         $documents = $this->filteredDocuments();
@@ -167,6 +192,8 @@ class DocumentAttachments extends Page
                         now()->addMinutes((int) config('erp.documents.download_url_ttl_minutes', 30)),
                         ['attachment' => $attachment]
                     ),
+                    'canDelete' => (auth()->user()?->can('documents.delete') ?? false)
+                        || ((int) $attachment->uploaded_by === (int) auth()->id()),
                     'icon' => $this->iconFor($attachment),
                     'tint' => $this->tintFor($attachment),
                 ];
