@@ -1,0 +1,153 @@
+import colors from 'tailwindcss/colors'
+
+export default {
+    content: [
+        './resources/views/**/*.blade.php',
+        './src/**/*.php',
+    ],
+    darkMode: 'class',
+    theme: {
+        extend: {
+            colors: {
+                // Material 3 - Lumina Editorial Color System
+                'surface-variant': '#e4e2e2',
+                'on-primary': '#ffffff',
+                'surface': '#fbf9f8',
+                'secondary-container': '#e5e2e1',
+                'on-secondary-fixed-variant': '#474646',
+                'secondary-fixed': '#e5e2e1',
+                'tertiary': '#242625',
+                'surface-dim': '#dbdad9',
+                'secondary-fixed-dim': '#c8c6c5',
+                'on-secondary': '#ffffff',
+                'outline': '#717973',
+                'tertiary-container': '#3a3c3b',
+                'inverse-surface': '#303031',
+                'outline-variant': '#c1c8c2',
+                'surface-container-lowest': '#ffffff',
+                'on-primary-container': '#86af99',
+                'inverse-primary': '#a5d0b9',
+                'error': '#ba1a1a',
+                'primary-container': '#1b4332',
+                'on-primary-fixed-variant': '#274e3d',
+                'on-tertiary': '#ffffff',
+                'on-tertiary-container': '#a5a6a5',
+                'on-error-container': '#93000a',
+                'error-container': '#ffdad6',
+                'on-tertiary-fixed-variant': '#454746',
+                'on-secondary-fixed': '#1c1b1b',
+                'surface-container-highest': '#e4e2e2',
+                'on-primary-fixed': '#002114',
+                'surface-container': '#efeded',
+                'on-error': '#ffffff',
+                'background': '#fbf9f8',
+                'secondary': '#5f5e5e',
+                'surface-tint': '#3f6653',
+                'surface-container-low': '#f5f3f3',
+                'tertiary-fixed': '#e2e3e1',
+                'on-surface': '#1b1c1c',
+                'on-surface-variant': '#414844',
+                'surface-bright': '#fbf9f8',
+                'on-background': '#1b1c1c',
+                'surface-container-high': '#e9e8e7',
+                'primary': '#012d1d',
+                'primary-fixed': '#c1ecd4',
+                'tertiary-fixed-dim': '#c6c7c5',
+                'inverse-on-surface': '#f2f0f0',
+                'on-tertiary-fixed': '#1a1c1b',
+                'on-secondary-container': '#656464',
+                'primary-fixed-dim': '#a5d0b9',
+            },
+            borderRadius: {
+                DEFAULT: '0.125rem',
+                lg: '0.25rem',
+                xl: '0.5rem',
+                full: '0.75rem',
+            },
+            spacing: {
+                lg: '48px',
+                'content-max': '720px',
+                base: '8px',
+                sm: '12px',
+                xl: '80px',
+                xs: '4px',
+                md: '24px',
+                'container-max': '1120px',
+            },
+            fontFamily: {
+                'body-lg': ['Newsreader', 'serif'],
+                'label-sm': ['Manrope', 'sans-serif'],
+                'body-md': ['Newsreader', 'serif'],
+                h3: ['Manrope', 'sans-serif'],
+                h2: ['Manrope', 'sans-serif'],
+                'label-md': ['Manrope', 'sans-serif'],
+                h1: ['Manrope', 'sans-serif'],
+            },
+            fontSize: {
+                'body-lg': [
+                    '21px',
+                    {
+                        lineHeight: '1.6',
+                        letterSpacing: '0',
+                        fontWeight: '400',
+                    },
+                ],
+                'label-sm': [
+                    '12px',
+                    {
+                        lineHeight: '1.2',
+                        letterSpacing: '0.08em',
+                        fontWeight: '600',
+                    },
+                ],
+                'body-md': [
+                    '18px',
+                    {
+                        lineHeight: '1.6',
+                        letterSpacing: '0',
+                        fontWeight: '400',
+                    },
+                ],
+                h3: [
+                    '24px',
+                    {
+                        lineHeight: '1.3',
+                        letterSpacing: '0',
+                        fontWeight: '600',
+                    },
+                ],
+                h2: [
+                    '32px',
+                    {
+                        lineHeight: '1.2',
+                        letterSpacing: '-0.01em',
+                        fontWeight: '600',
+                    },
+                ],
+                'label-md': [
+                    '14px',
+                    {
+                        lineHeight: '1.4',
+                        letterSpacing: '0.05em',
+                        fontWeight: '500',
+                    },
+                ],
+                h1: [
+                    '48px',
+                    {
+                        lineHeight: '1.1',
+                        letterSpacing: '-0.02em',
+                        fontWeight: '700',
+                    },
+                ],
+            },
+            maxWidth: {
+                'content-max': '720px',
+                'container-max': '1120px',
+            },
+        },
+    },
+    plugins: [
+        require('@tailwindcss/forms'),
+    ],
+}

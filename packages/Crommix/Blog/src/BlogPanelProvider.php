@@ -25,18 +25,18 @@ class BlogPanelProvider extends PanelProvider
             ->id('blog')
             ->path('blog-admin')
             ->login()
-            ->brandName('Crommix Forge · Blog')
-            ->font('Inter')
+            ->brandName('Lumina Editorial')
+            ->font('Manrope')
             ->darkMode()
             ->defaultThemeMode(ThemeMode::System)
             ->sidebarCollapsibleOnDesktop()
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->colors([
-                'primary' => Color::hex('#002045'),
-                'gray' => Color::Slate,
-                'info' => Color::hex('#1a365d'),
-                'success' => Color::hex('#43af9f'),
-                'warning' => Color::hex('#b98a06'),
+                'primary' => Color::hex('#012d1d'), // Lumina Editorial Primary Green
+                'gray' => Color::Stone, // Stone palette for neutral tones
+                'info' => Color::hex('#1b4332'),
+                'success' => Color::hex('#2d6a4f'),
+                'warning' => Color::hex('#d4a574'),
                 'danger' => Color::hex('#ba1a1a'),
             ])
             ->discoverResources(in: __DIR__ . '/Filament/Resources', for: 'Crommix\\Blog\\Filament\\Resources')
