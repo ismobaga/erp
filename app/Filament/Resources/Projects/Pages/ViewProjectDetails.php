@@ -16,6 +16,7 @@ use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\URL;
 
 class ViewProjectDetails extends ViewRecord
 {
@@ -45,7 +46,15 @@ class ViewProjectDetails extends ViewRecord
 
     public function saveInternalNote(): void
     {
-        $validated = $this->validate([
+        $creator = auth()->user();
+
+        abort_unless((bool) $creator, 403);
+
+        $payload = validator([
+            'internalNote' => $this->internalNote,
+            'noteDate' => $this->noteDate ?: now()->toDateString(),
+            'noteUserId' => $this->noteUserId ?: $creator->getKey(),
+        ], [
             'internalNote' => ['required', 'string', 'min:3', 'max:4000'],
             'noteDate' => ['required', 'date'],
             'noteUserId' => ['required', 'integer', 'exists:users,id'],
@@ -53,28 +62,27 @@ class ViewProjectDetails extends ViewRecord
             'internalNote' => 'note interne',
             'noteDate' => 'date de la note',
             'noteUserId' => 'auteur',
-        ]);
-
-        $creator = auth()->user();
-
-        abort_unless((bool) $creator, 403);
+        ])->validate();
 
         /** @var Project $project */
         $project = $this->getRecord();
+        $author = User::query()->findOrFail($payload['noteUserId']);
 
         Note::create([
             'notable_type' => Project::class,
             'notable_id' => $project->getKey(),
-            'user_id' => $validated['noteUserId'],
+            'user_id' => $author->getKey(),
             'created_by' => $creator->getKey(),
-            'noted_at' => $validated['noteDate'],
-            'body' => $validated['internalNote'],
+            'noted_at' => $payload['noteDate'],
+            'body' => $payload['internalNote'],
         ]);
+
+        $project->addInternalNote($author, $payload['internalNote']);
 
         $this->record = $project->fresh(['client', 'service', 'assignee', 'approver']);
         $this->internalNote = '';
-        $this->noteDate = null;
-        $this->noteUserId = null;
+        $this->noteDate = now()->toDateString();
+        $this->noteUserId = $creator->getKey();
 
         Notification::make()
             ->title('Note interne enregistrée.')
@@ -185,7 +193,11 @@ class ViewProjectDetails extends ViewRecord
             ->map(fn(Attachment $attachment): array => [
                 'name' => $attachment->file_name,
                 'meta' => $attachment->humanSize() . ' • ' . ($attachment->created_at?->translatedFormat('d M Y') ?? '—'),
-                'downloadUrl' => route('attachments.download', $attachment),
+                'downloadUrl' => URL::temporarySignedRoute(
+                    'attachments.download',
+                    now()->addMinutes((int) config('erp.documents.download_url_ttl_minutes', 30)),
+                    ['attachment' => $attachment]
+                ),
             ])
             ->all();
     }

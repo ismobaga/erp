@@ -8,6 +8,7 @@ use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\LedgerPostingService;
 use Database\Seeders\LedgerAccountsSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -165,5 +166,33 @@ class LedgerPostingTest extends TestCase
         $this->assertDatabaseHas('ledger_accounts', ['code' => '4100', 'type' => 'revenue']);
         $this->assertDatabaseHas('ledger_accounts', ['code' => '2100', 'type' => 'liability']);
         $this->assertDatabaseHas('ledger_accounts', ['code' => '5300', 'type' => 'expense']);
+    }
+
+    public function test_posting_service_does_not_create_duplicate_entries_for_same_invoice_source(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create(['type' => 'company', 'company_name' => 'Test Co', 'status' => 'active']);
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-TEST-004',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'sent',
+            'subtotal' => 300.00,
+            'tax_total' => 0.00,
+            'total' => 300.00,
+            'balance_due' => 300.00,
+            'created_by' => $user->id,
+        ]);
+
+        $service = app(LedgerPostingService::class);
+
+        $first = $service->postInvoice($invoice, $user->id);
+        $second = $service->postInvoice($invoice, $user->id);
+
+        $this->assertNotNull($first);
+        $this->assertNotNull($second);
+        $this->assertSame($first->id, $second->id);
+        $this->assertDatabaseCount('journal_entries', 1);
     }
 }

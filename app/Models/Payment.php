@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -76,16 +77,18 @@ class Payment extends Model
     protected static function booted(): void
     {
         static::saving(function (Payment $payment): void {
+            $payment->payment_method = static::normalizePaymentMethod($payment->payment_method);
+
             if ((float) $payment->amount <= 0) {
                 throw ValidationException::withMessages(['amount' => 'Payment amount must be positive.']);
             }
 
             $referenceRequiredMethods = array_map(
-                static fn(string $method): string => strtolower(trim($method)),
+                static fn(string $method): string => static::normalizePaymentMethod($method),
                 config('erp.billing.payment_reference_required_methods', [])
             );
 
-            if (in_array(strtolower(trim((string) $payment->payment_method)), $referenceRequiredMethods, true) && blank($payment->reference)) {
+            if (in_array((string) $payment->payment_method, $referenceRequiredMethods, true) && blank($payment->reference)) {
                 throw ValidationException::withMessages([
                     'reference' => 'A payment reference is required for traceable payment methods.',
                 ]);
@@ -202,5 +205,22 @@ class Payment extends Model
         }
 
         return blank($this->reference) ? 'flagged' : 'completed';
+    }
+
+    protected static function normalizePaymentMethod(mixed $method): string
+    {
+        $normalized = Str::of((string) $method)
+            ->lower()
+            ->trim()
+            ->replace(['-', ' '], '_')
+            ->value();
+
+        return match ($normalized) {
+            'bank_transfer', 'wire_transfer' => 'bank_transfer',
+            'cash' => 'cash',
+            'check', 'cheque' => 'check',
+            'mobile_money', 'mobilemoney' => 'mobile_money',
+            default => $normalized,
+        };
     }
 }

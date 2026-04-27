@@ -28,7 +28,7 @@ class GenerateScheduledReportJob implements ShouldQueue
         /** @var ReportSchedule|null $schedule */
         $schedule = ReportSchedule::find($this->scheduleId);
 
-        if (!$schedule || !$schedule->isActive()) {
+        if (!$schedule || !in_array($schedule->status, ['active', 'processing'], true)) {
             return;
         }
 
@@ -69,6 +69,8 @@ class GenerateScheduledReportJob implements ShouldQueue
         $schedule = ReportSchedule::find($this->scheduleId);
 
         if ($schedule) {
+            $schedule->forceFill(['status' => 'active'])->save();
+
             app(AuditTrailService::class)->log('scheduled_report_failed', null, [
                 'schedule_id' => $schedule->id,
                 'error' => $exception->getMessage(),

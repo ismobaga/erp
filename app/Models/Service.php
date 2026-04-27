@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -34,9 +35,7 @@ class Service extends Model
     {
         static::saving(function (Service $service): void {
             if (blank($service->code)) {
-                throw ValidationException::withMessages([
-                    'code' => 'A service code is required.',
-                ]);
+                $service->code = static::generateServiceCode();
             }
 
             $duplicate = static::query()
@@ -50,5 +49,36 @@ class Service extends Model
                 ]);
             }
         });
+    }
+
+    public static function generateServiceCode(): string
+    {
+        $prefix = 'SVC';
+
+        $max = static::query()
+            ->where('code', 'like', $prefix . '-%')
+            ->pluck('code')
+            ->reduce(function (int $carry, ?string $code) use ($prefix): int {
+                if (!filled($code)) {
+                    return $carry;
+                }
+
+                $normalized = Str::upper((string) $code);
+                $expectedPrefix = $prefix . '-';
+
+                if (!str_starts_with($normalized, $expectedPrefix)) {
+                    return $carry;
+                }
+
+                $suffix = substr($normalized, strlen($expectedPrefix));
+
+                if (!ctype_digit($suffix)) {
+                    return $carry;
+                }
+
+                return max($carry, (int) $suffix);
+            }, 0);
+
+        return $prefix . '-' . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

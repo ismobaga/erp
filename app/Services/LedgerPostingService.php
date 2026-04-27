@@ -258,6 +258,22 @@ class LedgerPostingService
         ?int $financialPeriodId,
     ): JournalEntry {
         return DB::transaction(function () use ($date, $description, $sourceType, $sourceId, $lines, $userId, $financialPeriodId): JournalEntry {
+            $existing = JournalEntry::query()
+                ->where('source_type', $sourceType)
+                ->where('source_id', $sourceId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $existing->loadMissing('lines');
+
+                if ($existing->status === 'draft' && $existing->lines->isNotEmpty()) {
+                    $existing->post($userId);
+                }
+
+                return $existing->fresh(['lines']);
+            }
+
             $entry = JournalEntry::create([
                 'entry_number' => $this->generateEntryNumber($date),
                 'entry_date' => $date,

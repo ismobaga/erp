@@ -119,6 +119,16 @@ class ReportExportService
         $processed = 0;
 
         foreach ($schedules as $schedule) {
+            $claimed = ReportSchedule::query()
+                ->whereKey($schedule->getKey())
+                ->where('status', 'active')
+                ->where('next_execution_at', $schedule->next_execution_at)
+                ->update(['status' => 'processing']);
+
+            if ($claimed !== 1) {
+                continue;
+            }
+
             GenerateScheduledReportJob::dispatch($schedule->id);
             $processed++;
         }

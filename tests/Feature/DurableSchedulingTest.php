@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ReportExportService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 class DurableSchedulingTest extends TestCase
@@ -135,5 +136,41 @@ class DurableSchedulingTest extends TestCase
         $due = ReportSchedule::due()->get();
 
         $this->assertEmpty($due);
+    }
+
+    public function test_due_schedule_is_claimed_only_once_before_dispatch(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $schedule = ReportSchedule::create([
+            'description' => 'Claim once schedule',
+            'frequency' => 'Hebdomadaire',
+            'export_format' => 'pdf',
+            'next_execution_at' => now()->subMinute(),
+            'status' => 'active',
+        ]);
+
+        $service = app(ReportExportService::class);
+
+        $this->assertSame(1, $service->runDueScheduledExports());
+        $this->assertSame(0, $service->runDueScheduledExports());
+        $this->assertSame('processing', $schedule->fresh()->status);
+        \Illuminate\Support\Facades\Queue::assertPushed(GenerateScheduledReportJob::class, 1);
+    }
+
+    public function test_failed_scheduled_job_releases_schedule_back_to_active(): void
+    {
+        $schedule = ReportSchedule::create([
+            'description' => 'Retry schedule',
+            'frequency' => 'Hebdomadaire',
+            'export_format' => 'pdf',
+            'next_execution_at' => now()->subMinute(),
+            'status' => 'processing',
+        ]);
+
+        $job = new GenerateScheduledReportJob($schedule->id);
+        $job->failed(new RuntimeException('boom'));
+
+        $this->assertSame('active', $schedule->fresh()->status);
     }
 }

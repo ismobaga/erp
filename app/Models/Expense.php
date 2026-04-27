@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -48,6 +49,8 @@ class Expense extends Model
                     'amount' => 'Expense amount must be positive.',
                 ]);
             }
+
+            $expense->category = static::normalizeCategory($expense->category);
 
             $allowedCategories = ['travel', 'supplies', 'operations', 'payroll', 'compliance', 'other'];
             if (!in_array((string) $expense->category, $allowedCategories, true)) {
@@ -123,5 +126,24 @@ class Expense extends Model
                 'notes' => $notes,
             ],
         ]);
+    }
+
+    protected static function normalizeCategory(mixed $category): string
+    {
+        $normalized = Str::of((string) $category)
+            ->lower()
+            ->trim()
+            ->replace(['-', ' '], '_')
+            ->value();
+
+        return match ($normalized) {
+            'travel', 'travels' => 'travel',
+            'supplies', 'supply' => 'supplies',
+            'operations', 'operation', 'marketing' => 'operations',
+            'payroll', 'salary', 'salaries' => 'payroll',
+            'compliance', 'audit' => 'compliance',
+            'other', 'misc', 'miscellaneous' => 'other',
+            default => $normalized,
+        };
     }
 }
