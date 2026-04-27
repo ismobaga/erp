@@ -4,31 +4,31 @@
 @source '../../../../resources/views/filament/**/*.blade.php';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-    --ledger-primary: #002045;
-    --ledger-primary-container: #1a365d;
-    --ledger-surface: #f8f9ff;
-    --ledger-surface-low: #eff4ff;
+    --ledger-primary: #012d1d;
+    --ledger-primary-container: #1b4332;
+    --ledger-surface: #fbf9f8;
+    --ledger-surface-low: #f5f3f3;
     --ledger-surface-card: #ffffff;
-    --ledger-muted: #43474e;
-    --ledger-outline: rgba(116, 119, 127, 0.18);
-    --ledger-shadow: 0 8px 32px rgba(11, 28, 48, 0.06);
+    --ledger-muted: #5f5e5e;
+    --ledger-outline: rgba(113, 121, 115, 0.2);
+    --ledger-shadow: 0 8px 28px rgba(27, 67, 50, 0.08);
 }
 
 .fi-body,
 .fi-layout,
 .fi-simple-layout {
     background: linear-gradient(180deg, var(--ledger-surface) 0%, var(--ledger-surface-low) 100%);
-    color: #0b1c30;
+    color: #1b1c1c;
 }
 
 .fi-sidebar {
     background: var(--ledger-surface-low);
     border-inline-end: none;
-    box-shadow: inset -1px 0 0 rgba(196, 198, 207, 0.25);
+    box-shadow: inset -1px 0 0 rgba(193, 200, 194, 0.4);
 }
 
 .fi-sidebar-header,
@@ -38,7 +38,7 @@
 }
 
 .fi-topbar {
-    background: rgba(248, 249, 255, 0.82);
+    background: rgba(251, 249, 248, 0.92);
     backdrop-filter: blur(20px);
     box-shadow: none;
 }
@@ -105,9 +105,9 @@
 .fi-textarea,
 .fi-input-wrp,
 .fi-fo-file-upload {
-    border-color: rgba(196, 198, 207, 0.2) !important;
+    border-color: rgba(193, 200, 194, 0.5) !important;
     background: var(--ledger-surface-low) !important;
-    color: #0b1c30 !important;
+    color: #1b1c1c !important;
     box-shadow: none !important;
 }
 
@@ -116,7 +116,7 @@
 .fi-textarea::placeholder,
 .fi-input-wrp input::placeholder,
 .fi-input-wrp textarea::placeholder {
-    color: #57657a !important;
+    color: #656464 !important;
     opacity: 1;
 }
 
@@ -125,7 +125,7 @@
 .fi-input-wrp-icon,
 .fi-fo-field-wrp-helper-text,
 .fi-simple-header-subheading {
-    color: #57657a !important;
+    color: #656464 !important;
 }
 
 .fi-simple-main,
@@ -136,18 +136,18 @@
 .fi-simple-main .fi-input-wrp,
 .fi-simple-main .fi-fo-field-wrp-label,
 .fi-simple-main .fi-link {
-    color: #0b1c30 !important;
+    color: #1b1c1c !important;
 }
 
 .fi-input:focus,
 .fi-select-input:focus,
 .fi-textarea:focus {
-    border-color: rgba(0, 32, 69, 0.28) !important;
-    box-shadow: 0 0 0 3px rgba(0, 32, 69, 0.08) !important;
+    border-color: rgba(27, 67, 50, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.12) !important;
 }
 
 .fi-btn-color-primary {
-    background: linear-gradient(135deg, #002045 0%, #1a365d 100%);
+    background: linear-gradient(135deg, #012d1d 0%, #1b4332 100%);
 }
 
 .fi-badge {
@@ -157,7 +157,7 @@
 
 .fi-ta-table thead tr,
 .fi-ta-header-ctn {
-    background: rgba(239, 244, 255, 0.85);
+    background: rgba(239, 237, 237, 0.85);
 }
 
 .fi-ta-header-cell-label {
@@ -175,21 +175,21 @@
 
 .fi-ta-row:hover,
 .fi-ta-record:hover {
-    background: rgba(239, 244, 255, 0.45);
+    background: rgba(239, 237, 237, 0.45);
 }
 
 .fi-dropdown-panel,
 .fi-modal-window {
     border: none !important;
     background: #ffffff !important;
-    color: #0b1c30 !important;
-    box-shadow: 0 12px 40px rgba(11, 28, 48, 0.08);
+    color: #1b1c1c !important;
+    box-shadow: 0 12px 34px rgba(27, 67, 50, 0.1);
     backdrop-filter: blur(20px);
 }
 
 .fi-dropdown-panel *,
 .fi-modal-window * {
-    color: #0b1c30;
+    color: #1b1c1c;
 }
 
 .architectural-card {
@@ -208,7 +208,7 @@
 }
 
 .board-shell {
-    background: linear-gradient(180deg, rgba(248, 249, 255, 0.95) 0%, rgba(239, 244, 255, 0.75) 100%);
+    background: linear-gradient(180deg, rgba(251, 249, 248, 0.95) 0%, rgba(239, 237, 237, 0.75) 100%);
 }
 
 .board-column {
@@ -219,13 +219,13 @@
     border-radius: 1rem;
     background: rgba(255, 255, 255, 0.96);
     padding: 1.25rem;
-    box-shadow: 0 8px 24px rgba(11, 28, 48, 0.05);
+    box-shadow: 0 8px 24px rgba(27, 67, 50, 0.08);
     transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
 .board-project-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(11, 28, 48, 0.08);
+    box-shadow: 0 14px 32px rgba(27, 67, 50, 0.12);
 }
 
 .metric-hero {
@@ -234,15 +234,15 @@
     border-radius: 1.25rem;
     padding: 2rem;
     min-height: 18rem;
-    background: linear-gradient(135deg, #002045 0%, #1a365d 100%);
-    box-shadow: 0 16px 40px rgba(11, 28, 48, 0.16);
+    background: linear-gradient(135deg, #012d1d 0%, #1b4332 100%);
+    box-shadow: 0 16px 40px rgba(27, 67, 50, 0.2);
 }
 
 .metric-hero::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 35%, rgba(141, 245, 228, 0.18) 100%);
+    background: linear-gradient(90deg, transparent 35%, rgba(134, 175, 153, 0.22) 100%);
 }
 
 .glass-panel {
@@ -258,10 +258,10 @@
     justify-content: center;
     border-radius: 9999px;
     border: 2px solid #fff;
-    color: #002045;
+    color: #1b4332;
     font-size: 0.7rem;
     font-weight: 800;
-    box-shadow: 0 4px 12px rgba(11, 28, 48, 0.06);
+    box-shadow: 0 4px 12px rgba(27, 67, 50, 0.08);
 }
 
 .team-avatar-sm {
@@ -293,15 +293,15 @@
 }
 
 .ledger-pillar-primary::before {
-    background: linear-gradient(180deg, #002045 0%, #1a365d 100%);
+    background: linear-gradient(180deg, #012d1d 0%, #1b4332 100%);
 }
 
 .ledger-pillar-secondary::before {
-    background: linear-gradient(180deg, #adc7f7 0%, #6f8fc8 100%);
+    background: linear-gradient(180deg, #c1ecd4 0%, #86af99 100%);
 }
 
 .ledger-pillar-tertiary::before {
-    background: linear-gradient(180deg, #8df5e4 0%, #43af9f 100%);
+    background: linear-gradient(180deg, #e5e2e1 0%, #c8c6c5 100%);
 }
 
 .ledger-pillar .fi-section-header,
@@ -310,8 +310,8 @@
 }
 
 .ledger-summary-card {
-    background: linear-gradient(135deg, #002045 0%, #1a365d 100%) !important;
-    box-shadow: 0 18px 40px rgba(11, 28, 48, 0.16) !important;
+    background: linear-gradient(135deg, #012d1d 0%, #1b4332 100%) !important;
+    box-shadow: 0 18px 40px rgba(27, 67, 50, 0.22) !important;
 }
 
 .ledger-summary-card {

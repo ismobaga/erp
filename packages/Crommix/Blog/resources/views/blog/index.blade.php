@@ -6,10 +6,10 @@
 @push('styles')
     <style>
         .hero {
-            background: linear-gradient(140deg, #001838, #002c60 60%, #1a365d 100%);
-            color: #fff;
-            padding: 72px 22px 48px;
-            border-bottom: 6px solid #8df5e4;
+            background: radial-gradient(560px 260px at 15% 0%, rgba(193, 236, 212, .5) 0%, transparent 62%), linear-gradient(145deg, #f5f3f3 15%, #efeded 70%, #e4e2e2 100%);
+            color: #1b1c1c;
+            padding: 72px 22px 54px;
+            border-bottom: 1px solid #c1c8c2;
         }
 
         .hero-wrap,
@@ -21,11 +21,13 @@
         .hero h1 {
             margin: 0 0 8px;
             font-size: clamp(1.8rem, 2.8vw, 2.8rem);
+            font-family: 'Manrope', sans-serif;
+            color: #012d1d;
         }
 
         .hero p {
             margin: 0;
-            color: #c5d8f7;
+            color: #414844;
             max-width: 760px;
         }
 
@@ -35,12 +37,12 @@
         }
 
         .card {
-            background: #fff;
-            border: 1px solid #c8d6ef;
+            background: #ffffff;
+            border: 1px solid #c1c8c2;
             border-radius: 18px;
             padding: 22px;
             margin-bottom: 14px;
-            box-shadow: 0 16px 32px rgba(0, 32, 69, 0.08);
+            box-shadow: 0 14px 30px rgba(27, 67, 50, 0.09);
         }
 
         .eyebrow {
@@ -48,46 +50,49 @@
             font-size: 11px;
             letter-spacing: .08em;
             text-transform: uppercase;
-            background: #dce9ff;
-            color: #002045;
+            background: #e5e2e1;
+            color: #1b4332;
             border-radius: 999px;
             padding: 5px 10px;
             font-weight: 700;
             margin-bottom: 10px;
+            font-family: 'Manrope', sans-serif;
         }
 
         .title {
             margin: 0 0 8px;
             font-size: 1.3rem;
+            font-family: 'Manrope', sans-serif;
         }
 
         .title a {
-            color: #002045;
+            color: #012d1d;
             text-decoration: none;
         }
 
         .title a:hover {
-            color: #1a365d;
+            color: #1b4332;
         }
 
         .meta {
             margin: 0 0 12px;
-            color: #4e5a70;
+            color: #5f5e5e;
             font-size: 13px;
+            font-family: 'Manrope', sans-serif;
         }
 
         .excerpt {
             margin: 0;
             line-height: 1.7;
-            color: #23324a;
+            color: #414844;
         }
 
         .empty {
-            border: 1px dashed #c8d6ef;
+            border: 1px dashed #c1c8c2;
             border-radius: 16px;
             padding: 24px;
             text-align: center;
-            color: #4e5a70;
+            color: #5f5e5e;
             background: #fff;
         }
 

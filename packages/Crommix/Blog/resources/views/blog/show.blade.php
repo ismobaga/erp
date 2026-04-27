@@ -14,17 +14,18 @@
         .back {
             display: inline-flex;
             margin-bottom: 16px;
-            color: #002045;
+            color: #1b4332;
             text-decoration: none;
             font-weight: 700;
+            font-family: 'Manrope', sans-serif;
         }
 
         article {
             background: #fff;
-            border: 1px solid #c8d6ef;
+            border: 1px solid #c1c8c2;
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 0 18px 36px rgba(0, 32, 69, 0.1);
+            box-shadow: 0 16px 34px rgba(27, 67, 50, 0.1);
         }
 
         .kicker {
@@ -32,34 +33,38 @@
             font-size: 11px;
             letter-spacing: .08em;
             text-transform: uppercase;
-            background: #dce9ff;
-            color: #002045;
+            background: #e5e2e1;
+            color: #1b4332;
             border-radius: 999px;
             padding: 5px 10px;
             font-weight: 700;
             margin-bottom: 12px;
+            font-family: 'Manrope', sans-serif;
         }
 
         h1 {
             margin: 0 0 10px;
             font-size: clamp(1.6rem, 2.7vw, 2.5rem);
+            color: #012d1d;
+            font-family: 'Manrope', sans-serif;
         }
 
         .meta {
             font-size: 13px;
-            color: #4e5a70;
+            color: #5f5e5e;
             margin: 0 0 18px;
+            font-family: 'Manrope', sans-serif;
         }
 
         .content {
             line-height: 1.8;
-            color: #1b2a43;
+            color: #414844;
         }
 
         .divider {
             height: 3px;
             border-radius: 999px;
-            background: linear-gradient(90deg, #43af9f, #8df5e4, transparent);
+            background: linear-gradient(90deg, #1b4332, #86af99, transparent);
             margin-bottom: 18px;
         }
     </style>
