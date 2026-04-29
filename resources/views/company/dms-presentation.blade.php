@@ -1,462 +1,286 @@
-<!DOCTYPE html>
-<html class="scroll-smooth" lang="fr">
+@extends('layouts.public')
 
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>{{ ($company?->company_name ?: 'DMS Ledger') . ' — La Révolution de la Gestion Officinale' }}</title>
-    <meta name="description"
-        content="DMS Ledger : solution de gestion officinale en français avec commandes, facturation, stocks, péremptions, AMO et extranet Pharma ML." />
+@section('title', 'DMS Crommix — Gestion des Pharmacies en Afrique de l\'Ouest')
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+@section('meta_description', 'DMS : Solution complète de gestion pour pharmacies d\'Afrique de l\'Ouest. Commandes, stock, facturation, péremptions, assurances mutuelles.')
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#002045',
-                        tertiary: '#005048',
-                        surface: '#f8f9ff',
-                        panel: '#eff4ff',
-                        ink: '#0b1c30',
-                        muted: '#43474e',
-                        accent: '#8df5e4'
-                    }
-                }
+@section('nav_links')
+    <a href="#fonctionnalites"
+        class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Fonctionnalités</a>
+    <a href="#avantages"
+        class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Avantages</a>
+    <a href="#contact"
+        class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Contact</a>
+@endsection
+
+@push('styles')
+<link href="https://cdn.tailwindcss.com" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+<script>
+    tailwind.config = {
+        theme: {
+            colors: {
+                'primary': '#002045',
+                'tertiary': '#005048',
+                'accent': '#70d8c8',
+                'surface': '#f8f9ff',
+                'panel': '#eff4ff',
+                'ink': '#0b1c30',
+                'muted': '#43474e',
             }
         }
-    </script>
+    }
+</script>
+@endpush
 
-    <style>
-        body {
-            font-family: Inter, sans-serif;
-        }
-
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
-        }
-
-        .status-pillar {
-            width: 4px;
-            height: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
-        }
-    </style>
-</head>
-
-@php
-    $companyName = $company?->company_name ?: 'DMS Ledger';
-    $companyEmail = $company?->email ?: 'contact@dms-ledger.com';
-    $companyPhone = $company?->phone ?: '+225 00 00 00 00';
-    $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Abidjan, Côte d\'Ivoire';
-    $companyWebsite = $company?->website ?: 'www.dms-ledger.com';
-
-    $dmsFeatures = [
-        'Commande - livraison - validation',
-        'Facturation - encaissement - recouvrement',
-        'Gestion des avoirs fournisseurs',
-        'Stock Min - Max',
-        'Gestion des produits (création, modification, suppression) avec zones de stockage, famille produit, DCI et unités de gestion',
-        'Multi-magasins avec transfert de stocks et multi-caisses (magasin, salle de vente, parapharmacie...)',
-        'Contrôle des péremptions (date sur code-barres) et détection des produits à date la plus proche à la vente',
-        'Gestion intégrale automatique des bons AMO et autres assurances',
-        'Extranet (commande et facture électronique) et intégration de la norme Pharma ML avec Ubipharm',
-        'Inventaire tournant, inventaire complet et micro-inventaire progressif',
-        'Archivage des données et restauration depuis le logiciel',
-        '200 points de contrôle d\'accès',
-        'Sauvegarde complète à chaque arrêt de session',
-        'Espace statistique et états divers',
-        'Mobile paiement, SMS pharmacie et alertes SMS',
-    ];
-@endphp
-
-<body class="bg-surface text-ink selection:bg-accent selection:text-primary">
-    <header class="fixed top-0 z-50 w-full border-b border-slate-200/40 bg-[#eff4ff]/95 backdrop-blur">
-        <nav class="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-5 lg:px-8">
-            <a href="#top" class="text-xl font-bold tracking-tight text-primary">{{ $companyName }}</a>
-
-            <div class="hidden items-center gap-8 md:flex">
-                <a class="border-b-2 border-accent pb-1 text-primary" href="#produit">Produit</a>
-                <a class="font-medium text-slate-600 transition hover:text-primary"
-                    href="#fonctionnalites">Fonctionnalités</a>
-                <a class="font-medium text-slate-600 transition hover:text-primary" href="#excellence">Excellence</a>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <a href="#contact"
-                    class="rounded-lg px-4 py-2 font-medium text-primary transition hover:bg-white/70">Connexion</a>
-                <a href="#contact"
-                    class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90">Demander
-                    une démo</a>
-            </div>
-        </nav>
-    </header>
-
-    <main class="pt-24" id="top">
-        <section class="relative overflow-hidden px-6 pb-28 pt-16 lg:px-8" id="produit">
-            <div class="mx-auto flex max-w-screen-2xl flex-col items-center gap-16 lg:flex-row">
-                <div class="z-10 flex-1 space-y-8">
-                    <div
-                        class="inline-flex items-center gap-2 rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">
-                        Gestion officinale nouvelle génération
+@section('content')
+        <section class="relative overflow-hidden bg-surface">
+            <div class="absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-panel to-transparent lg:block"></div>
+            <div class="mx-auto grid min-h-[780px] max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:px-8">
+                <div class="relative z-10">
+                    <div class="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-blue-900">
+                        <span class="h-2 w-2 rounded-full bg-accent"></span>
+                        Solution Complète
                     </div>
 
-                    <h1 class="text-5xl font-extrabold leading-[1.1] tracking-tight text-primary lg:text-7xl">
-                        La Révolution de la <span class="text-tertiary">Gestion Officinale</span>
+                    <h1 class="mb-6 max-w-3xl text-5xl font-extrabold leading-[1.05] tracking-tight text-primary lg:text-7xl">
+                        Transformez votre pharmacie en Afrique de l'Ouest
                     </h1>
 
-                    <p class="max-w-xl text-xl leading-relaxed text-muted">
-                        DMS centralise toute votre activité pharmacie: ventes, stocks, assurances, inventaires,
-                        sécurité et pilotage en temps réel.
+                    <p class="mb-10 max-w-xl text-xl leading-relaxed text-muted">
+                        DMS : Gestion intégrée des commandes, du stock, de la facturation et des assurances pour votre officine.
                     </p>
 
-                    <div class="flex flex-wrap gap-4 pt-2">
-                        <a href="#contact"
-                            class="rounded-lg bg-primary px-8 py-4 text-lg font-bold text-white transition active:scale-95">Demander
-                            une démo</a>
-                        <a href="#fonctionnalites"
-                            class="rounded-lg bg-[#d5e3fc] px-8 py-4 text-lg font-bold text-[#3a485b] transition active:scale-95">Voir
-                            les fonctionnalités</a>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#contact" class="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-white transition hover:opacity-90">
+                            Demander une démo
+                            <span aria-hidden="true">→</span>
+                        </a>
+                        <a href="{{ route('company.presentation') }}" class="rounded-xl border border-slate-300 bg-panel px-8 py-4 font-bold text-primary transition hover:bg-white">
+                            Retour à l'accueil
+                        </a>
                     </div>
                 </div>
 
-                <div class="relative w-full flex-1">
-                    <div class="overflow-hidden rounded-2xl bg-[#1a365d] p-2 shadow-2xl">
-                        <img alt="Tableau de bord DMS" class="h-auto w-full rounded-xl object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbRn7e_2le-iY9W2jghym3pmDIqQvXVJP8Het08d9zD6D_gYZmidReqUf2-3FVp6vdNp1CSYL5aw09aH-pj5G3YlCxQrz5lPN39Q36qhcyuJfEoeSyFRZ85VDp7uodra01Hu8B_JucfFFrUv8Vag5HimnMqohvhrxblTvistubIm-34fxi_ekUpwZbWfFUvTWQS3B9KhD3NsFKRoRcBBluTzBVn2V1r4nh3YdgX4-tbvd2PdUtBslDpgIc4SlLxvhIu-YpcT4yWU0p" />
-                    </div>
-
-                    <div class="absolute -bottom-6 -left-4 hidden rounded-xl bg-accent p-5 shadow-xl md:block">
-                        <span class="block text-3xl font-black text-[#00201c]">100%</span>
-                        <span class="text-xs font-bold uppercase tracking-widest text-[#00201c]/80">Précision
-                            inventaire</span>
+                <div class="relative">
+                    <div class="aspect-square overflow-hidden rounded-[2rem] shadow-2xl">
+                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi-xtgOWk5hDfEAKs7bQtg_Oc3F3anSiDhhH2GE2TgvLgQnwWQ40f8ZlGuKvGAsIBkSVFpLZK-HjQkpghvaKGZTSfLS2CRIqWBXr6_S4K2-p0iiOvDOGHJ03D9ksglYXCt2baSHEs-_OLU_irqHFHIj5_FHXZqVf6tc1n6FcFav9XWu0x-rh0o-VpxlsnPT4jQJiZ6i1rcdYzze4knt0BU-XH1iybMTlGJADbCkB2zQSCMpQ2muAUvM0xOIeLfCGLuUF7XjU4aVYri" alt="Tableau de bord DMS" class="h-full w-full object-cover">
                     </div>
                 </div>
             </div>
-
-            <div class="absolute right-0 top-0 -z-10 h-full w-1/3 bg-linear-to-l from-panel to-transparent"></div>
         </section>
 
-        <section class="bg-surface py-24" id="fonctionnalites">
-            <div class="mx-auto max-w-screen-2xl px-6 lg:px-8">
-                <div class="mb-16 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-                    <div class="max-w-2xl">
-                        <h2 class="mb-4 text-4xl font-bold tracking-tight text-primary">Fonctionnalités de DMS</h2>
-                        <p class="text-lg text-muted">Une suite d'outils orchestrée pour automatiser chaque étape de
-                            votre officine.</p>
-                    </div>
-                    <div class="font-bold italic tracking-tight text-tertiary">Compatible flux Pharma ML</div>
+        <section id="fonctionnalites" class="bg-surface py-24">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="mb-16 text-center">
+                    <h2 class="mb-4 text-4xl font-black tracking-tight text-primary">Fonctionnalités de DMS</h2>
+                    <p class="mx-auto max-w-2xl text-muted">Une plateforme conçue spécifiquement pour les réalités des pharmacies d'Afrique de l'Ouest.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                    <article
-                        class="group relative rounded-xl bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1">
-                        <div class="status-pillar bg-primary"></div>
-                        <div
-                            class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-panel text-primary">
-                            <span class="material-symbols-outlined">local_shipping</span>
-                        </div>
-                        <h3 class="mb-3 text-xl font-bold text-primary">Commande - livraison - validation</h3>
-                        <p class="leading-relaxed text-muted">Suivi de bout en bout des flux d'approvisionnement avec
-                            validation rapide.</p>
-                    </article>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    @php
+                        $dmsFeatures = [
+                            ['title' => 'Commandes Intégrées', 'description' => 'Gérez vos approvisionnements auprès des fournisseurs locaux et internationaux.'],
+                            ['title' => 'Gestion du Stock', 'description' => 'Suivi en temps réel des stocks, alertes de rupture et valuation des prix.'],
+                            ['title' => 'Facturation Complète', 'description' => 'Génération d\'ordonnances et de factures conformes aux régulations locales.'],
+                            ['title' => 'Péremptions', 'description' => 'Suivi automatique des dates de péremption et alertes avant expiration.'],
+                            ['title' => 'Assurances Mutuelles', 'description' => 'Gestion des remboursements d\'assurances et mutuelles de santé.'],
+                            ['title' => 'Pharmacologie ML', 'description' => 'Classification intelligente des médicaments avec recommandations.'],
+                            ['title' => 'Rapports Conformité', 'description' => 'Documents de conformité réglementaire pour autorités sanitaires.'],
+                            ['title' => 'Tableau de Bord', 'description' => 'KPIs en temps réel de votre activité et rentabilité.'],
+                        ];
+                    @endphp
 
-                    <article
-                        class="group relative rounded-xl bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1">
-                        <div class="status-pillar bg-accent"></div>
-                        <div
-                            class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-panel text-tertiary">
-                            <span class="material-symbols-outlined">receipt_long</span>
-                        </div>
-                        <h3 class="mb-3 text-xl font-bold text-primary">Facturation - recouvrement</h3>
-                        <p class="leading-relaxed text-muted">Encaissement, recouvrement et gestion des avoirs
-                            fournisseurs sur une même interface.</p>
-                    </article>
-
-                    <article
-                        class="group relative rounded-xl bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1">
-                        <div class="status-pillar bg-primary"></div>
-                        <div
-                            class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-panel text-primary">
-                            <span class="material-symbols-outlined">inventory_2</span>
-                        </div>
-                        <h3 class="mb-3 text-xl font-bold text-primary">Stock Min - Max</h3>
-                        <p class="leading-relaxed text-muted">Niveaux cibles automatisés pour éviter ruptures et
-                            surstocks.</p>
-                    </article>
-
-                    <article
-                        class="group relative rounded-xl bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1">
-                        <div class="status-pillar bg-accent"></div>
-                        <div
-                            class="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-panel text-tertiary">
-                            <span class="material-symbols-outlined">barcode_reader</span>
-                        </div>
-                        <h3 class="mb-3 text-xl font-bold text-primary">Contrôle des péremptions</h3>
-                        <p class="leading-relaxed text-muted">Date de péremption sur code-barres et détection FEFO à la
-                            vente.</p>
-                    </article>
-                </div>
-
-                <div class="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     @foreach ($dmsFeatures as $feature)
-                        <div class="rounded-xl bg-panel p-5 text-sm font-medium text-[#2d476f] ring-1 ring-[#dce9ff]">
-                            {{ $feature }}
-                        </div>
+                        <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+                            <h3 class="mb-3 text-lg font-bold text-primary">{{ $feature['title'] }}</h3>
+                            <p class="text-sm leading-relaxed text-muted">{{ $feature['description'] }}</p>
+                        </article>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <section class="overflow-hidden bg-primary py-24 text-white" id="excellence">
-            <div class="mx-auto max-w-screen-2xl px-6 lg:px-8">
-                <div class="grid grid-cols-1 items-start gap-16 lg:grid-cols-2">
-                    <div class="space-y-10">
-                        <div>
-                            <h2 class="text-4xl font-extrabold tracking-tight lg:text-5xl">Excellence opérationnelle
-                            </h2>
-                            <p class="mt-4 max-w-xl text-lg text-[#d6e3ff]">
-                                Une infrastructure robuste pensée pour la continuité d'activité de la pharmacie,
-                                l'auditabilité et la conformité.
-                            </p>
-                        </div>
-
+        <section id="avantages" class="bg-panel py-24">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="grid grid-cols-1 gap-12 lg:grid-cols-2">
+                    <div>
+                        <h2 class="mb-8 text-4xl font-black tracking-tight text-primary">Excellence & Performance</h2>
                         <div class="space-y-6">
-                            <div class="flex items-start gap-4">
-                                <div class="rounded-lg bg-[#1a365d] p-3 text-accent"><span
-                                        class="material-symbols-outlined">shield_person</span></div>
+                            <div class="flex gap-4">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-accent">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                </div>
                                 <div>
-                                    <h4 class="text-xl font-bold">200 points de contrôle d'accès</h4>
-                                    <p class="text-[#d6e3ff]">Sécurité granulaire des profils et traçabilité complète
-                                        des actions.</p>
+                                    <h3 class="font-bold text-primary">Confiance Pharmaceutique</h3>
+                                    <p class="text-sm text-muted">Tous les médicaments traçables et conformes aux standards de qualité africains.</p>
                                 </div>
                             </div>
-
-                            <div class="flex items-start gap-4">
-                                <div class="rounded-lg bg-[#1a365d] p-3 text-accent"><span
-                                        class="material-symbols-outlined">cloud_sync</span></div>
+                            <div class="flex gap-4">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-accent">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                </div>
                                 <div>
-                                    <h4 class="text-xl font-bold">Sauvegarde à chaque arrêt de session</h4>
-                                    <p class="text-[#d6e3ff]">Protection automatique des données sensibles de
-                                        l'officine.</p>
+                                    <h3 class="font-bold text-primary">Croissance Mesurable</h3>
+                                    <p class="text-sm text-muted">Augmentez votre marge bénéficiaire de 15% à 25% grâce à l'optimisation des stocks.</p>
                                 </div>
                             </div>
-
-                            <div class="flex items-start gap-4">
-                                <div class="rounded-lg bg-[#1a365d] p-3 text-accent"><span
-                                        class="material-symbols-outlined">query_stats</span></div>
+                            <div class="flex gap-4">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-accent">
+                                    <span class="material-symbols-outlined">security</span>
+                                </div>
                                 <div>
-                                    <h4 class="text-xl font-bold">Espace statistique et états divers</h4>
-                                    <p class="text-[#d6e3ff]">Pilotage par indicateurs, rapports métier et exports
-                                        décisionnels.</p>
+                                    <h3 class="font-bold text-primary">Sécurité des Données</h3>
+                                    <p class="text-sm text-muted">Chiffrement enterprise, sauvegarde cloud, conformité RGPD et données sensibles.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-4 pt-10">
-                            <div class="aspect-square overflow-hidden rounded-2xl bg-[#1a365d]">
-                                <img alt="Pharmacie moderne"
-                                    class="h-full w-full object-cover opacity-70 transition duration-700 hover:scale-105"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBhhj9qh3FUrY82oA3647u8sCnXeaadWj1qG3O9-TPZLtIz78wh5r2nUpeLWiPynkd37WcuT-pAG68ZfcpptK6Icxxx6SmW-fvUPa6pU2eVC6ffeTIWkvCcgvUl56YWWOoxVHov0XpOV93mCibf_01PgL_mzzTQwcdkfuN9uOq6izO13MfkwRi4DrwLQVIsrLvzsCRB-8xt-KkZ5YQdbG6_DPXTSPFLLhVQARO-OirxioUENXGMuRJI4-FaBI7XgfHfRQg8uGARwCw" />
-                            </div>
-                            <div class="rounded-2xl bg-[#003d36] p-6">
-                                <div class="text-4xl font-black text-accent">99.9%</div>
-                                <div class="text-xs font-bold uppercase tracking-widest text-accent/80">Disponibilité
-                                </div>
-                            </div>
-                        </div>
-
+                    <div class="rounded-[2rem] bg-white p-8 shadow-lg">
+                        <h3 class="mb-6 text-2xl font-bold text-primary">Performance Démontrée</h3>
                         <div class="space-y-4">
-                            <div class="h-56 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                                <div class="text-xs font-bold uppercase tracking-widest text-accent">Intégrations</div>
-                                <div class="mt-3 text-2xl font-bold">AMO, Assurances, Pharma ML</div>
+                            <div class="flex items-end gap-2">
+                                <div class="flex-1 h-12 bg-accent rounded-t-lg"></div>
+                                <p class="text-sm font-bold text-primary">98%</p>
                             </div>
-                            <div class="aspect-square overflow-hidden rounded-2xl bg-[#1a365d]">
-                                <img alt="Infrastructure DMS"
-                                    class="h-full w-full object-cover opacity-70 transition duration-700 hover:scale-105"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3aC3sQ2X5u5SWjpLd9nElJjp2fcSYpGK_lOW5ZzgSzye4zrR3IbCK14Vlq9kxAevd4pX4UhbCp7BOScK2W6DY1t1_jGVvvdN6eni8mJEhFpSjmnr6ZkMzNp4EYmA_8XUl4bS7PZlHD2ly0IpYkzi7RYnKjkKudyZa5WL9Kf8f-UWmdCMM_noIW8VjYwClr2buDq0n5C8fOPmyeqqSDtF77_i0qBTEukFbqMkuUtZIgKRlYPguwUuO9Zr7S7MY9XBB2IyuaVb0Ydne" />
+                            <p class="text-xs text-muted">Taux de satisfaction client</p>
+
+                            <div class="h-px bg-slate-200 my-6"></div>
+
+                            <div class="flex items-end gap-2">
+                                <div class="flex-1 h-8 bg-accent/70 rounded-t-lg"></div>
+                                <p class="text-sm font-bold text-primary">3.2x</p>
                             </div>
+                            <p class="text-xs text-muted">Retour sur investissement (année 1)</p>
+
+                            <div class="h-px bg-slate-200 my-6"></div>
+
+                            <div class="flex items-end gap-2">
+                                <div class="flex-1 h-10 bg-accent/50 rounded-t-lg"></div>
+                                <p class="text-sm font-bold text-primary">15+</p>
+                            </div>
+                            <p class="text-xs text-muted">Pays d'Afrique de l'Ouest</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="bg-[#eff4ff] py-24">
-            <div class="mx-auto max-w-screen-2xl px-6 lg:px-8">
-                <div class="grid grid-cols-1 gap-14 lg:grid-cols-2">
-                    <div>
-                        <h2 class="text-4xl font-bold tracking-tight text-primary">Visualisez votre performance</h2>
-                        <p class="mt-5 text-lg leading-relaxed text-muted">
-                            DMS transforme vos données brutes en décisions opérationnelles. Inventaire tournant,
-                            micro-inventaire progressif, alertes SMS, mobile paiement et archivage unifié.
-                        </p>
+        <section class="bg-surface py-24">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="mb-4 text-4xl font-black tracking-tight text-primary">Prêt à transformer votre pharmacie ?</h2>
+                    <p class="mx-auto max-w-2xl text-muted">Rejoignez les centaines de pharmacies en Afrique de l'Ouest qui font confiance à DMS.</p>
+                </div>
 
-                        <ul class="mt-8 space-y-3">
-                            <li class="flex items-center gap-3 font-semibold text-primary"><span
-                                    class="material-symbols-outlined text-tertiary">check_circle</span>Audit automatique
-                                des écarts</li>
-                            <li class="flex items-center gap-3 font-semibold text-primary"><span
-                                    class="material-symbols-outlined text-tertiary">check_circle</span>Exports
-                                multi-formats (PDF, Excel, Pharma ML)</li>
-                            <li class="flex items-center gap-3 font-semibold text-primary"><span
-                                    class="material-symbols-outlined text-tertiary">check_circle</span>Tableaux de bord
-                                personnalisables</li>
-                        </ul>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="rounded-2xl border-2 border-primary/20 bg-white p-8 text-center">
+                        <p class="mb-4 text-4xl font-black text-primary">1</p>
+                        <h3 class="mb-2 font-bold text-primary">Essai Gratuit</h3>
+                        <p class="text-sm text-muted">30 jours sans engagement pour tester toutes les fonctionnalités.</p>
                     </div>
-
-                    <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200/50">
-                        <div class="mb-8 flex items-center justify-between">
-                            <h3 class="text-2xl font-bold text-primary">Analyse dynamique</h3>
-                            <span class="rounded bg-panel px-3 py-1 text-sm font-semibold text-[#3a485b]">Mensuel</span>
-                        </div>
-
-                        <div class="space-y-6">
-                            <div class="border-l-4 border-accent pl-5">
-                                <p class="text-xs font-bold uppercase tracking-widest text-muted">Inventaire tournant
-                                </p>
-                                <p class="text-4xl font-extrabold text-primary">84.2%</p>
-                                <p class="text-xs font-bold text-tertiary">+12% vs mois dernier</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="rounded-xl bg-surface p-5 ring-1 ring-slate-200/40">
-                                    <p class="text-xs font-bold uppercase tracking-widest text-muted">Micro-inventaire
-                                    </p>
-                                    <p class="mt-2 text-2xl font-bold text-primary">Quotidien</p>
-                                </div>
-                                <div class="rounded-xl bg-surface p-5 ring-1 ring-slate-200/40">
-                                    <p class="text-xs font-bold uppercase tracking-widest text-muted">États</p>
-                                    <p class="mt-2 text-2xl font-bold text-primary">+45</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="rounded-2xl border-2 border-primary/20 bg-white p-8 text-center">
+                        <p class="mb-4 text-4xl font-black text-primary">2</p>
+                        <h3 class="mb-2 font-bold text-primary">Formation Complète</h3>
+                        <p class="text-sm text-muted">Nous formons vos équipes à distance pour une utilisation optimale.</p>
+                    </div>
+                    <div class="rounded-2xl border-2 border-primary/20 bg-white p-8 text-center">
+                        <p class="mb-4 text-4xl font-black text-primary">3</p>
+                        <h3 class="mb-2 font-bold text-primary">Support Continu</h3>
+                        <p class="text-sm text-muted">Support en français 24h/24, 7j/7 pendant et après votre implémentation.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="relative overflow-hidden bg-surface py-24" id="contact">
-            <div class="mx-auto mb-12 max-w-4xl px-6 text-center lg:px-8">
-                <h2 class="mb-4 text-4xl font-extrabold tracking-tight text-primary lg:text-5xl">Prêt à transformer
-                    votre pharmacie ?</h2>
-                <p class="text-xl text-muted">Passez à une gestion officinale intégrée, fiable et pilotée par la donnée.
-                </p>
-            </div>
+        <section id="contact" class="bg-panel py-24">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="flex flex-col gap-12 rounded-[2rem] bg-white p-8 lg:flex-row lg:items-start lg:p-16">
+                    <div class="lg:w-1/2">
+                        <h2 class="mb-6 text-4xl font-black tracking-tight text-primary">Demander une Démo</h2>
+                        <p class="mb-10 leading-relaxed text-muted">Échangez avec nos experts DMS pour comprendre comment l'application peut transformer votre pharmacie.</p>
 
-            <div class="mx-auto max-w-3xl px-6 lg:px-8">
-                <form method="POST" action="{{ route('company.presentation.contact') }}"
-                    class="space-y-6 rounded-2xl border border-slate-200/40 bg-white p-8 shadow-xl lg:p-10">
-                    @csrf
+                        @if (session('status'))
+                            <div class="mb-6 rounded-xl border border-accent/40 bg-surface px-4 py-3 text-sm font-semibold text-tertiary">
+                                {{ session('status') }}
+                            </div>
+                        @endif
 
-                    @if (session('status'))
-                        <div
-                            class="rounded-xl border border-accent/40 bg-[#edfff9] px-4 py-3 text-sm font-semibold text-tertiary">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <div>
-                            <label class="mb-2 block text-sm font-bold uppercase tracking-wider text-primary"
-                                for="name">Prénom & nom</label>
-                            <input class="w-full rounded-lg border-none bg-panel p-4 focus:ring-2 focus:ring-accent"
-                                id="name" name="name" placeholder="Jean Dupont" type="text" value="{{ old('name') }}" />
-                            @error('name')
-                                <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="mb-2 block text-sm font-bold uppercase tracking-wider text-primary"
-                                for="intent">Type de demande</label>
-                            <select class="w-full rounded-lg border-none bg-panel p-4 focus:ring-2 focus:ring-accent"
-                                id="intent" name="intent">
-                                <option value="Implémentation DMS" @selected(old('intent') === 'Implémentation DMS')>
-                                    Implémentation DMS</option>
-                                <option value="Extranet Pharma ML" @selected(old('intent') === 'Extranet Pharma ML')>
-                                    Extranet Pharma ML</option>
-                                <option value="Gestion AMO et Assurances" @selected(old('intent') === 'Gestion AMO et Assurances')>Gestion AMO et assurances</option>
-                                <option value="Audit opérationnel" @selected(old('intent') === 'Audit opérationnel')>Audit
-                                    opérationnel</option>
-                            </select>
-                            @error('intent')
-                                <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                            @enderror
+                        <div class="space-y-5 text-sm font-medium text-ink">
+                            <div class="flex items-center gap-4">
+                                <span>📍</span>
+                                <span>{{ $companyAddress }}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span>✉️</span>
+                                <span>{{ $companyEmail }}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span>☎️</span>
+                                <span>{{ $companyPhone }}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="mb-2 block text-sm font-bold uppercase tracking-wider text-primary"
-                            for="email">Email professionnel</label>
-                        <input class="w-full rounded-lg border-none bg-panel p-4 focus:ring-2 focus:ring-accent"
-                            id="email" name="email" placeholder="contact@pharmacie.fr" type="email"
-                            value="{{ old('email') }}" />
-                        @error('email')
-                            <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                        @enderror
+                    <div class="w-full lg:w-1/2">
+                        <form method="POST" action="{{ route('company.presentation.contact') }}" class="grid grid-cols-1 gap-6">
+                            @csrf
+
+                            <div class="space-y-1">
+                                <label for="name" class="text-xs font-bold uppercase tracking-widest text-muted">Nom complet</label>
+                                <input id="name" name="name" value="{{ old('name') }}" type="text" placeholder="Fatou Diallo" class="w-full rounded-xl border border-slate-200 bg-surface p-4 outline-none transition focus:border-primary/15 focus:ring-2 focus:ring-primary/10">
+                                @error('name')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-1">
+                                <label for="company_name" class="text-xs font-bold uppercase tracking-widest text-muted">Nom de la pharmacie <span class="normal-case font-normal opacity-60">(optionnel)</span></label>
+                                <input id="company_name" name="company_name" value="{{ old('company_name') }}" type="text" placeholder="Pharmacie Centrale" class="w-full rounded-xl border border-slate-200 bg-surface p-4 outline-none transition focus:border-primary/15 focus:ring-2 focus:ring-primary/10">
+                                @error('company_name')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-1">
+                                <label for="email" class="text-xs font-bold uppercase tracking-widest text-muted">E-mail</label>
+                                <input id="email" name="email" value="{{ old('email') }}" type="email" placeholder="f.diallo@pharmacie.com" class="w-full rounded-xl border border-slate-200 bg-surface p-4 outline-none transition focus:border-primary/15 focus:ring-2 focus:ring-primary/10">
+                                @error('email')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-1">
+                                <label for="intent" class="text-xs font-bold uppercase tracking-widest text-muted">Type de pharmacie</label>
+                                <select id="intent" name="intent" class="w-full appearance-none rounded-xl border border-slate-200 bg-surface p-4 outline-none transition focus:border-primary/15 focus:ring-2 focus:ring-primary/10">
+                                    <option value="Demande démo DMS" @selected(old('intent', 'Demande démo DMS') === 'Demande démo DMS')>Officine communautaire</option>
+                                    <option value="Pharmacie Hospitalière" @selected(old('intent') === 'Pharmacie Hospitalière')>Pharmacie hospitalière</option>
+                                    <option value="Pharmacie Clinique" @selected(old('intent') === 'Pharmacie Clinique')>Pharmacie clinique privée</option>
+                                    <option value="Chaîne Pharmacies" @selected(old('intent') === 'Chaîne Pharmacies')>Chaîne de pharmacies</option>
+                                </select>
+                                @error('intent')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-1">
+                                <label for="message" class="text-xs font-bold uppercase tracking-widest text-muted">Message</label>
+                                <textarea id="message" name="message" rows="4" placeholder="Parlez-nous de votre contexte..." class="w-full rounded-xl border border-slate-200 bg-surface p-4 outline-none transition focus:border-primary/15 focus:ring-2 focus:ring-primary/10">{{ old('message') }}</textarea>
+                                @error('message')
+                                    <p class="text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <input type="hidden" name="source" value="dms">
+
+                            <button type="submit" class="rounded-xl bg-primary py-4 font-bold text-white shadow-lg shadow-primary/10 transition hover:shadow-primary/20">
+                                Demander une démo
+                            </button>
+                        </form>
                     </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-bold uppercase tracking-wider text-primary"
-                            for="message">Message (optionnel)</label>
-                        <textarea class="w-full rounded-lg border-none bg-panel p-4 focus:ring-2 focus:ring-accent"
-                            id="message" name="message" placeholder="Décrivez votre besoin"
-                            rows="4">{{ old('message') }}</textarea>
-                        @error('message')
-                            <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <button
-                        class="w-full rounded-lg bg-primary py-4 text-lg font-bold text-white transition hover:shadow-lg active:scale-[0.99]"
-                        type="submit">
-                        Envoyer ma demande de démo
-                    </button>
-
-                    <p class="text-center text-xs text-muted/80">En soumettant ce formulaire, vous acceptez notre
-                        politique de confidentialité.</p>
-                </form>
+                </div>
             </div>
         </section>
-    </main>
-
-    <footer class="mt-auto w-full border-t border-slate-200/60 bg-[#eff4ff]">
-        <div
-            class="mx-auto grid max-w-screen-2xl grid-cols-1 gap-8 px-8 py-14 text-sm text-slate-600 md:grid-cols-2 lg:px-12">
-            <div class="space-y-4">
-                <div class="text-lg font-semibold text-primary">{{ $companyName }}</div>
-                <p class="max-w-md">Le système de gestion officinale nouvelle génération alliant robustesse métier et
-                    expérience utilisateur claire.</p>
-                <div>© {{ now()->year }} {{ $companyName }}</div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-8">
-                <div class="space-y-3">
-                    <div class="text-xs font-bold uppercase tracking-widest text-primary">Contact</div>
-                    <p>{{ $companyAddress }}</p>
-                    <p>{{ $companyPhone }}</p>
-                    <p>{{ $companyEmail }}</p>
-                    <p>{{ $companyWebsite }}</p>
-                </div>
-                <div class="space-y-3">
-                    <div class="text-xs font-bold uppercase tracking-widest text-primary">Navigation</div>
-                    <a class="block hover:underline" href="#produit">Produit</a>
-                    <a class="block hover:underline" href="#fonctionnalites">Fonctionnalités</a>
-                    <a class="block hover:underline" href="#excellence">Excellence</a>
-                    <a class="block hover:underline" href="#contact">Démo</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
-
-</html>
+@endsection

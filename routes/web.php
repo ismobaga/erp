@@ -11,11 +11,24 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
 Route::get('/', function () {
-    return view('company.presentation', [
-        'company' => Schema::hasTable('company_settings')
-            ? CompanySetting::query()->first()
-            : null,
-    ]);
+    $company = Schema::hasTable('company_settings')
+        ? CompanySetting::query()->first()
+        : null;
+
+    $companyName = $company?->company_name ?: 'CROMMIX MALI - SA';
+    $companyEmail = $company?->email ?: '';
+    $companyPhone = $company?->phone ?: '83 45 08 83 / 00226 25 50 20 00';
+    $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343';
+    $companyWebsite = $company?->website ?: '';
+
+    return view('company.presentation', compact(
+        'company',
+        'companyName',
+        'companyEmail',
+        'companyPhone',
+        'companyAddress',
+        'companyWebsite'
+    ));
 })->name('company.presentation');
 
 Route::get('/presentation', function () {
@@ -23,11 +36,24 @@ Route::get('/presentation', function () {
 });
 
 Route::get('/dms-presentation', function () {
-    return view('company.dms-presentation', [
-        'company' => Schema::hasTable('company_settings')
-            ? CompanySetting::query()->first()
-            : null,
-    ]);
+    $company = Schema::hasTable('company_settings')
+        ? CompanySetting::query()->first()
+        : null;
+
+    $companyName = $company?->company_name ?: 'CROMMIX MALI - SA';
+    $companyEmail = $company?->email ?: '';
+    $companyPhone = $company?->phone ?: '83 45 08 83 / 00226 25 50 20 00';
+    $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343';
+    $companyWebsite = $company?->website ?: '';
+
+    return view('company.dms-presentation', compact(
+        'company',
+        'companyName',
+        'companyEmail',
+        'companyPhone',
+        'companyAddress',
+        'companyWebsite'
+    ));
 })->name('dms.presentation');
 
 Route::post('/contact-request', function (Request $request) {
@@ -37,7 +63,10 @@ Route::post('/contact-request', function (Request $request) {
         'email' => ['required', 'email', 'max:255'],
         'intent' => ['required', 'string', 'max:255'],
         'message' => ['nullable', 'string', 'max:2000'],
+        'source' => ['nullable', 'in:website,dms'],
     ]);
+
+    $source = $validated['source'] ?? 'website';
 
     ContactRequest::create([
         'name' => $validated['name'],
@@ -46,10 +75,14 @@ Route::post('/contact-request', function (Request $request) {
         'intent' => $validated['intent'],
         'message' => $validated['message'] ?? null,
         'status' => 'new',
-        'source' => 'website',
+        'source' => $source,
     ]);
 
-    return redirect()->to(url('/') . '/#contact')->with(
+    $redirectTarget = $source === 'dms'
+        ? url('/dms-presentation') . '/#contact'
+        : url('/') . '/#contact';
+
+    return redirect()->to($redirectTarget)->with(
         'status',
         'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
     );
