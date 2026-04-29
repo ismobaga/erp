@@ -1,6 +1,6 @@
 @extends('crommix-blog::layouts.public')
 
-@section('title', 'Crommix Forge · Blog')
+@section('title', 'CGL · Blog')
 @section('meta_description', 'Articles opérationnels, retours terrain et stratégies de croissance.')
 
 @push('styles')
@@ -105,7 +105,7 @@
 @section('content')
     <header class="hero">
         <div class="hero-wrap">
-            <h1>Journal Crommix Forge</h1>
+            <h1>Journal CGL</h1>
             <p>Articles opérationnels, retours terrain et stratégies de croissance pour structurer vos opérations.</p>
         </div>
     </header>

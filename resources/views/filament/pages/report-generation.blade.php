@@ -378,7 +378,7 @@
         <footer
             class="mt-auto flex items-center justify-between border-t border-[#c4c6cf]/10 bg-[#f8faff]/30 px-4 py-6 dark:border-white/10">
             <div class="flex items-center gap-4">
-                <span class="text-xs font-medium text-[#74777f]">© 2024 Crommix Forge - ERP Le Grand Registre</span>
+                <span class="text-xs font-medium text-[#74777f]">© {{ date('Y') }} CGL – Gestion financière &amp; ERP</span>
             </div>
             <div class="flex gap-6">
                 <a href="#" class="text-xs font-semibold text-[#57657a] transition-colors hover:text-[#002045]">Aide &

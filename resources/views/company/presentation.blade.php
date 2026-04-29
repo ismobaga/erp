@@ -447,7 +447,7 @@
                 class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">
                 <span>© {{ now()->year }} {{ $companyName }}. Pour votre transformation numérique.</span>
                 <span>En partenariat avec <a href="https://crommix.com/" target="_blank" rel="noopener noreferrer"
-                        class="underline transition hover:text-[#005048]">Crommix</a> — Burkina Faso</span>
+                        class="underline transition hover:text-[#005048]">CGL</a> — Burkina Faso</span>
             </div>
         </div>
     </footer>
