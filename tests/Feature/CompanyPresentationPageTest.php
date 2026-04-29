@@ -2,18 +2,20 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CompanyPresentationPageTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_company_presentation_page_is_available(): void
     {
         $response = $this->get('/');
 
         $response->assertOk();
         $response->assertSeeText('Demander une démo');
-        $response->assertSeeText('Catalogue DMS');
-        $response->assertSeeText('Ouvrir la présentation DMS');
+        $response->assertSeeText('DMS');
+        $response->assertSeeText('Gestion des pharmacies');
     }
 
     public function test_dms_presentation_page_is_available(): void

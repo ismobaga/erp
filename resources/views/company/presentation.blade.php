@@ -5,7 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ ($company?->company_name ?: config('app.name')) . ' — Présentation' }}</title>
-    <meta name="description" content="Présentation de l'entreprise, de sa vision et de ses solutions métier.">
+    <meta name="description"
+        content="CROMMIX MALI — Vos solutions logicielles pour la transformation numérique des entreprises d'Afrique de l'Ouest.">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
@@ -19,11 +20,12 @@
     </style>
 </head>
 @php
-    $companyName = $company?->company_name ?: config('app.name');
+    $companyName = $company?->company_name ?: 'CROMMIX MALI - SA';
     $companyEmail = $company?->email ?: '';
-    $companyPhone = $company?->phone ?: '+225 00 00 00 00';
-    $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Siège Social, Plateau, Abidjan';
+    $companyPhone = $company?->phone ?: '83 45 08 83 / 00226 25 50 20 00';
+    $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343';
     $companyWebsite = $company?->website ?: '';
+
 @endphp
 
 <body class="bg-[#f8f9ff] text-[#0b1c30] antialiased">
@@ -197,51 +199,82 @@
 
         <section id="dms-products" class="bg-[#eff4ff] py-24">
             <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                <div class="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                    <div>
-                        <h2 class="text-3xl font-black tracking-tight text-[#002045]">Catalogue DMS</h2>
-                        <p class="mt-2 text-[#43474e]">Accédez directement à la présentation détaillée du produit DMS.
-                        </p>
-                    </div>
-                    <a href="{{ route('dms.presentation') }}"
-                        class="inline-flex items-center gap-2 rounded-xl bg-[#002045] px-5 py-3 text-sm font-bold text-white transition hover:opacity-90">
-                        Ouvrir la présentation DMS
-                        <span aria-hidden="true">→</span>
-                    </a>
+                <div class="mb-12 text-center">
+                    <span
+                        class="inline-block rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">Nos
+                        logiciels</span>
+                    <h2 class="mt-4 text-3xl font-black tracking-tight text-[#002045]">Solutions pour votre
+                        transformation numérique</h2>
+                    <p class="mt-3 mx-auto max-w-2xl text-[#43474e]">Des logiciels métier conçus pour les réalités des
+                        entreprises d'Afrique de l'Ouest. D'autres solutions arrivent prochainement.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Produit</p>
-                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">DMS Ledger</h3>
-                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Gestion officinale complète: commande,
-                            stock, facturation, assurances et pilotage.</p>
-                        <a href="{{ route('dms.presentation') }}#fonctionnalites"
-                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
-                            Voir les fonctionnalités
-                        </a>
+                    {{-- DMS --}}
+                    <article class="flex flex-col rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span
+                                class="rounded-lg bg-[#8df5e4]/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#005048]">Disponible</span>
+                            <span class="text-2xl">💊</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-[#002045]">DMS</h3>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]">Gestion des
+                            pharmacies</p>
+                        <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]">Gestion officinale complète :
+                            commandes, stock, facturation, assurances mutuelles et tableau de bord.</p>
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <a href="{{ route('dms.presentation') }}"
+                                class="inline-flex items-center gap-1 rounded-lg bg-[#002045] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">
+                                Voir la présentation →
+                            </a>
+                            <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
+                                class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#002045] transition hover:bg-[#eff4ff]">
+                                Demander une démo
+                            </a>
+                        </div>
                     </article>
 
-                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Démo</p>
-                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">Parcours guidé</h3>
-                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Découvrez le flux complet:
-                            approvisionnement, vente, recouvrement, inventaires et reporting.</p>
-                        <a href="{{ route('dms.presentation') }}#produit"
-                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
-                            Démarrer la visite produit
-                        </a>
+                    {{-- ERP --}}
+                    <article class="flex flex-col rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span
+                                class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">Bientôt</span>
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-[#002045]">ERP</h3>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]">Gestion des
+                            ressources d'entreprise</p>
+                        <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]">Finances, facturation, projets,
+                            achats et reporting — une plateforme unifiée pour piloter toute votre activité.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('company.presentation', ['intent' => 'Implémentation ERP']) }}#contact"
+                                class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#002045] transition hover:bg-[#eff4ff]">
+                                Nous contacter
+                            </a>
+                        </div>
                     </article>
 
-                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Action</p>
-                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">Demander une démo</h3>
-                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Planifiez une démonstration personnalisée
-                            avec votre équipe officinale.</p>
-                        <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
-                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
-                            Remplir le formulaire
-                        </a>
+                    {{-- Futur produit --}}
+                    <article
+                        class="flex flex-col rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-[#f8f9ff] p-7">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span
+                                class="rounded-lg bg-[#f8f9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#43474e]">En
+                                développement</span>
+                            <span class="text-2xl opacity-40">🔮</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-[#43474e]">Prochainement</h3>
+                        <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]/60">Nouveaux
+                            logiciels métier</p>
+                        <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]/70">De nouvelles solutions
+                            sectorielles sont en cours de développement. Laissez-nous vos coordonnées pour être informé
+                            en priorité.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('company.presentation', ['intent' => 'Autre Enquête']) }}#contact"
+                                class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#43474e] transition hover:bg-white">
+                                Rester informé
+                            </a>
+                        </div>
                     </article>
                 </div>
             </div>
@@ -339,55 +372,63 @@
                             </div>
 
                             <div class="space-y-1">
-                                <label for="email"
-                                    class="text-xs font-bold uppercase tracking-widest text-[#43474e]">E-mail
-                                    professionnel</label>
-                                <input id="email" name="email" value="{{ old('email') }}" type="email"
-                                    placeholder="j.dupont@entreprise.ci"
+                                <label for="company_name"
+                                    class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Entreprise <span
+                                        class="normal-case font-normal opacity-60">(optionnel)</span></label>
+                                <input id="company_name" name="company_name" value="{{ old('company_name') }}"
+                                    type="text" placeholder="Nom de votre entreprise"
                                     class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                                @error('email')
+                                @error('company_name')
                                     <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
                                 @enderror
                             </div>
-
-                            <div class="space-y-1">
-                                <label for="intent"
-                                    class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Intention
-                                    stratégique</label>
-                                <select id="intent" name="intent"
-                                    class="w-full appearance-none rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                                    <option value="Demande démo DMS" @selected(old('intent', request('intent')) === 'Demande démo DMS')>Demande démo DMS</option>
-                                    <option value="Implémentation ERP" @selected(old('intent') === 'Implémentation ERP')>
-                                        Implémentation ERP</option>
-                                    <option value="Consultation Digitale" @selected(old('intent', request('intent')) === 'Consultation Digitale')>Consultation digitale</option>
-                                    <option value="Gestion de Flotte" @selected(old('intent', request('intent')) === 'Gestion de Flotte')>
-                                        Gestion de flotte</option>
-                                    <option value="Autre Enquête" @selected(old('intent', request('intent')) === 'Autre Enquête')>Autre
-                                        enquête</option>
-                                </select>
-                                @error('intent')
-                                    <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="space-y-1">
-                                <label for="message"
-                                    class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Message</label>
-                                <textarea id="message" name="message" rows="4"
-                                    placeholder="Décrivez brièvement votre besoin..."
-                                    class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">{{ old('message') }}</textarea>
-                                @error('message')
-                                    <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <button type="submit"
-                                class="rounded-xl bg-[#002045] py-4 font-bold text-white shadow-lg shadow-[#002045]/10 transition hover:shadow-[#002045]/20">
-                                Envoyer la demande
-                            </button>
-                        </form>
+                            class="text-xs font-bold uppercase tracking-widest text-[#43474e]">E-mail
+                            professionnel</label>
+                            <input id="email" name="email" value="{{ old('email') }}" type="email"
+                                placeholder="j.dupont@entreprise.ci"
+                                class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
+                            @error('email')
+                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
+                            @enderror
                     </div>
+
+                    <div class="space-y-1">
+                        <label for="intent" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Intention
+                            stratégique</label>
+                        <select id="intent" name="intent"
+                            class="w-full appearance-none rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
+                            <option value="Demande démo DMS" @selected(old('intent', request('intent')) === 'Demande démo DMS')>Demande démo DMS</option>
+                            <option value="Implémentation ERP" @selected(old('intent') === 'Implémentation ERP')>
+                                Implémentation ERP</option>
+                            <option value="Consultation Digitale" @selected(old('intent', request('intent')) === 'Consultation Digitale')>Consultation digitale</option>
+                            <option value="Gestion de Flotte" @selected(old('intent', request('intent')) === 'Gestion de Flotte')>
+                                Gestion de flotte</option>
+                            <option value="Autre Enquête" @selected(old('intent', request('intent')) === 'Autre Enquête')>
+                                Autre
+                                enquête</option>
+                        </select>
+                        @error('intent')
+                            <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="message"
+                            class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Message</label>
+                        <textarea id="message" name="message" rows="4" placeholder="Décrivez brièvement votre besoin..."
+                            class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">{{ old('message') }}</textarea>
+                        @error('message')
+                            <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button type="submit"
+                        class="rounded-xl bg-[#002045] py-4 font-bold text-white shadow-lg shadow-[#002045]/10 transition hover:shadow-[#002045]/20">
+                        Envoyer la demande
+                    </button>
+                    </form>
                 </div>
+            </div>
             </div>
         </section>
     </main>
@@ -402,8 +443,11 @@
                 <a href="#" class="transition hover:text-[#005048]">Cookies</a>
                 <a href="#" class="transition hover:text-[#005048]">Bureaux</a>
             </div>
-            <div class="text-[10px] uppercase tracking-wider text-[#43474e]/70">
-                © {{ now()->year }} {{ $companyName }}. Précision architecturale au service des entreprises.
+            <div
+                class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">
+                <span>© {{ now()->year }} {{ $companyName }}. Pour votre transformation numérique.</span>
+                <span>En partenariat avec <a href="https://crommix.com/" target="_blank" rel="noopener noreferrer"
+                        class="underline transition hover:text-[#005048]">Crommix</a> — Burkina Faso</span>
             </div>
         </div>
     </footer>

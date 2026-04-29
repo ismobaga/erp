@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ContactRequest;
 use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\BackupDownloadController;
 use App\Http\Controllers\InvoicePdfController;
@@ -32,9 +33,20 @@ Route::get('/dms-presentation', function () {
 Route::post('/contact-request', function (Request $request) {
     $validated = $request->validate([
         'name' => ['required', 'string', 'max:255'],
+        'company_name' => ['nullable', 'string', 'max:255'],
         'email' => ['required', 'email', 'max:255'],
         'intent' => ['required', 'string', 'max:255'],
         'message' => ['nullable', 'string', 'max:2000'],
+    ]);
+
+    ContactRequest::create([
+        'name' => $validated['name'],
+        'company_name' => $validated['company_name'] ?? null,
+        'email' => $validated['email'],
+        'intent' => $validated['intent'],
+        'message' => $validated['message'] ?? null,
+        'status' => 'new',
+        'source' => 'website',
     ]);
 
     return redirect()->to(url('/') . '/#contact')->with(
