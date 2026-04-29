@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\AuditTrailService;
+use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -111,12 +112,15 @@ class Quote extends Model
 
     public function recalculateTotals(): void
     {
-        $subtotal = (float) $this->items()->sum('line_total');
-        $total = max(0, $subtotal - (float) $this->discount_total + (float) $this->tax_total);
+        // Use BCMath to avoid float precision accumulation on quote totals.
+        $subtotal = Money::of((string) $this->items()->sum('line_total'));
+        $discount = Money::of((string) $this->discount_total);
+        $tax      = Money::of((string) $this->tax_total);
+        $total    = Money::zero()->max($subtotal->subtract($discount)->add($tax));
 
         $this->forceFill([
-            'subtotal' => $subtotal,
-            'total' => $total,
+            'subtotal' => $subtotal->toString(),
+            'total'    => $total->toString(),
         ])->saveQuietly();
     }
 

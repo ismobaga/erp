@@ -7,6 +7,7 @@ use App\Filament\Concerns\HasBillingFormConcerns;
 use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
+use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\FinancialPeriod;
@@ -20,6 +21,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
@@ -226,6 +228,7 @@ class InvoiceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(fn (Invoice $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('invoice_number')
                     ->label(__('erp.common.invoice'))
@@ -310,6 +313,7 @@ class InvoiceResource extends Resource
                     ->label(__('erp.actions.export_pdf'))
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
                     ->url(fn(Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -370,9 +374,10 @@ class InvoiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListInvoices::route('/'),
+            'index'  => ListInvoices::route('/'),
             'create' => CreateInvoice::route('/create'),
-            'edit' => EditInvoice::route('/{record}/edit'),
+            'view'   => ViewInvoice::route('/{record}'),
+            'edit'   => EditInvoice::route('/{record}/edit'),
         ];
     }
 
