@@ -161,6 +161,29 @@ class Invoice extends Model
             ? now()->parse($this->due_date)->endOfDay()->addDays($overdueGraceDays)
             : null;
 
+        // Statuses that must never be silently overridden by financial recomputation.
+        if ($this->status === 'cancelled') {
+            $this->forceFill([
+                'paid_total'  => $paidTotal,
+                'balance_due' => $balanceDue,
+            ])->saveQuietly();
+
+            return;
+        }
+
+        // A draft invoice has not yet been issued. Without any payments it
+        // should remain in draft so that simply adding line items does not
+        // silently flip it to overdue/sent. Once a payment exists the invoice
+        // is effectively open, so we allow status to advance normally.
+        if ($this->status === 'draft' && $paidTotal <= 0.0) {
+            $this->forceFill([
+                'paid_total'  => $paidTotal,
+                'balance_due' => $balanceDue,
+            ])->saveQuietly();
+
+            return;
+        }
+
         $status = 'sent';
         if ($isSettled && (float) $this->total > 0) {
             $status = 'paid';
@@ -168,10 +191,6 @@ class Invoice extends Model
             $status = 'partially_paid';
         } elseif ($balanceDue > 0.0 && $overdueAt !== null && now()->greaterThan($overdueAt)) {
             $status = 'overdue';
-        }
-
-        if ($this->status === 'cancelled') {
-            $status = 'cancelled';
         }
 
         $this->forceFill([
