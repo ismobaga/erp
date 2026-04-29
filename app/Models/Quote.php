@@ -65,7 +65,9 @@ class Quote extends Model
         return DB::transaction(function () use ($createdBy): Invoice {
             // Lock the quote row so that two concurrent requests cannot both
             // pass the existence check and create duplicate invoices.
-            $fresh = static::query()->whereKey($this->getKey())->lockForUpdate()->first();
+            // Eager-load items here so the subsequent loop does not trigger
+            // an additional query per conversion.
+            $fresh = static::query()->with('items')->whereKey($this->getKey())->lockForUpdate()->first();
 
             if ($fresh->invoice()->exists()) {
                 return $fresh->invoice;
