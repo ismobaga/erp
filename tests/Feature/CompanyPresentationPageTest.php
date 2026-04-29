@@ -11,7 +11,7 @@ class CompanyPresentationPageTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSeeText('CROMMIX');
+        $response->assertSeeText(config('app.name'));
         $response->assertSeeText('Notre Philosophie Architecturale');
         $response->assertSeeText('Établissez Votre Fondation');
     }

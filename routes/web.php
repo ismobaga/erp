@@ -31,9 +31,9 @@ Route::post('/contact-request', function (Request $request) {
 
     return redirect()->to(url('/') . '/#contact')->with(
         'status',
-        'Merci ' . $validated['name'] . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
+        'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
     );
-})->name('company.presentation.contact');
+})->middleware('throttle:5,1')->name('company.presentation.contact');
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)

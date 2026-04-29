@@ -494,7 +494,7 @@
         $currency = $company?->currency ?: 'FCFA';
         $formatMoney = fn($amount) => number_format((float) $amount, 0, ',', ' ') . ' ' . $currency;
         $clientName = $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Client';
-        $companyName = $company?->company_name ?: 'CROMMIX MALI S.A.';
+        $companyName = $company?->company_name ?: config('app.name');
         $companyAddress = array_filter([$company?->address, $company?->city, $company?->country]);
         $clientAddress = array_filter([$invoice->client?->address, $invoice->client?->city, $invoice->client?->country]);
         $notes = $invoice->notes ?: $company?->invoice_default_notes;
@@ -677,22 +677,30 @@
                     <div class="section-label" style="margin-bottom: 12px;">Instructions de paiement</div>
                     <div class="small-card">
                         <table class="payment-table" role="presentation">
-                            <tr>
-                                <td class="payment-label">Banque</td>
-                                <td class="payment-value">{{ $bankDetails['bank_name'] }}</td>
-                            </tr>
-                            <tr>
-                                <td class="payment-label">Titulaire</td>
-                                <td class="payment-value">{{ $bankDetails['account_name'] }}</td>
-                            </tr>
-                            <tr>
-                                <td class="payment-label">Numéro de compte (RIB)</td>
-                                <td class="payment-value">{{ $bankDetails['account_number'] }}</td>
-                            </tr>
-                            <tr>
-                                <td class="payment-label">Code SWIFT</td>
-                                <td class="payment-value">{{ $bankDetails['swift_code'] }}</td>
-                            </tr>
+                            @if($bankDetails['bank_name'])
+                                <tr>
+                                    <td class="payment-label">Banque</td>
+                                    <td class="payment-value">{{ $bankDetails['bank_name'] }}</td>
+                                </tr>
+                            @endif
+                            @if($bankDetails['account_name'])
+                                <tr>
+                                    <td class="payment-label">Titulaire</td>
+                                    <td class="payment-value">{{ $bankDetails['account_name'] }}</td>
+                                </tr>
+                            @endif
+                            @if($bankDetails['account_number'])
+                                <tr>
+                                    <td class="payment-label">Numéro de compte (RIB)</td>
+                                    <td class="payment-value">{{ $bankDetails['account_number'] }}</td>
+                                </tr>
+                            @endif
+                            @if($bankDetails['swift_code'])
+                                <tr>
+                                    <td class="payment-label">Code SWIFT</td>
+                                    <td class="payment-value">{{ $bankDetails['swift_code'] }}</td>
+                                </tr>
+                            @endif
                             <tr>
                                 <td class="payment-label">Référence</td>
                                 <td class="payment-value">{{ $invoice->invoice_number }}</td>
@@ -717,7 +725,7 @@
                     <div class="closing-note">
                         Merci d'indiquer le numéro de facture sur tous vos virements.<br>
                         Le paiement est exigible sous 30 jours sauf accord contraire.<br>
-                        {{ $notes ?: 'Merci pour votre confiance et votre collaboration avec Crommix Mali.' }}
+                        {{ $notes ?: 'Merci pour votre confiance et votre collaboration.' }}
                     </div>
                 </div>
             </footer>

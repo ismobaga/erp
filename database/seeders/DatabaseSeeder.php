@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
 
         $user = User::factory()->create([
             'name' => 'Super Admin',
-            'email' => 'admin@crommix.local',
+            'email' => env('ADMIN_EMAIL', 'admin@example.com'),
             'status' => 'active',
         ]);
 

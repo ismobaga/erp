@@ -26,6 +26,10 @@ return new class extends Migration {
             $table->string('logo_path')->nullable();
             $table->text('invoice_default_notes')->nullable();
             $table->text('quote_default_notes')->nullable();
+            $table->string('bank_name')->nullable()->after('invoice_default_notes');
+            $table->string('bank_account_name')->nullable()->after('bank_name');
+            $table->string('bank_account_number')->nullable()->after('bank_account_name');
+            $table->string('bank_swift_code')->nullable()->after('bank_account_number');
             $table->timestamps();
         });
 
@@ -69,7 +73,7 @@ return new class extends Migration {
             $table->decimal('tax_total', 15, 2)->default(0);
             $table->decimal('total', 15, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
@@ -83,6 +87,7 @@ return new class extends Migration {
             $table->decimal('unit_price', 15, 2);
             $table->decimal('line_total', 15, 2)->default(0);
             $table->timestamps();
+            $table->index('quote_id', 'quote_items_quote_id_index');
         });
 
         Schema::create('invoices', function (Blueprint $table) {
@@ -100,7 +105,7 @@ return new class extends Migration {
             $table->decimal('paid_total', 15, 2)->default(0);
             $table->decimal('balance_due', 15, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
@@ -114,13 +119,15 @@ return new class extends Migration {
             $table->decimal('unit_price', 15, 2);
             $table->decimal('line_total', 15, 2)->default(0);
             $table->timestamps();
+            $table->index('invoice_id', 'invoice_items_invoice_id_index');
+
         });
 
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_id')->nullable()->constrained('invoices')->cascadeOnDelete();
-            $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
-            $table->date('payment_date');
+            $table->foreignId('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
+            $table->foreignId('client_id')->index()->constrained('clients')->cascadeOnDelete();
+            $table->date('payment_date')->index();
             $table->decimal('amount', 15, 2);
             $table->string('payment_method');
             $table->string('reference')->nullable();
@@ -130,7 +137,7 @@ return new class extends Migration {
             $table->timestamp('flagged_at')->nullable();
             $table->string('flagged_reason')->nullable();
             $table->foreignId('flagged_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('recorded_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
 
@@ -149,8 +156,10 @@ return new class extends Migration {
             $table->text('approval_notes')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
-            $table->foreignId('recorded_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            $table->index('approval_status', 'expenses_approval_status_index');
+
         });
 
         Schema::create('projects', function (Blueprint $table) {
@@ -168,9 +177,20 @@ return new class extends Migration {
             $table->date('due_date')->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+        });
+        Schema::create('notes', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('notable');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->date('noted_at');
+            $table->text('body');
+            $table->timestamps();
+
+            $table->index(['notable_type', 'notable_id', 'noted_at']);
         });
 
         Schema::create('attachments', function (Blueprint $table) {
@@ -186,6 +206,15 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['attachable_type', 'attachable_id']);
+        });
+        Schema::create('sequences', function (Blueprint $table) {
+            $table->id();
+            $table->string('key');
+            $table->string('period');
+            $table->unsignedBigInteger('next_val')->default(1);
+            $table->timestamps();
+
+            $table->unique(['key', 'period']);
         });
 
         Schema::create('activity_logs', function (Blueprint $table) {
@@ -208,8 +237,11 @@ return new class extends Migration {
      */
     public function down(): void
     {
+
         Schema::dropIfExists('activity_logs');
+        Schema::dropIfExists('sequences');
         Schema::dropIfExists('attachments');
+        Schema::dropIfExists('notes');
         Schema::dropIfExists('projects');
         Schema::dropIfExists('expenses');
         Schema::dropIfExists('payments');

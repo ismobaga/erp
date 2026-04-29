@@ -24,16 +24,16 @@ class InvoicePdfController extends Controller
         ], auth()->id());
 
         $company = CompanySetting::query()->first();
-        $companyName = $company?->company_name ?: 'CROMMIX MALI S.A.';
+        $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
             'company' => $company,
             'bankDetails' => [
-                'bank_name' => 'BDM - SA (Banque de Développement du Mali)',
-                'account_name' => $company?->legal_name ?: $companyName,
-                'account_number' => 'ML016 01001 002345678901 22',
-                'swift_code' => 'BDMAMLBX',
+                'bank_name' => $company?->bank_name ?: null,
+                'account_name' => $company?->bank_account_name ?: ($company?->legal_name ?: $companyName),
+                'account_number' => $company?->bank_account_number ?: null,
+                'swift_code' => $company?->bank_swift_code ?: null,
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => $request->boolean('download'),

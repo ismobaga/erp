@@ -119,6 +119,21 @@ class CompanySettingResource extends Resource
                                     ->label('État de configuration')
                                     ->content('Le profil administratif est prêt pour la génération des documents.'),
                             ]),
+                        Section::make('Coordonnées bancaires')
+                            ->description('Informations figurant sur les factures émises. Laissez vide pour masquer la section.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
+                            ->columnSpanFull()
+                            ->columns(['lg' => 2])
+                            ->schema([
+                                TextInput::make('bank_name')
+                                    ->label('Nom de la banque'),
+                                TextInput::make('bank_account_name')
+                                    ->label('Titulaire du compte'),
+                                TextInput::make('bank_account_number')
+                                    ->label('Numéro de compte / IBAN'),
+                                TextInput::make('bank_swift_code')
+                                    ->label('Code SWIFT / BIC'),
+                            ]),
                         Section::make('Notes par défaut')
                             ->description('Texte standard ajouté aux factures et aux devis.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])

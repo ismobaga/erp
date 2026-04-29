@@ -20,5 +20,11 @@ use Illuminate\Database\Eloquent\Model;
     'logo_path',
     'invoice_default_notes',
     'quote_default_notes',
+    'bank_name',
+    'bank_account_name',
+    'bank_account_number',
+    'bank_swift_code',
 ])]
-class CompanySetting extends Model {}
+class CompanySetting extends Model
+{
+}

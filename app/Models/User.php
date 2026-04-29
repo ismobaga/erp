@@ -29,9 +29,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
-            'last_login_at'     => 'datetime',
-            'password'          => 'hashed',
-            'preferences'       => 'array',
+            'last_login_at' => 'datetime',
+            'password' => 'hashed',
+            'preferences' => 'array',
         ];
     }
 
@@ -42,10 +42,6 @@ class User extends Authenticatable implements FilamentUser
         }
 
         if ($this->hasRole('Super Admin')) {
-            return true;
-        }
-
-        if (app()->environment('local') && (!$this->relationLoaded('roles') ? $this->roles()->count() === 0 : $this->roles->isEmpty())) {
             return true;
         }
 

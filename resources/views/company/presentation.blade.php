@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ ($company?->company_name ?: 'CROMMIX') . ' — Présentation' }}</title>
+    <title>{{ ($company?->company_name ?: config('app.name')) . ' — Présentation' }}</title>
     <meta name="description" content="Présentation de l'entreprise, de sa vision et de ses solutions métier.">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -19,11 +19,11 @@
     </style>
 </head>
 @php
-    $companyName = $company?->company_name ?: 'CROMMIX';
-    $companyEmail = $company?->email ?: 'contact@crommix.ledger';
+    $companyName = $company?->company_name ?: config('app.name');
+    $companyEmail = $company?->email ?: '';
     $companyPhone = $company?->phone ?: '+225 00 00 00 00';
     $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Siège Social, Plateau, Abidjan';
-    $companyWebsite = $company?->website ?: 'www.crommix.com';
+    $companyWebsite = $company?->website ?: '';
 @endphp
 
 <body class="bg-[#f8f9ff] text-[#0b1c30] antialiased">
