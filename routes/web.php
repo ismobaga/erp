@@ -21,6 +21,14 @@ Route::get('/presentation', function () {
     return redirect()->route('company.presentation');
 });
 
+Route::get('/dms-presentation', function () {
+    return view('company.dms-presentation', [
+        'company' => Schema::hasTable('company_settings')
+            ? CompanySetting::query()->first()
+            : null,
+    ]);
+})->name('dms.presentation');
+
 Route::post('/contact-request', function (Request $request) {
     $validated = $request->validate([
         'name' => ['required', 'string', 'max:255'],

@@ -11,9 +11,18 @@ class CompanyPresentationPageTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSeeText(config('app.name'));
-        $response->assertSeeText('Notre Philosophie Architecturale');
-        $response->assertSeeText('Établissez Votre Fondation');
+        $response->assertSeeText('Demander une démo');
+        $response->assertSeeText('Catalogue DMS');
+        $response->assertSeeText('Ouvrir la présentation DMS');
+    }
+
+    public function test_dms_presentation_page_is_available(): void
+    {
+        $response = $this->get('/dms-presentation');
+
+        $response->assertOk();
+        $response->assertSeeText('Fonctionnalités de DMS');
+        $response->assertSeeText('Prêt à transformer votre pharmacie ?');
     }
 
     public function test_company_presentation_contact_form_accepts_a_valid_request(): void

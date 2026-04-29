@@ -46,7 +46,7 @@
 
             <a href="#contact"
                 class="rounded-lg bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                Commencer
+                Demander une démo
             </a>
         </nav>
     </header>
@@ -81,9 +81,9 @@
                             Découvrir nos solutions
                             <span aria-hidden="true">→</span>
                         </a>
-                        <a href="#philosophie"
+                        <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
                             class="rounded-xl border border-[#c4c6cf]/40 bg-[#eff4ff] px-8 py-4 font-bold text-[#002045] transition hover:bg-white">
-                            Notre vision
+                            Request Demo
                         </a>
                     </div>
                 </div>
@@ -190,6 +190,58 @@
                         class="flex cursor-pointer flex-col justify-between rounded-[2rem] bg-[#8df5e4] p-8 transition hover:translate-x-1">
                         <h3 class="text-lg font-bold leading-tight text-[#002521]">Conseil stratégique</h3>
                         <div class="text-3xl text-[#002521]">→</div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="dms-products" class="bg-[#eff4ff] py-24">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight text-[#002045]">Catalogue DMS</h2>
+                        <p class="mt-2 text-[#43474e]">Accédez directement à la présentation détaillée du produit DMS.
+                        </p>
+                    </div>
+                    <a href="{{ route('dms.presentation') }}"
+                        class="inline-flex items-center gap-2 rounded-xl bg-[#002045] px-5 py-3 text-sm font-bold text-white transition hover:opacity-90">
+                        Ouvrir la présentation DMS
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
+                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Produit</p>
+                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">DMS Ledger</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Gestion officinale complète: commande,
+                            stock, facturation, assurances et pilotage.</p>
+                        <a href="{{ route('dms.presentation') }}#fonctionnalites"
+                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
+                            Voir les fonctionnalités
+                        </a>
+                    </article>
+
+                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
+                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Démo</p>
+                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">Parcours guidé</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Découvrez le flux complet:
+                            approvisionnement, vente, recouvrement, inventaires et reporting.</p>
+                        <a href="{{ route('dms.presentation') }}#produit"
+                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
+                            Démarrer la visite produit
+                        </a>
+                    </article>
+
+                    <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
+                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Action</p>
+                        <h3 class="mt-2 text-2xl font-bold text-[#002045]">Demander une démo</h3>
+                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Planifiez une démonstration personnalisée
+                            avec votre équipe officinale.</p>
+                        <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
+                            class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#002045] hover:underline">
+                            Remplir le formulaire
+                        </a>
                     </article>
                 </div>
             </div>
@@ -304,12 +356,13 @@
                                     stratégique</label>
                                 <select id="intent" name="intent"
                                     class="w-full appearance-none rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
+                                    <option value="Demande démo DMS" @selected(old('intent', request('intent')) === 'Demande démo DMS')>Demande démo DMS</option>
                                     <option value="Implémentation ERP" @selected(old('intent') === 'Implémentation ERP')>
                                         Implémentation ERP</option>
-                                    <option value="Consultation Digitale" @selected(old('intent') === 'Consultation Digitale')>Consultation digitale</option>
-                                    <option value="Gestion de Flotte" @selected(old('intent') === 'Gestion de Flotte')>
+                                    <option value="Consultation Digitale" @selected(old('intent', request('intent')) === 'Consultation Digitale')>Consultation digitale</option>
+                                    <option value="Gestion de Flotte" @selected(old('intent', request('intent')) === 'Gestion de Flotte')>
                                         Gestion de flotte</option>
-                                    <option value="Autre Enquête" @selected(old('intent') === 'Autre Enquête')>Autre
+                                    <option value="Autre Enquête" @selected(old('intent', request('intent')) === 'Autre Enquête')>Autre
                                         enquête</option>
                                 </select>
                                 @error('intent')
