@@ -13,5 +13,5 @@
   <!-- "L" -->
   <text x="138" y="68" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" fill="#1a2040" letter-spacing="-2">L</text>
   <!-- Tagline -->
-  <text x="0" y="85" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="600" fill="#3a9e44" letter-spacing="0.5">Gestion financière &amp; ERP</text>
+  <text x="0" y="85" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="600" fill="#3a9e44" letter-spacing="0.5" aria-hidden="true">Gestion financière &amp; ERP</text>
 </svg>
