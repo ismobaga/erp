@@ -6,6 +6,7 @@ use App\Filament\Widgets\AccountingPeriodsOverview;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\LedgerOverview;
 use App\Filament\Widgets\OperationalResilienceOverview;
+use App\Support\ErpEdition;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -14,6 +15,10 @@ class Dashboard extends BaseDashboard
 
     public static function canAccess(): bool
     {
+        if (!ErpEdition::isModuleEnabled('dashboard')) {
+            return false;
+        }
+
         $user = auth()->user();
 
         if (!$user || $user->status === 'restricted') {
@@ -37,11 +42,17 @@ class Dashboard extends BaseDashboard
 
     public function getWidgets(): array
     {
-        return [
-            ArchitecturalStatsOverview::class,
-            AccountingPeriodsOverview::class,
-            OperationalResilienceOverview::class,
-            LedgerOverview::class,
+        $widgets = [
+            ['class' => ArchitecturalStatsOverview::class, 'module' => 'dashboard'],
+            ['class' => AccountingPeriodsOverview::class, 'module' => 'financial_periods'],
+            ['class' => OperationalResilienceOverview::class, 'module' => 'reports'],
+            ['class' => LedgerOverview::class, 'module' => 'ledger'],
         ];
+
+        return collect($widgets)
+            ->filter(fn(array $widget): bool => ErpEdition::isModuleEnabled($widget['module']))
+            ->map(fn(array $widget): string => $widget['class'])
+            ->values()
+            ->all();
     }
 }

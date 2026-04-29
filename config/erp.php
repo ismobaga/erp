@@ -1,6 +1,36 @@
 <?php
 
 return [
+    'edition' => [
+        'active' => strtolower((string) env('ERP_APP_EDITION', 'full')),
+        'profiles' => [
+            'full' => [
+                'enabled_modules' => ['*'],
+            ],
+            'simple' => [
+                'enabled_modules' => array_values(array_filter(array_map(
+                    static fn(string $module): string => trim(strtolower($module)),
+                    explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,quotes,invoices,payments,expenses'))
+                ))),
+            ],
+        ],
+        'scope_to_module' => [
+            'clients' => 'clients',
+            'services' => 'services',
+            'quotes' => 'quotes',
+            'invoices' => 'invoices',
+            'payments' => 'payments',
+            'expenses' => 'expenses',
+            'projects' => 'projects',
+            'documents' => 'documents',
+            'settings' => 'settings',
+            'users' => 'users',
+            'ledger' => 'ledger',
+            'reports' => 'reports',
+            'financial_periods' => 'financial_periods',
+        ],
+    ],
+
     'billing' => [
         'invoice_default_due_days' => max(0, (int) env('ERP_INVOICE_DEFAULT_DUE_DAYS', 30)),
         'overdue_grace_days' => max(0, (int) env('ERP_INVOICE_OVERDUE_GRACE_DAYS', 0)),

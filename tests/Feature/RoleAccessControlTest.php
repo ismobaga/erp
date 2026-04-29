@@ -63,4 +63,50 @@ class RoleAccessControlTest extends TestCase
             ->get('/admin')
             ->assertForbidden();
     }
+
+    public function test_simple_edition_keeps_core_finance_modules_and_dashboard_accessible(): void
+    {
+        config()->set('erp.edition.active', 'simple');
+        config()->set('erp.edition.profiles.simple.enabled_modules', ['dashboard', 'quotes', 'invoices', 'payments', 'expenses']);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $this->actingAs($user)
+            ->get('/admin')
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/quotes')
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/invoices')
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/payments')
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/expenses')
+            ->assertOk();
+    }
+
+    public function test_simple_edition_blocks_modules_outside_the_selected_profile_even_for_super_admin(): void
+    {
+        config()->set('erp.edition.active', 'simple');
+        config()->set('erp.edition.profiles.simple.enabled_modules', ['dashboard', 'quotes', 'invoices', 'payments', 'expenses']);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Super Admin');
+
+        $this->actingAs($user)
+            ->get('/admin/report-generation')
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->get('/admin/clients')
+            ->assertForbidden();
+    }
 }

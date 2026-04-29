@@ -2,12 +2,17 @@
 
 namespace App\Filament\Concerns;
 
+use App\Support\ErpEdition;
 use Illuminate\Database\Eloquent\Model;
 
 trait HasPermissionAccess
 {
     protected static function canAccessPermission(string $action): bool
     {
+        if (!static::isEditionFeatureEnabled()) {
+            return false;
+        }
+
         $user = auth()->user();
 
         if (!$user) {
@@ -25,6 +30,13 @@ trait HasPermissionAccess
         }
 
         return $user->can($permissionScope . '.' . $action);
+    }
+
+    protected static function isEditionFeatureEnabled(): bool
+    {
+        $permissionScope = property_exists(static::class, 'permissionScope') ? static::$permissionScope : null;
+
+        return ErpEdition::isPermissionScopeEnabled($permissionScope);
     }
 
     public static function canViewAny(): bool
