@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title', 'Crommix Forge')</title>
-    <meta name="description" content="@yield('meta_description', 'Crommix Forge - contenu public')">
+    <title>@yield('title', 'Crommix Mali - Blog')</title>
+    <meta name="description" content="@yield('meta_description', 'Crommix Mali - Innovation numérique pour l’Afrique - contenu public')">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +90,7 @@
                     class="transition hover:text-[#1b4332]">Contact</a>
             </div>
             <div class="font-manrope text-[10px] uppercase tracking-wider text-stone-400">
-                © {{ now()->year }} {{ $companyName }}. Précision architecturale au service des entreprises.
+                © {{ now()->year }} {{ $companyName }}. Innovation numérique pour l’Afrique.
             </div>
         </div>
     </footer>

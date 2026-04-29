@@ -141,7 +141,7 @@
                 <h4 class="mt-2 text-xl font-black">Les transactions au-delà des seuils majeurs exigent une vérification
                     secondaire.
                 </h4>
-                <p class="mt-2 text-sm text-white/70">La surcouche de conformité Crommix reste active pour les
+                <p class="mt-2 text-sm text-white/70">La surcouche de conformité CGL reste active pour les
                     opérations financières.
                 </p>
             </div>
