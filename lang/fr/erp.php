@@ -191,6 +191,7 @@ return [
             'weekly' => 'Hebdomadaire',
             'monthly' => 'Mensuelle',
         ],
+        'end_date_after_start' => 'La date de fin doit être postérieure ou égale à la date de début.',
     ],
 
     'dashboard' => [

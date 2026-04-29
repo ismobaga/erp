@@ -191,6 +191,7 @@ return [
             'weekly' => 'Weekly',
             'monthly' => 'Monthly',
         ],
+        'end_date_after_start' => 'The end date must be on or after the start date.',
     ],
 
     'dashboard' => [
