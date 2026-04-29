@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -100,42 +101,48 @@ class Payment extends Model
                 return;
             }
 
-            /** @var Invoice|null $invoice */
-            $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
+            // Wrap the lock + overpayment check in a transaction so that
+            // lockForUpdate() holds until the INSERT/UPDATE is committed,
+            // preventing concurrent payments from racing past the guard.
+            DB::transaction(function () use ($payment): void {
+                /** @var Invoice|null $invoice */
+                $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
 
-            if ($invoice === null) {
-                return;
-            }
+                if ($invoice === null) {
+                    return;
+                }
 
-            if ($invoice->status === 'cancelled') {
-                throw ValidationException::withMessages([
-                    'invoice_id' => 'Cancelled invoices cannot accept new payments.',
-                ]);
-            }
+                if ($invoice->status === 'cancelled') {
+                    throw ValidationException::withMessages([
+                        'invoice_id' => 'Cancelled invoices cannot accept new payments.',
+                    ]);
+                }
 
-            if (
-                $payment->payment_date !== null
-                && $invoice->issue_date !== null
-                && now()->parse((string) $payment->payment_date)->lt(now()->parse((string) $invoice->issue_date))
-            ) {
-                throw ValidationException::withMessages([
-                    'payment_date' => 'Payment date cannot be earlier than the invoice issue date.',
-                ]);
-            }
+                if (
+                    $payment->payment_date !== null
+                    && $invoice->issue_date !== null
+                    && now()->parse((string) $payment->payment_date)->lt(now()->parse((string) $invoice->issue_date))
+                ) {
+                    throw ValidationException::withMessages([
+                        'payment_date' => 'Payment date cannot be earlier than the invoice issue date.',
+                    ]);
+                }
 
-            if ($payment->allow_overpayment) {
-                return;
-            }
+                if ($payment->allow_overpayment) {
+                    return;
+                }
 
-            $otherPayments = (float) $invoice->payments()
-                ->when($payment->exists, fn($query) => $query->whereKeyNot($payment->getKey()))
-                ->sum('amount');
+                $otherPayments = (float) $invoice->payments()
+                    ->when($payment->exists, fn($query) => $query->whereKeyNot($payment->getKey()))
+                    ->lockForUpdate()
+                    ->sum('amount');
 
-            if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
-                throw ValidationException::withMessages([
-                    'amount' => 'Total paid cannot exceed invoice total unless overpayment is explicitly allowed.',
-                ]);
-            }
+                if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
+                    throw ValidationException::withMessages([
+                        'amount' => 'Total paid cannot exceed invoice total unless overpayment is explicitly allowed.',
+                    ]);
+                }
+            });
         });
 
         static::deleting(function (Payment $payment): void {

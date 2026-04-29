@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'quote_number',
@@ -65,39 +66,41 @@ class Quote extends Model
             return $this->invoice;
         }
 
-        $invoice = Invoice::create([
-            'client_id' => $this->client_id,
-            'quote_id' => $this->getKey(),
-            'issue_date' => now()->toDateString(),
-            'due_date' => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
-            'status' => 'draft',
-            'discount_total' => $this->discount_total,
-            'tax_total' => $this->tax_total,
-            'notes' => $this->notes,
-            'created_by' => $createdBy ?? auth()->id(),
-            'updated_by' => $createdBy ?? auth()->id(),
-        ]);
-
-        foreach ($this->items as $item) {
-            $invoice->items()->create([
-                'service_id' => $item->service_id,
-                'description' => $item->description,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'line_total' => $item->line_total,
+        return DB::transaction(function () use ($createdBy): Invoice {
+            $invoice = Invoice::create([
+                'client_id'      => $this->client_id,
+                'quote_id'       => $this->getKey(),
+                'issue_date'     => now()->toDateString(),
+                'due_date'       => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
+                'status'         => 'draft',
+                'discount_total' => $this->discount_total,
+                'tax_total'      => $this->tax_total,
+                'notes'          => $this->notes,
+                'created_by'     => $createdBy ?? auth()->id(),
+                'updated_by'     => $createdBy ?? auth()->id(),
             ]);
-        }
 
-        $this->forceFill(['status' => 'accepted'])->saveQuietly();
+            foreach ($this->items as $item) {
+                $invoice->items()->create([
+                    'service_id'  => $item->service_id,
+                    'description' => $item->description,
+                    'quantity'    => $item->quantity,
+                    'unit_price'  => $item->unit_price,
+                    'line_total'  => $item->line_total,
+                ]);
+            }
 
-        app(AuditTrailService::class)->log('quote_converted_to_invoice', $invoice, [
-            'quote_id' => $this->getKey(),
-            'quote_number' => $this->quote_number,
-            'invoice_number' => $invoice->invoice_number,
-            'converted_by' => $createdBy ?? auth()->id(),
-        ]);
+            $this->forceFill(['status' => 'accepted'])->saveQuietly();
 
-        return $invoice;
+            app(AuditTrailService::class)->log('quote_converted_to_invoice', $invoice, [
+                'quote_id'       => $this->getKey(),
+                'quote_number'   => $this->quote_number,
+                'invoice_number' => $invoice->invoice_number,
+                'converted_by'   => $createdBy ?? auth()->id(),
+            ]);
+
+            return $invoice;
+        });
     }
 
     public function recalculateTotals(): void

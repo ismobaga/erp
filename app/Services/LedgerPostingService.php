@@ -10,10 +10,13 @@ use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class LedgerPostingService
 {
+    public function __construct(
+        private readonly SequenceService $sequences,
+    ) {}
+
     /**
      * Default account codes used by automated posting rules.
      * These can be overridden via config erp.ledger.accounts.
@@ -309,19 +312,12 @@ class LedgerPostingService
 
     private function generateEntryNumber(string $date): string
     {
-        $year = substr($date, 0, 4);
+        $year   = substr($date, 0, 4);
         $prefix = 'JE-' . $year . '-';
 
-        $highest = JournalEntry::query()
-            ->where('entry_number', 'like', $prefix . '%')
-            ->pluck('entry_number')
-            ->reduce(function (int $carry, string $num) use ($prefix): int {
-                $suffix = substr($num, strlen($prefix));
+        $seq = $this->sequences->next('journal_entry', $year);
 
-                return ctype_digit($suffix) ? max($carry, (int) $suffix) : $carry;
-            }, 0);
-
-        return $prefix . str_pad((string) ($highest + 1), 5, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 
     private function resolvePeriodId(mixed $date): ?int

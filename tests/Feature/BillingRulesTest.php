@@ -50,7 +50,10 @@ class BillingRulesTest extends TestCase
         $invoice->refresh();
 
         $this->assertSame('250.00', $invoice->total);
-        $this->assertSame('overdue', $invoice->status);
+        // A draft invoice keeps its 'draft' status when items are added but
+        // no payment has been received yet (fixes C7 – the old code silently
+        // flipped 'draft' to 'overdue').
+        $this->assertSame('draft', $invoice->status);
 
         Payment::create([
             'invoice_id' => $invoice->id,

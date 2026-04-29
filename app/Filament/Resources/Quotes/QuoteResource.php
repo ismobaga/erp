@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Quotes;
 
+use App\Filament\Concerns\HasBillingFormConcerns;
 use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Quotes\Pages\CreateQuote;
 use App\Filament\Resources\Quotes\Pages\EditQuote;
@@ -10,9 +11,10 @@ use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Service;
+use App\Services\AuditTrailService;
+use App\Services\SequenceService;
 use BackedEnum;
 use App\Filament\Resources\Invoices\InvoiceResource;
-use App\Services\AuditTrailService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -38,6 +40,7 @@ use Filament\Tables\Table;
 class QuoteResource extends Resource
 {
     use HasPermissionAccess;
+    use HasBillingFormConcerns;
 
     protected static string $permissionScope = 'quotes';
 
@@ -250,6 +253,11 @@ class QuoteResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['client']);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -268,23 +276,11 @@ class QuoteResource extends Resource
 
     public static function generateQuoteNumber(): string
     {
-        $next = (Quote::max('id') ?? 0) + 1;
+        $year   = now()->format('Y');
+        $prefix = 'QT-' . $year;
+        $sep    = '-';
+        $seq    = app(SequenceService::class)->next('quote', $year);
 
-        return 'QT-' . now()->format('Y') . '-' . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-    }
-
-    protected static function calculateTotals(array $items, float $discount, float $tax): array
-    {
-        $subtotal = collect($items)->sum(fn(array $item): float => ((float) ($item['quantity'] ?? 0)) * ((float) ($item['unit_price'] ?? 0)));
-
-        return [
-            'subtotal' => $subtotal,
-            'total' => max(0, $subtotal - $discount + $tax),
-        ];
-    }
-
-    protected static function formatMoney(float $amount): string
-    {
-        return 'FCFA ' . number_format($amount, 2, '.', ' ');
+        return $prefix . $sep . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

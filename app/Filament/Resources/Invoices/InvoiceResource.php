@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices;
 
 use App\Filament\Concerns\HasPermissionAccess;
+use App\Filament\Concerns\HasBillingFormConcerns;
 use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
@@ -41,6 +42,7 @@ use Illuminate\Database\Eloquent\Model;
 class InvoiceResource extends Resource
 {
     use HasPermissionAccess;
+    use HasBillingFormConcerns;
 
     protected static string $permissionScope = 'invoices';
 
@@ -318,6 +320,11 @@ class InvoiceResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['client', 'quote']);
+    }
+
     public static function canEdit(Model $record): bool
     {
         return static::canAccessPermission('update')
@@ -372,20 +379,5 @@ class InvoiceResource extends Resource
     public static function generateInvoiceNumber(mixed $issueDate = null): string
     {
         return app(InvoiceNumberService::class)->generate($issueDate ?? now());
-    }
-
-    protected static function calculateTotals(array $items, float $discount, float $tax): array
-    {
-        $subtotal = collect($items)->sum(fn(array $item): float => ((float) ($item['quantity'] ?? 0)) * ((float) ($item['unit_price'] ?? 0)));
-
-        return [
-            'subtotal' => $subtotal,
-            'total' => max(0, $subtotal - $discount + $tax),
-        ];
-    }
-
-    protected static function formatMoney(float $amount): string
-    {
-        return 'FCFA ' . number_format($amount, 2, '.', ' ');
     }
 }
