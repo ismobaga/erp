@@ -1,7 +1,7 @@
 @extends('crommix-blog::layouts.public')
 
 @section('title', $post->seo_title ?: $post->title)
-@section('meta_description', $post->seo_description ?: 'Article de blog CGL')
+@section('meta_description', $post->seo_description ?: 'Article de blog Crommix Mali')
 
 @push('styles')
     <style>
