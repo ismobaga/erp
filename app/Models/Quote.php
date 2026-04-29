@@ -62,25 +62,29 @@ class Quote extends Model
 
     public function convertToInvoice(?int $createdBy = null): Invoice
     {
-        if ($this->invoice()->exists()) {
-            return $this->invoice;
-        }
-
         return DB::transaction(function () use ($createdBy): Invoice {
+            // Lock the quote row so that two concurrent requests cannot both
+            // pass the existence check and create duplicate invoices.
+            $fresh = static::query()->whereKey($this->getKey())->lockForUpdate()->first();
+
+            if ($fresh->invoice()->exists()) {
+                return $fresh->invoice;
+            }
+
             $invoice = Invoice::create([
-                'client_id'      => $this->client_id,
-                'quote_id'       => $this->getKey(),
+                'client_id'      => $fresh->client_id,
+                'quote_id'       => $fresh->getKey(),
                 'issue_date'     => now()->toDateString(),
                 'due_date'       => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
                 'status'         => 'draft',
-                'discount_total' => $this->discount_total,
-                'tax_total'      => $this->tax_total,
-                'notes'          => $this->notes,
+                'discount_total' => $fresh->discount_total,
+                'tax_total'      => $fresh->tax_total,
+                'notes'          => $fresh->notes,
                 'created_by'     => $createdBy ?? auth()->id(),
                 'updated_by'     => $createdBy ?? auth()->id(),
             ]);
 
-            foreach ($this->items as $item) {
+            foreach ($fresh->items as $item) {
                 $invoice->items()->create([
                     'service_id'  => $item->service_id,
                     'description' => $item->description,
@@ -90,11 +94,11 @@ class Quote extends Model
                 ]);
             }
 
-            $this->forceFill(['status' => 'accepted'])->saveQuietly();
+            $fresh->forceFill(['status' => 'accepted'])->saveQuietly();
 
             app(AuditTrailService::class)->log('quote_converted_to_invoice', $invoice, [
-                'quote_id'       => $this->getKey(),
-                'quote_number'   => $this->quote_number,
+                'quote_id'       => $fresh->getKey(),
+                'quote_number'   => $fresh->quote_number,
                 'invoice_number' => $invoice->invoice_number,
                 'converted_by'   => $createdBy ?? auth()->id(),
             ]);

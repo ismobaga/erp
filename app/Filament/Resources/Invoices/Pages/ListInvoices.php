@@ -35,13 +35,13 @@ class ListInvoices extends ListRecords
                 ->visible(fn(): bool => auth()->user()?->can('invoices.update') ?? false)
                 ->action(function (): void {
                     $targetDate = now()->addDay()->toDateString();
+                    // Query already returns Invoice instances; no re-fetch needed.
                     $invoices = Invoice::query()
                         ->with('client')
                         ->where('due_date', $targetDate)
                         ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
                         ->where('balance_due', '>', 0)
-                        ->get()
-                        ->map(fn($inv) => $inv instanceof \App\Models\Invoice ? $inv : Invoice::find($inv->id));
+                        ->get();
 
                     $sent = 0;
                     foreach ($invoices as $invoice) {

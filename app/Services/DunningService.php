@@ -77,11 +77,21 @@ class DunningService
             return false;
         }
 
-        $lastForStage = DunningLog::query()
-            ->forInvoice($invoice->id)
-            ->where('stage', $stage)
-            ->latest('sent_at')
-            ->first();
+        // When the dunningLogs relation has already been eager-loaded (e.g. by
+        // eligibleInvoices()), filter the in-memory collection to avoid an N+1
+        // query per invoice.  Fall back to a targeted DB query otherwise.
+        if ($invoice->relationLoaded('dunningLogs')) {
+            $lastForStage = $invoice->dunningLogs
+                ->where('stage', $stage)
+                ->sortByDesc('sent_at')
+                ->first();
+        } else {
+            $lastForStage = DunningLog::query()
+                ->forInvoice($invoice->id)
+                ->where('stage', $stage)
+                ->latest('sent_at')
+                ->first();
+        }
 
         if (!$lastForStage) {
             return true;
