@@ -532,11 +532,11 @@
                         @if(!empty($logoDataUri))
                             <img src="{{ $logoDataUri }}" alt="Logo {{ $companyName }}" class="brand-logo">
                         @else
-                            <div class="brand-icon">CM</div>
+                            <div class="brand-icon">CGL</div>
                         @endif
                         <div>
                             <h1 class="brand-title">{{ $companyName }}</h1>
-                            <div class="brand-subtitle">Excellence architecturale</div>
+                            <div class="brand-subtitle">Gestion financière &amp; ERP</div>
                         </div>
                     </div>
                     <div class="muted" style="font-size: 14px; line-height: 1.7; margin-top: 16px;">

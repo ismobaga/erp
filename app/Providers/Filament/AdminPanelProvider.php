@@ -29,17 +29,19 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(EditProfile::class, isSimple: false)
-            ->brandName('Crommix Forge')
+            ->brandName('CGL')
+            ->brandLogo(asset('images/cgl-logo.svg'))
+            ->brandLogoHeight('2.5rem')
             ->font('Inter')
             ->darkMode()
             ->defaultThemeMode(ThemeMode::System)
             ->sidebarCollapsibleOnDesktop()
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->colors([
-                'primary' => Color::hex('#002045'),
+                'primary' => Color::hex('#1a3b2e'),
                 'gray' => Color::Slate,
-                'info' => Color::hex('#1a365d'),
-                'success' => Color::hex('#43af9f'),
+                'info' => Color::hex('#1a3b2e'),
+                'success' => Color::hex('#3a9e44'),
                 'warning' => Color::hex('#b98a06'),
                 'danger' => Color::hex('#ba1a1a'),
             ])
