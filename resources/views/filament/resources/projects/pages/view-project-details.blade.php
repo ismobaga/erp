@@ -32,11 +32,9 @@
         $priority = $remainingDays !== null && $remainingDays < 30 ? 'Critique (P1)' : 'Normale (P2)';
     @endphp
 
-    <div class="space-y-8">
+    <div class="space-y-8 text-[#0b1c30] dark:text-white">
         <section
             class="relative overflow-hidden rounded-xl bg-[#eff4ff] p-8 text-[#0b1c30] shadow-sm ring-1 ring-[#dce9ff] dark:bg-slate-900 dark:text-white dark:ring-white/10">
-            <div class="absolute right-0 top-0 p-12 text-8xl opacity-5">📁</div>
-
             <div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
                 <div class="space-y-4">
                     <div class="flex flex-wrap items-center gap-3">
@@ -74,10 +72,7 @@
                     <div class="absolute left-0 top-0 h-full w-1 bg-[#70d8c8]"></div>
 
                     <div class="mb-6 flex items-center justify-between">
-                        <h3 class="flex items-center gap-2 text-lg font-bold text-[#002045] dark:text-white">
-                            <span class="text-[#005048]">📈</span>
-                            Progression du Projet
-                        </h3>
+                        <h3 class="text-lg font-bold text-[#002045] dark:text-white">Progression du projet</h3>
                         <span class="text-2xl font-black text-[#002045] dark:text-white">{{ $progress }}%</span>
                     </div>
 
@@ -112,13 +107,13 @@
                 </section>
 
                 <section class="space-y-4">
-                    <h3 class="px-2 text-xl font-bold text-[#002045] dark:text-white">Maillage Opérationnel</h3>
+                    <h3 class="px-2 text-xl font-bold text-[#002045] dark:text-white">Maillage opérationnel</h3>
 
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                        <div class="rounded-xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
                             <div class="mb-6 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-800">📄</div>
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-xs font-bold text-blue-800">DOC</div>
                                     <span class="font-bold text-[#002045] dark:text-white">Documents ({{ count($relatedAttachments) }})</span>
                                 </div>
                                 <a href="{{ url('/admin/documents') }}" class="text-xs font-bold uppercase text-[#002045] hover:underline dark:text-[#8df5e4]">Voir tout</a>
@@ -128,13 +123,13 @@
                                 @forelse ($relatedAttachments as $attachment)
                                     <div class="flex items-center justify-between rounded-xl border border-transparent bg-white p-3.5 transition-all hover:border-[#002045]/10 hover:shadow-sm dark:bg-gray-900">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500">PDF</div>
+                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-[10px] font-bold text-red-500">PDF</div>
                                             <div class="flex flex-col">
                                                 <span class="text-sm font-bold text-[#002045] dark:text-white">{{ $attachment['name'] }}</span>
                                                 <span class="text-[10px] font-medium text-[#57657a] dark:text-slate-400">{{ $attachment['meta'] }}</span>
                                             </div>
                                         </div>
-                                        <a href="{{ $attachment['downloadUrl'] }}" class="rounded-full p-2 text-[#57657a] transition-all hover:bg-[#f8faff] hover:text-[#002045] dark:text-slate-300">↓</a>
+                                        <a href="{{ $attachment['downloadUrl'] }}" class="rounded-full p-2 text-xs font-bold text-[#57657a] transition-all hover:bg-[#f8faff] hover:text-[#002045] dark:text-slate-300">DL</a>
                                     </div>
                                 @empty
                                     <p class="text-sm text-[#57657a] dark:text-slate-400">Aucun document lié au projet.</p>
@@ -146,10 +141,10 @@
                             </a>
                         </div>
 
-                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                        <div class="rounded-xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
                             <div class="mb-6 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-800">💳</div>
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-xs font-bold text-teal-800">PAY</div>
                                     <span class="font-bold text-[#002045] dark:text-white">Paiements ({{ count($relatedPayments) }})</span>
                                 </div>
                             </div>
@@ -170,7 +165,7 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                        <div class="rounded-xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
                             <div class="mb-6 flex items-center justify-between">
                                 <span class="font-bold text-[#002045] dark:text-white">Factures ({{ count($relatedInvoices) }})</span>
                                 <a href="{{ url('/admin/invoices') }}" class="text-xs font-bold uppercase text-[#002045] hover:underline dark:text-[#8df5e4]">Détails</a>
@@ -194,7 +189,7 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
+                        <div class="rounded-xl bg-[#eff4ff] p-6 dark:bg-slate-800/70">
                             <div class="mb-6 flex items-center justify-between">
                                 <span class="font-bold text-[#002045] dark:text-white">Devis ({{ count($relatedQuotes) }})</span>
                                 <a href="{{ url('/admin/quotes') }}" class="text-xs font-bold uppercase text-[#002045] hover:underline dark:text-[#8df5e4]">Détails</a>
@@ -221,10 +216,7 @@
                 </section>
 
                 <section class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-                    <h3 class="mb-8 flex items-center gap-2 text-lg font-bold text-[#002045] dark:text-white">
-                        <span class="text-[#86a0cd]">🕘</span>
-                        Historique & Notes détaillées
-                    </h3>
+                    <h3 class="mb-8 text-lg font-bold text-[#002045] dark:text-white">Historique et notes détaillées</h3>
 
                     <div class="relative space-y-6">
                         <div class="absolute bottom-2 left-4 top-2 w-0.5 bg-[#c4c6cf] opacity-20 dark:bg-white/20">
@@ -232,8 +224,8 @@
 
                         <div class="relative pl-12">
                             <div
-                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#d6e3ff] text-xs text-[#002045] dark:border-gray-900">
-                                ✓</div>
+                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#d6e3ff] text-[10px] font-bold text-[#002045] dark:border-gray-900">
+                                01</div>
                             <div class="mb-2 flex items-start justify-between gap-3">
                                 <div>
                                     <h4 class="font-bold text-[#002045] dark:text-white">Phase active :
@@ -251,8 +243,8 @@
 
                         <div class="relative pl-12">
                             <div
-                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#d5e3fc] text-xs text-[#515f74] dark:border-gray-900">
-                                ✎</div>
+                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#d5e3fc] text-[10px] font-bold text-[#515f74] dark:border-gray-900">
+                                02</div>
                             <div class="mb-2">
                                 <h4 class="font-bold text-[#002045] dark:text-white">Périmètre de service</h4>
                                 <p class="text-xs text-[#43474e] dark:text-slate-400">{{ $serviceName }} • Priorité
@@ -266,8 +258,8 @@
 
                         <div class="relative pl-12">
                             <div
-                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#eff4ff] text-xs text-[#43474e] dark:border-gray-900">
-                                ⚑</div>
+                                class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-[#eff4ff] text-[10px] font-bold text-[#43474e] dark:border-gray-900">
+                                03</div>
                             <div class="mb-2">
                                 <h4 class="font-bold text-[#002045] dark:text-white">Lancement du projet</h4>
                                 <p class="text-xs text-[#43474e] dark:text-slate-400">Automatisé • {{ $startDate }}</p>
@@ -277,8 +269,8 @@
                         @foreach ($noteEntries as $entry)
                             <div class="relative pl-12">
                                 <div
-                                    class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-sky-100 text-xs text-sky-700 dark:border-gray-900 dark:bg-sky-500/20 dark:text-sky-300">
-                                    ✦</div>
+                                    class="absolute left-0 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-sky-100 text-[10px] font-bold text-sky-700 dark:border-gray-900 dark:bg-sky-500/20 dark:text-sky-300">
+                                    LOG</div>
                                 <div
                                     class="rounded-xl border border-[#c4c6cf]/20 bg-[#f8f9ff] p-4 dark:border-white/10 dark:bg-slate-800/70">
                                     <div class="mb-2 flex items-start justify-between gap-3">
@@ -301,7 +293,7 @@
 
             <div class="col-span-12 space-y-8 lg:col-span-4">
                 <section class="rounded-xl bg-[#002045] p-8 text-white shadow-xl shadow-[#002045]/20">
-                    <h3 class="mb-6 text-xs font-bold uppercase tracking-[0.2em] opacity-60">Équipe Assignée</h3>
+                    <h3 class="mb-6 text-xs font-bold uppercase tracking-wider opacity-60">Équipe assignée</h3>
                     <div class="group flex items-center gap-4">
                         <div
                             class="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#8df5e4] bg-[#1a365d] text-lg font-bold">
@@ -326,10 +318,7 @@
 
                 <section
                     class="rounded-xl bg-[#eff4ff] p-8 text-[#0b1c30] shadow-sm ring-1 ring-[#dce9ff] dark:bg-slate-900 dark:text-white dark:ring-white/10">
-                    <h3 class="mb-6 flex items-center gap-2 text-sm font-bold text-[#002045] dark:text-white">
-                        <span>🏢</span>
-                        Informations Client
-                    </h3>
+                    <h3 class="mb-6 text-sm font-bold text-[#002045] dark:text-white">Informations client</h3>
                     <div class="space-y-6">
                         <div>
                             <p
