@@ -48,7 +48,7 @@ class InvoicePdfController extends Controller
                     'defaultFont' => 'DejaVu Sans',
                 ])
                 ->setPaper('a4')
-                ->stream($invoice->invoice_number . '.pdf'); // Use stream() for inline display, download() for forced download
+                ->download($invoice->invoice_number . '.pdf');
         }
 
         return response()->view('invoices.pdf', $viewData);

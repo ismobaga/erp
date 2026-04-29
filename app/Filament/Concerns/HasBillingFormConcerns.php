@@ -2,6 +2,8 @@
 
 namespace App\Filament\Concerns;
 
+use App\ValueObjects\Money;
+
 /**
  * Shared billing helpers for Filament Resources that deal with
  * monetary line items (Invoice, Quote, etc.).
@@ -19,15 +21,16 @@ trait HasBillingFormConcerns
      * The currency symbol falls back to 'FCFA' so the method is safe to
      * call before any company settings have been saved.
      */
-    protected static function formatMoney(float $amount): string
+    public static function formatMoney(float $amount): string
     {
         $currency = (string) config('erp.billing.currency', 'FCFA');
 
-        return $currency . ' ' . number_format($amount, 2, '.', ' ');
+        return Money::of($amount)->format($currency);
     }
 
     /**
-     * Compute billing totals from a Repeater items array.
+     * Compute billing totals from a Repeater items array using BCMath to
+     * avoid floating-point accumulation on line-item sums.
      *
      * @param  array<int, array<string, mixed>>  $items
      * @param  float  $discount  Total discount amount (subtracted from subtotal).
@@ -36,13 +39,21 @@ trait HasBillingFormConcerns
      */
     protected static function calculateTotals(array $items, float $discount, float $tax): array
     {
-        $subtotal = collect($items)->sum(
-            fn(array $item): float => ((float) ($item['quantity'] ?? 0)) * ((float) ($item['unit_price'] ?? 0))
-        );
+        $subtotal = Money::zero();
+
+        foreach ($items as $item) {
+            $qty   = (string) ($item['quantity'] ?? 0);
+            $price = (string) ($item['unit_price'] ?? 0);
+            $subtotal = $subtotal->add(Money::of($qty)->multiply($price));
+        }
+
+        $discountMoney = Money::of((string) $discount);
+        $taxMoney      = Money::of((string) $tax);
+        $total         = Money::zero()->max($subtotal->subtract($discountMoney)->add($taxMoney));
 
         return [
-            'subtotal' => $subtotal,
-            'total'    => max(0.0, $subtotal - $discount + $tax),
+            'subtotal' => $subtotal->toFloat(),
+            'total'    => $total->toFloat(),
         ];
     }
 }

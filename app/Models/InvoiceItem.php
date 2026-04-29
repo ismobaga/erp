@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,7 +33,11 @@ class InvoiceItem extends Model
             if ((float) $item->quantity <= 0) {
                 throw ValidationException::withMessages(['quantity' => 'La quantité doit être supérieure à zéro.']);
             }
-            $item->line_total = (float) $item->quantity * (float) $item->unit_price;
+            // Use BCMath to avoid float precision errors when multiplying
+            // quantity × unit_price for high-value or fractional amounts.
+            $item->line_total = Money::of((string) $item->quantity)
+                ->multiply((string) $item->unit_price)
+                ->toString();
         });
 
         static::saved(function (InvoiceItem $item): void {

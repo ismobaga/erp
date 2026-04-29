@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Services\AuditTrailService;
 use App\Services\InvoiceNumberService;
 use App\Services\TaxProfileResolver;
+use App\States\InvoiceStateMachine;
+use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -112,18 +114,34 @@ class Invoice extends Model
 
     public function recalculateTotals(): void
     {
-        $subtotal = (float) $this->items()->sum('line_total');
-        $taxComputation = app(TaxProfileResolver::class)->calculateForClient($subtotal, $this->client);
-        $taxTotal = $taxComputation['matched'] ? (float) $taxComputation['tax_total'] : (float) $this->tax_total;
-        $baseTotal = $taxComputation['matched'] && (($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive')
-            ? (float) $taxComputation['total']
-            : $subtotal + $taxTotal;
-        $total = max(0, $baseTotal - (float) $this->discount_total);
+        // Use BCMath (via Money) to avoid floating-point accumulation errors.
+        $subtotal = Money::of((string) $this->items()->sum('line_total'));
+
+        $taxComputation = app(TaxProfileResolver::class)->calculateForClient(
+            $subtotal->toFloat(),
+            $this->client,
+        );
+
+        $taxTotal = $taxComputation['matched']
+            ? Money::of((string) $taxComputation['tax_total'])
+            : Money::of((string) $this->tax_total);
+
+        // For inclusive tax profiles the resolver already includes tax in the
+        // returned total; for exclusive we add it on top of the subtotal.
+        $isInclusive = $taxComputation['matched']
+            && ($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive';
+
+        $baseTotal = $isInclusive
+            ? Money::of((string) $taxComputation['total'])
+            : $subtotal->add($taxTotal);
+
+        $discount = Money::of((string) $this->discount_total);
+        $total    = Money::zero()->max($baseTotal->subtract($discount));
 
         $this->forceFill([
-            'subtotal' => $subtotal,
-            'tax_total' => $taxTotal,
-            'total' => $total,
+            'subtotal'  => $subtotal->toString(),
+            'tax_total' => $taxTotal->toString(),
+            'total'     => $total->toString(),
         ])->saveQuietly();
 
         $this->refreshFinancials();
@@ -131,21 +149,44 @@ class Invoice extends Model
 
     public function refreshCreditBalance(): void
     {
-        $creditedTotal = (float) $this->creditNotes()
-            ->whereIn('status', ['issued', 'approved'])
-            ->sum('amount');
-        $updatedDiscount = $creditedTotal;
-        $currentSubtotal = max((float) $this->subtotal, (float) $this->total + (float) $this->discount_total - (float) $this->tax_total);
-        $taxComputation = app(TaxProfileResolver::class)->calculateForClient($currentSubtotal, $this->client);
-        $taxTotal = $taxComputation['matched'] ? (float) $taxComputation['tax_total'] : (float) $this->tax_total;
-        $baseTotal = $taxComputation['matched'] && (($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive')
-            ? (float) $taxComputation['total']
-            : $currentSubtotal + $taxTotal;
+        $creditedTotal = Money::of(
+            (string) $this->creditNotes()
+                ->whereIn('status', ['issued', 'approved'])
+                ->sum('amount'),
+        );
+
+        // Re-derive the raw subtotal by reversing the stored totals.
+        $storedTotal    = Money::of((string) $this->total);
+        $storedDiscount = Money::of((string) $this->discount_total);
+        $storedTax      = Money::of((string) $this->tax_total);
+        $storedSubtotal = Money::of((string) $this->subtotal);
+
+        $currentSubtotal = $storedSubtotal->isZero()
+            ? Money::zero()->max($storedTotal->add($storedDiscount)->subtract($storedTax))
+            : $storedSubtotal;
+
+        $taxComputation = app(TaxProfileResolver::class)->calculateForClient(
+            $currentSubtotal->toFloat(),
+            $this->client,
+        );
+
+        $taxTotal = $taxComputation['matched']
+            ? Money::of((string) $taxComputation['tax_total'])
+            : $storedTax;
+
+        $isInclusive = $taxComputation['matched']
+            && ($taxComputation['profile']['mode'] ?? 'exclusive') === 'inclusive';
+
+        $baseTotal = $isInclusive
+            ? Money::of((string) $taxComputation['total'])
+            : $currentSubtotal->add($taxTotal);
+
+        $newTotal = Money::zero()->max($baseTotal->subtract($creditedTotal));
 
         $this->forceFill([
-            'discount_total' => $updatedDiscount,
-            'tax_total' => $taxTotal,
-            'total' => max(0, $baseTotal - $updatedDiscount),
+            'discount_total' => $creditedTotal->toString(),
+            'tax_total'      => $taxTotal->toString(),
+            'total'          => $newTotal->toString(),
         ])->saveQuietly();
 
         $this->refreshFinancials();
@@ -153,19 +194,19 @@ class Invoice extends Model
 
     public function refreshFinancials(): void
     {
-        $paidTotal = (float) $this->payments()->sum('amount');
-        $balanceDue = max(0, (float) $this->total - $paidTotal);
-        $isSettled = $balanceDue <= 0.00001;
-        $overdueGraceDays = max(0, (int) config('erp.billing.overdue_grace_days', 0));
-        $overdueAt = $this->due_date !== null
-            ? now()->parse($this->due_date)->endOfDay()->addDays($overdueGraceDays)
-            : null;
+        // Use BCMath Money to avoid float precision drift when summing payments.
+        $paidMoney  = Money::of((string) $this->payments()->sum('amount'));
+        $totalMoney = Money::of((string) $this->total);
+        $balanceMoney = Money::zero()->max($totalMoney->subtract($paidMoney));
+
+        $paidTotal  = $paidMoney->toFloat();
+        $balanceDue = $balanceMoney->toFloat();
 
         // Statuses that must never be silently overridden by financial recomputation.
         if ($this->status === 'cancelled') {
             $this->forceFill([
-                'paid_total'  => $paidTotal,
-                'balance_due' => $balanceDue,
+                'paid_total'  => $paidMoney->toString(),
+                'balance_due' => $balanceMoney->toString(),
             ])->saveQuietly();
 
             return;
@@ -175,28 +216,35 @@ class Invoice extends Model
         // should remain in draft so that simply adding line items does not
         // silently flip it to overdue/sent. Once a payment exists the invoice
         // is effectively open, so we allow status to advance normally.
-        if ($this->status === 'draft' && $paidTotal <= 0.0) {
+        if ($this->status === 'draft' && $paidMoney->isZero()) {
             $this->forceFill([
-                'paid_total'  => $paidTotal,
-                'balance_due' => $balanceDue,
+                'paid_total'  => $paidMoney->toString(),
+                'balance_due' => $balanceMoney->toString(),
             ])->saveQuietly();
 
             return;
         }
 
-        $status = 'sent';
-        if ($isSettled && (float) $this->total > 0) {
-            $status = 'paid';
-        } elseif ($paidTotal > 0.0 && $balanceDue > 0.0) {
-            $status = 'partially_paid';
-        } elseif ($balanceDue > 0.0 && $overdueAt !== null && now()->greaterThan($overdueAt)) {
-            $status = 'overdue';
-        }
+        $overdueGraceDays = max(0, (int) config('erp.billing.overdue_grace_days', 0));
+        $overdueAt = $this->due_date !== null
+            ? now()->parse($this->due_date)->endOfDay()->addDays($overdueGraceDays)
+            : null;
+
+        $isOverdue = $overdueAt !== null && now()->greaterThan($overdueAt);
+
+        // Delegate status computation to the state machine, which knows the
+        // allowed transitions and will prevent illegal status jumps.
+        $newStatus = InvoiceStateMachine::computeNext(
+            currentStatus: (string) $this->status,
+            total:         $totalMoney->toFloat(),
+            paidTotal:     $paidTotal,
+            isOverdue:     $isOverdue,
+        );
 
         $this->forceFill([
-            'paid_total' => $paidTotal,
-            'balance_due' => $balanceDue,
-            'status' => $status,
+            'paid_total'  => $paidMoney->toString(),
+            'balance_due' => $balanceMoney->toString(),
+            'status'      => $newStatus,
         ])->saveQuietly();
     }
 }

@@ -309,6 +309,13 @@ class PaymentResource extends Resource
         return 'FCFA ' . number_format($amount, 2, '.', ' ');
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Eager-load client and invoice to avoid N+1 queries when the table
+        // renders client name, invoice number, and due-date columns.
+        return parent::getEloquentQuery()->with(['client', 'invoice']);
+    }
+
     public static function getRelations(): array
     {
         return [

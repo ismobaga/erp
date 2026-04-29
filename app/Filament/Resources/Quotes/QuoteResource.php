@@ -7,6 +7,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Quotes\Pages\CreateQuote;
 use App\Filament\Resources\Quotes\Pages\EditQuote;
 use App\Filament\Resources\Quotes\Pages\ListQuotes;
+use App\Filament\Resources\Quotes\Pages\ViewQuote;
 use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\Quote;
@@ -20,6 +21,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
@@ -198,6 +200,7 @@ class QuoteResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(fn (Quote $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('quote_number')
                     ->searchable(),
@@ -243,6 +246,7 @@ class QuoteResource extends Resource
 
                         redirect(InvoiceResource::getUrl('edit', ['record' => $invoice]));
                     }),
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -268,9 +272,10 @@ class QuoteResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListQuotes::route('/'),
+            'index'  => ListQuotes::route('/'),
             'create' => CreateQuote::route('/create'),
-            'edit' => EditQuote::route('/{record}/edit'),
+            'view'   => ViewQuote::route('/{record}'),
+            'edit'   => EditQuote::route('/{record}/edit'),
         ];
     }
 
