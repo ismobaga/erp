@@ -56,4 +56,16 @@ class User extends Authenticatable implements FilamentUser
             'Read Only',
         ]);
     }
+
+    public function companies()
+{
+    return $this->belongsToMany(Company::class)
+        ->withPivot('role')
+        ->withTimestamps();
+}
+
+public function currentCompany()
+{
+    return currentCompany();
+}
 }

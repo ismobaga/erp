@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
+use App\Models\Concerns\HasCompanyScope;
 
 #[Fillable([
     'invoice_number',
@@ -30,6 +31,7 @@ use Illuminate\Validation\ValidationException;
 ])]
 class Invoice extends Model
 {
+    use HasCompanyScope;
     protected function casts(): array
     {
         return [
