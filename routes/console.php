@@ -104,6 +104,7 @@ Artisan::command('invoices:send-due-reminders', function () {
 
 Schedule::command('erp:backup-run')->dailyAt('01:00');
 Schedule::command('invoices:send-due-reminders')->dailyAt('08:00');
+Schedule::command('invoices:generate-recurring')->dailyAt('06:00');
 Schedule::command('reports:run-scheduled-exports')->everyThirtyMinutes();
 Schedule::command('erp:monitor-health')->everyFifteenMinutes();
 Schedule::command('reports:cleanup-exports')->dailyAt('02:00');

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\AccountingPeriodsOverview;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\LedgerOverview;
+use App\Filament\Widgets\OnboardingChecklistWidget;
 use App\Filament\Widgets\OperationalResilienceOverview;
 use App\Support\ErpEdition;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -15,13 +16,13 @@ class Dashboard extends BaseDashboard
 
     public static function canAccess(): bool
     {
-        if (!ErpEdition::isModuleEnabled('dashboard')) {
+        if (! ErpEdition::isModuleEnabled('dashboard')) {
             return false;
         }
 
         $user = auth()->user();
 
-        if (!$user || $user->status === 'restricted') {
+        if (! $user || $user->status === 'restricted') {
             return false;
         }
 
@@ -43,6 +44,7 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         $widgets = [
+            ['class' => OnboardingChecklistWidget::class, 'module' => 'dashboard'],
             ['class' => ArchitecturalStatsOverview::class, 'module' => 'dashboard'],
             ['class' => AccountingPeriodsOverview::class, 'module' => 'financial_periods'],
             ['class' => OperationalResilienceOverview::class, 'module' => 'reports'],
@@ -50,8 +52,8 @@ class Dashboard extends BaseDashboard
         ];
 
         return collect($widgets)
-            ->filter(fn(array $widget): bool => ErpEdition::isModuleEnabled($widget['module']))
-            ->map(fn(array $widget): string => $widget['class'])
+            ->filter(fn (array $widget): bool => ErpEdition::isModuleEnabled($widget['module']))
+            ->map(fn (array $widget): string => $widget['class'])
             ->values()
             ->all();
     }

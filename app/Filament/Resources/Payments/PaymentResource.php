@@ -27,6 +27,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -108,7 +109,19 @@ class PaymentResource extends Resource
                                     ->options(trans('erp.payment_methods'))
                                     ->default('bank_transfer')
                                     ->native(false)
+                                    ->live()
                                     ->required(),
+                                Select::make('mobile_money_operator')
+                                    ->label('Opérateur Mobile Money')
+                                    ->options([
+                                        'Orange Money' => 'Orange Money',
+                                        'Wave'         => 'Wave',
+                                        'Moov Money'   => 'Moov Money',
+                                        'MTN MoMo'     => 'MTN MoMo',
+                                    ])
+                                    ->native(false)
+                                    ->visible(fn(Get $get): bool => $get('payment_method') === 'mobile_money')
+                                    ->required(fn(Get $get): bool => $get('payment_method') === 'mobile_money'),
                                 TextInput::make('reference')
                                     ->label('Référence')
                                     ->placeholder('PAY-20260424-0001')
@@ -127,6 +140,19 @@ class PaymentResource extends Resource
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
+                                Placeholder::make('balance_due_info')
+                                    ->label('Solde restant dû')
+                                    ->content(function (Get $get): string {
+                                        $invoiceId = $get('invoice_id');
+                                        if (blank($invoiceId)) {
+                                            return '—';
+                                        }
+                                        $invoice = Invoice::find($invoiceId);
+                                        if (!$invoice) {
+                                            return '—';
+                                        }
+                                        return 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
+                                    }),
                                 Toggle::make('allow_overpayment')
                                     ->label('Autoriser le trop-perçu')
                                     ->helperText('À activer uniquement après validation explicite de l’équipe finance.'),
@@ -182,7 +208,10 @@ class PaymentResource extends Resource
                 TextColumn::make('payment_method')
                     ->label('Mode')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => __('erp.payment_methods.' . $state)),
+                    ->formatStateUsing(fn(string $state): string => __('erp.payment_methods.' . $state))
+                    ->description(fn(Payment $record): ?string => $record->payment_method === 'mobile_money' && $record->mobile_money_operator
+                        ? $record->mobile_money_operator
+                        : null),
                 TextColumn::make('reconciliation_state')
                     ->label(__('erp.common.reconciliation'))
                     ->state(fn(Payment $record): string => __('erp.resources.payment.reconciliation.' . $record->reconciliationState()))
