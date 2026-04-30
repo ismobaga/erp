@@ -321,7 +321,10 @@ class InvoiceResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->emptyStateHeading('Aucune facture pour le moment')
+            ->emptyStateDescription('Créez votre première facture pour commencer à suivre vos créances.')
+            ->emptyStateIcon(Heroicon::OutlinedDocumentText);
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder

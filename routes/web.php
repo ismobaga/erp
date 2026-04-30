@@ -3,6 +3,7 @@
 use App\Models\ContactRequest;
 use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\BackupDownloadController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
 use App\Models\CompanySetting;
@@ -151,4 +152,11 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/backups/download', BackupDownloadController::class)
         ->middleware(['signed', 'throttle:10,1'])
         ->name('backups.download');
+});
+
+// ── Client Portal (public, token-secured) ──────────────────────────────────
+Route::prefix('portal/{token}')->middleware('throttle:60,1')->group(function (): void {
+    Route::get('/', [ClientPortalController::class, 'index'])->name('portal.index');
+    Route::get('/invoices/{invoice}', [ClientPortalController::class, 'showInvoice'])->name('portal.invoice');
+    Route::get('/invoices/{invoice}/pdf', [ClientPortalController::class, 'downloadPdf'])->name('portal.invoice.pdf');
 });

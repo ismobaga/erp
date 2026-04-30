@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Clients\Pages;
 use App\Filament\Resources\Clients\ClientResource;
 use App\Models\Client;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -22,6 +23,35 @@ class ViewClientDetails extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('portalLink')
+                ->label('Lien portail client')
+                ->icon('heroicon-o-link')
+                ->color('info')
+                ->action(function (): void {
+                    /** @var Client $client */
+                    $client = $this->getRecord();
+
+                    $url = $client->portalUrl();
+
+                    $this->js("
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText('".addslashes($url)."');
+                        } else {
+                            var el = document.createElement('textarea');
+                            el.value = '".addslashes($url)."';
+                            document.body.appendChild(el);
+                            el.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(el);
+                        }
+                    ");
+
+                    Notification::make()
+                        ->title('Lien portail copié')
+                        ->body('Partagez ce lien sécurisé avec votre client.')
+                        ->success()
+                        ->send();
+                }),
             Action::make('back')
                 ->label('Retour à la liste')
                 ->color('gray')

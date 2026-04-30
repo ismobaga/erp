@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'type',
@@ -19,11 +20,26 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'country',
     'notes',
     'status',
+    'portal_token',
     'created_by',
     'updated_by',
 ])]
 class Client extends Model
 {
+    protected static function booted(): void
+    {
+        static::creating(function (Client $client): void {
+            if (blank($client->portal_token)) {
+                $client->portal_token = (string) Str::uuid();
+            }
+        });
+    }
+
+    public function portalUrl(): string
+    {
+        return route('portal.index', ['token' => $this->portal_token]);
+    }
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');

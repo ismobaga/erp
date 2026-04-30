@@ -209,7 +209,10 @@ class ClientResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->emptyStateHeading('Aucun client enregistré')
+            ->emptyStateDescription('Ajoutez votre premier client pour commencer à créer des factures.')
+            ->emptyStateIcon('heroicon-o-rectangle-stack');
     }
 
     public static function getRelations(): array
