@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
 use App\Models\Payment;
+use App\Services\AuditTrailService;
 use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
@@ -245,6 +246,66 @@ class LedgerPostingService
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($creditNote->issue_date),
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // Reversal entries
+    // -------------------------------------------------------------------------
+
+    /**
+     * Create a reversal journal entry for a posted entry:
+     * - All debit/credit amounts on the lines are swapped.
+     * - The reversal is immediately posted.
+     * - The original entry is NOT voided; both remain in the ledger.
+     */
+    public function reverse(JournalEntry $entry, ?int $userId = null, ?string $reason = null): JournalEntry
+    {
+        if ($entry->status !== 'posted') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => __('erp.ledger.reverse_only_posted'),
+            ]);
+        }
+
+        $entry->loadMissing('lines');
+
+        return DB::transaction(function () use ($entry, $userId, $reason): JournalEntry {
+            $description = __('erp.ledger.reversal_of') . ': ' . $entry->entry_number;
+
+            if ($reason) {
+                $description .= ' — ' . $reason;
+            }
+
+            $reversal = JournalEntry::create([
+                'entry_number'       => $this->generateEntryNumber(now()->toDateString()),
+                'entry_date'         => now()->toDateString(),
+                'description'        => $description,
+                'status'             => 'draft',
+                'source_type'        => null,
+                'source_id'          => null,
+                'reversal_of'        => $entry->id,
+                'financial_period_id' => $this->resolvePeriodId(now()),
+                'created_by'         => $userId,
+            ]);
+
+            foreach ($entry->lines as $line) {
+                $reversal->lines()->create([
+                    'account_id'  => $line->account_id,
+                    'debit'       => $line->credit,
+                    'credit'      => $line->debit,
+                    'description' => $line->description,
+                ]);
+            }
+
+            $reversal->load('lines');
+            $reversal->post($userId);
+
+            app(AuditTrailService::class)->log('journal_entry_reversed', $entry, [
+                'reversal_entry_number' => $reversal->entry_number,
+                'reason' => $reason,
+            ], $userId);
+
+            return $reversal;
+        });
     }
 
     // -------------------------------------------------------------------------
