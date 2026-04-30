@@ -16,8 +16,8 @@ Route::get('/', function () {
         : null;
 
     $companyName = $company?->company_name ?: 'CROMMIX MALI - SA';
-    $companyEmail = $company?->email ?: '';
-    $companyPhone = $company?->phone ?: '83 45 08 83 / 00226 25 50 20 00';
+    $companyEmail = $company?->email ?: 'contact@crommixmali.com';
+    $companyPhone = $company?->phone ?: '83 45 08 83 / +226 25 50 20 00';
     $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343';
     $companyWebsite = $company?->website ?: '';
 
@@ -35,14 +35,63 @@ Route::get('/presentation', function () {
     return redirect()->route('company.presentation');
 });
 
+// Static legal / info pages
+Route::get('/confidentialite', function () {
+    $company = Schema::hasTable('company_settings') ? CompanySetting::query()->first() : null;
+    return view('company.confidentialite', [
+        'company' => $company,
+        'companyName' => $company?->company_name ?: 'CROMMIX MALI - SA',
+        'companyEmail' => $company?->email ?: 'contact@crommixmali.com',
+        'companyPhone' => $company?->phone ?: '83 45 08 83 / +226 25 50 20 00',
+        'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343',
+        'companyWebsite' => $company?->website ?: '',
+    ]);
+})->name('company.confidentialite');
+
+Route::get('/conditions', function () {
+    $company = Schema::hasTable('company_settings') ? CompanySetting::query()->first() : null;
+    return view('company.conditions', [
+        'company' => $company,
+        'companyName' => $company?->company_name ?: 'CROMMIX MALI - SA',
+        'companyEmail' => $company?->email ?: 'contact@crommixmali.com',
+        'companyPhone' => $company?->phone ?: '83 45 08 83 / +226 25 50 20 00',
+        'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343',
+        'companyWebsite' => $company?->website ?: '',
+    ]);
+})->name('company.conditions');
+
+Route::get('/cookies', function () {
+    $company = Schema::hasTable('company_settings') ? CompanySetting::query()->first() : null;
+    return view('company.cookies', [
+        'company' => $company,
+        'companyName' => $company?->company_name ?: 'CROMMIX MALI - SA',
+        'companyEmail' => $company?->email ?: 'contact@crommixmali.com',
+        'companyPhone' => $company?->phone ?: '83 45 08 83 / +226 25 50 20 00',
+        'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343',
+        'companyWebsite' => $company?->website ?: '',
+    ]);
+})->name('company.cookies');
+
+Route::get('/bureaux', function () {
+    $company = Schema::hasTable('company_settings') ? CompanySetting::query()->first() : null;
+    return view('company.bureaux', [
+        'company' => $company,
+        'companyName' => $company?->company_name ?: 'CROMMIX MALI - SA',
+        'companyEmail' => $company?->email ?: 'contact@crommixmali.com',
+        'companyPhone' => $company?->phone ?: '83 45 08 83 / +226 25 50 20 00',
+        'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343',
+        'companyWebsite' => $company?->website ?: '',
+    ]);
+})->name('company.bureaux');
+
 Route::get('/dms-presentation', function () {
     $company = Schema::hasTable('company_settings')
         ? CompanySetting::query()->first()
         : null;
 
     $companyName = $company?->company_name ?: 'CROMMIX MALI - SA';
-    $companyEmail = $company?->email ?: '';
-    $companyPhone = $company?->phone ?: '83 45 08 83 / 00226 25 50 20 00';
+    $companyEmail = $company?->email ?: 'contact@crommixmali.com';
+    $companyPhone = $company?->phone ?: '83 45 08 83 / +226 25 50 20 00';
     $companyAddress = trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')) ?: 'Bamako (République du Mali), Bacodjicoroni Golf Rue 661 Porte 343';
     $companyWebsite = $company?->website ?: '';
 

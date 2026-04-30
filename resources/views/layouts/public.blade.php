@@ -52,10 +52,11 @@
             <div class="text-xl font-black text-[#002045] uppercase">{{ $companyName }}</div>
             <div
                 class="flex flex-wrap justify-center gap-6 text-xs font-semibold uppercase tracking-widest text-[#43474e]">
-                <a href="#" class="transition hover:text-[#005048]">Confidentialité</a>
-                <a href="#" class="transition hover:text-[#005048]">Conditions</a>
-                <a href="#" class="transition hover:text-[#005048]">Cookies</a>
-                <a href="#" class="transition hover:text-[#005048]">Bureaux</a>
+                <a href="{{ route('company.confidentialite') }}"
+                    class="transition hover:text-[#005048]">Confidentialité</a>
+                <a href="{{ route('company.conditions') }}" class="transition hover:text-[#005048]">Conditions</a>
+                <a href="{{ route('company.cookies') }}" class="transition hover:text-[#005048]">Cookies</a>
+                <a href="{{ route('company.bureaux') }}" class="transition hover:text-[#005048]">Bureaux</a>
             </div>
             <div
                 class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">
