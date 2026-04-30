@@ -58,9 +58,6 @@ class GenerateRecurringInvoices extends Command
                         'due_date' => $dueDate,
                         'status' => 'draft',
                         'notes' => $template->notes,
-                        'subtotal' => $template->amount,
-                        'total' => $template->amount,
-                        'balance_due' => $template->amount,
                     ]);
 
                     if (! empty($template->items)) {

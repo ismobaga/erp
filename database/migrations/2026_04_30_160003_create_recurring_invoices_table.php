@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('recurring_invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
-            $table->string('frequency'); // daily, weekly, monthly, quarterly, yearly
+            $table->string('frequency')->comment('daily, weekly, monthly, quarterly, yearly'); // daily, weekly, monthly, quarterly, yearly
             $table->date('start_date');
             $table->date('next_due_date');
             $table->date('end_date')->nullable();

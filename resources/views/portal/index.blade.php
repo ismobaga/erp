@@ -11,7 +11,7 @@
         .topbar-brand { color: #fff; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
         .topbar-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
         .container { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
-        .hero { background: #fff; border-radius: 16px; padding: 32px; margin-bottom: 28px; box-shadow: 0 2px 12px rgba(0,32,69,0.07); ring: 1px solid #e5eaf2; }
+        .hero { background: #fff; border-radius: 16px; padding: 32px; margin-bottom: 28px; box-shadow: 0 2px 12px rgba(0,32,69,0.07); border: 1px solid #e5eaf2; }
         .hero h1 { font-size: 26px; font-weight: 900; color: #002045; margin-bottom: 4px; }
         .hero p { font-size: 14px; color: #57657a; }
         .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }

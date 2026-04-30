@@ -72,7 +72,7 @@ class RecurringInvoice extends Model
             default => $next->addMonth(),
         };
 
-        $expired = $this->end_date !== null && $next->gt($this->end_date);
+        $expired = $this->end_date !== null && $next->gte($this->end_date);
 
         $this->forceFill([
             'next_due_date' => $next,
