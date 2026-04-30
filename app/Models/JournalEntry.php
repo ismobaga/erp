@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -24,6 +25,7 @@ use Illuminate\Validation\ValidationException;
     'voided_by',
     'voided_at',
     'void_reason',
+    'reversal_of',
 ])]
 class JournalEntry extends Model
 {
@@ -59,6 +61,32 @@ class JournalEntry extends Model
     public function financialPeriod(): BelongsTo
     {
         return $this->belongsTo(FinancialPeriod::class);
+    }
+
+    /**
+     * The original entry that this entry reverses (if this is a reversal).
+     */
+    public function originalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'reversal_of');
+    }
+
+    /**
+     * The reversal entry created for this entry (if one exists).
+     */
+    public function reversal(): HasOne
+    {
+        return $this->hasOne(JournalEntry::class, 'reversal_of');
+    }
+
+    public function isReversal(): bool
+    {
+        return $this->reversal_of !== null;
+    }
+
+    public function hasReversal(): bool
+    {
+        return $this->reversal()->exists();
     }
 
     public function scopeDraft(Builder $query): Builder

@@ -8,6 +8,7 @@ use App\Filament\Resources\Ledger\Pages\EditJournalEntry;
 use App\Filament\Resources\Ledger\Pages\ListJournalEntries;
 use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
+use App\Services\LedgerPostingService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -60,6 +61,12 @@ class JournalEntryResource extends Resource
     public static function canDeleteAny(): bool
     {
         return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        // Only draft entries may be edited. Posted and voided entries are immutable.
+        return $record->status === 'draft';
     }
 
     public static function form(Schema $schema): Schema
@@ -206,6 +213,33 @@ class JournalEntryResource extends Resource
                     ->action(function (JournalEntry $record, array $data): void {
                         $record->void(auth()->id(), $data['void_reason']);
                         Notification::make()->warning()->title(__('erp.ledger.voided_notification'))->send();
+                    }),
+                Action::make('reverse')
+                    ->label(__('erp.ledger.reverse_action'))
+                    ->icon(Heroicon::OutlinedArrowPathRoundedSquare)
+                    ->color('warning')
+                    ->visible(fn(JournalEntry $record): bool => $record->status === 'posted' && $record->reversal_of === null)
+                    ->form([
+                        Textarea::make('reversal_reason')
+                            ->label(__('erp.ledger.reversal_reason'))
+                            ->nullable(),
+                    ])
+                    ->requiresConfirmation()
+                    ->action(function (JournalEntry $record, array $data): void {
+                        try {
+                            if ($record->hasReversal()) {
+                                Notification::make()->danger()->title(__('erp.ledger.already_reversed'))->send();
+                                return;
+                            }
+                            app(LedgerPostingService::class)->reverse(
+                                $record,
+                                auth()->id(),
+                                $data['reversal_reason'] ?? null,
+                            );
+                            Notification::make()->success()->title(__('erp.ledger.reversed_notification'))->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()->danger()->title($e->getMessage())->send();
+                        }
                     }),
             ])
             ->bulkActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
