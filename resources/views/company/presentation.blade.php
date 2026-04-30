@@ -47,8 +47,7 @@
 
             <div class="relative">
                 <div class="aspect-square overflow-hidden rounded-[2rem] shadow-2xl">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFjWrLc0BmgWuJCi5p4thcvE0E6vCHLBgz58sUeKi-TVvnI1C-XAdBxWcT1iCGpymCSrNHp7ngeKhdMO16FO7en8XC1IyFtUTlMpB-_QpqS2T7Vpn--1ttZlrwBHzrVKyZxedWRp5Ph8or5-pmTjOveEN8b6eAkXYlJJV94PIZsQ-n5DiCSH7uzbkWmve02s4qn6ghvEAob0uocUgsifj2Qba7ADX6crUjVCqQwH928GWZ3B0tMfkIDFgg7MnLn04fczpB_R_5H6xZ"
-                        alt="Immeuble corporate moderne" class="h-full w-full object-cover">
+                    <img src="" alt="Immeuble corporate moderne" class="h-full w-full object-cover">
                 </div>
 
                 <div
@@ -102,54 +101,54 @@
         </div>
     </section>
 
-    <section id="services" class="bg-[#f8f9ff] py-24">
-        <div class="mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="mb-16 text-center">
-                <h2 class="mb-4 text-4xl font-black tracking-tight text-[#002045]">Écosystème central</h2>
-                <p class="mx-auto max-w-2xl text-[#43474e]">Une suite intégrée de solutions conçues pour l'interopérabilité
-                    totale.</p>
-            </div>
-
-            <div class="grid h-auto grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:h-[600px]">
-                <article
-                    class="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-[#1a365d] p-8 text-white md:col-span-2 md:row-span-2">
-                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi-xtgOWk5hDfEAKs7bQtg_Oc3F3anSiDhhH2GE2TgvLgQnwWQ40f8ZlGuKvGAsIBkSVFpLZK-HjQkpghvaKGZTSfLS2CRIqWBXr6_S4K2-p0iiOvDOGHJ03D9ksglYXCt2baSHEs-_OLU_irqHFHIj5_FHXZqVf6tc1n6FcFav9XWu0x-rh0o-VpxlsnPT4jQJiZ6i1rcdYzze4knt0BU-XH1iybMTlGJADbCkB2zQSCMpQ2muAUvM0xOIeLfCGLuUF7XjU4aVYri"
-                        alt="Tableau de bord ERP"
-                        class="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay">
-                    <div class="relative z-10">
-                        <div class="mb-4 text-4xl text-[#8df5e4]">▦</div>
-                        <h3 class="mb-4 text-3xl font-bold">ERP d'entreprise</h3>
-                        <p class="leading-relaxed text-[#d6e3ff]">Gestion centralisée des ressources, de la finance et des
-                            opérations sur une plateforme robuste.</p>
+    <!-- <section id="services" class="bg-[#f8f9ff] py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="mb-16 text-center">
+                        <h2 class="mb-4 text-4xl font-black tracking-tight text-[#002045]">Écosystème central</h2>
+                        <p class="mx-auto max-w-2xl text-[#43474e]">Une suite intégrée de solutions conçues pour l'interopérabilité
+                            totale.</p>
                     </div>
-                    <div class="relative z-10 text-sm font-bold">En savoir plus →</div>
-                </article>
 
-                <article id="portfolio" class="flex flex-col justify-between rounded-[2rem] bg-[#d3e4fe] p-8 md:col-span-2">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-[#002045]">Architecture web</h3>
-                            <p class="mt-2 text-sm text-[#43474e]">Infrastructures scalables et interfaces haute
-                                performance.</p>
-                        </div>
-                        <div class="text-2xl text-[#002045]">🌐</div>
+                    <div class="grid h-auto grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:h-[600px]">
+                        <article
+                            class="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-[#1a365d] p-8 text-white md:col-span-2 md:row-span-2">
+                            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi-xtgOWk5hDfEAKs7bQtg_Oc3F3anSiDhhH2GE2TgvLgQnwWQ40f8ZlGuKvGAsIBkSVFpLZK-HjQkpghvaKGZTSfLS2CRIqWBXr6_S4K2-p0iiOvDOGHJ03D9ksglYXCt2baSHEs-_OLU_irqHFHIj5_FHXZqVf6tc1n6FcFav9XWu0x-rh0o-VpxlsnPT4jQJiZ6i1rcdYzze4knt0BU-XH1iybMTlGJADbCkB2zQSCMpQ2muAUvM0xOIeLfCGLuUF7XjU4aVYri"
+                                alt="Tableau de bord ERP"
+                                class="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay">
+                            <div class="relative z-10">
+                                <div class="mb-4 text-4xl text-[#8df5e4]">▦</div>
+                                <h3 class="mb-4 text-3xl font-bold">ERP d'entreprise</h3>
+                                <p class="leading-relaxed text-[#d6e3ff]">Gestion centralisée des ressources, de la finance et des
+                                    opérations sur une plateforme robuste.</p>
+                            </div>
+                            <div class="relative z-10 text-sm font-bold">En savoir plus →</div>
+                        </article>
+
+                        <article id="portfolio" class="flex flex-col justify-between rounded-[2rem] bg-[#d3e4fe] p-8 md:col-span-2">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-[#002045]">Architecture web</h3>
+                                    <p class="mt-2 text-sm text-[#43474e]">Infrastructures scalables et interfaces haute
+                                        performance.</p>
+                                </div>
+                                <div class="text-2xl text-[#002045]">🌐</div>
+                            </div>
+                            <div class="self-end text-4xl font-black text-[#002045]/10">WEB.CORE</div>
+                        </article>
+
+                        <article class="flex flex-col justify-between rounded-[2rem] bg-[#d5e3fc] p-8">
+                            <div class="text-3xl text-[#002045]">🚚</div>
+                            <h3 class="text-lg font-bold leading-tight text-[#002045]">Gestion de flotte</h3>
+                        </article>
+
+                        <article id="carrieres"
+                            class="flex cursor-pointer flex-col justify-between rounded-[2rem] bg-[#8df5e4] p-8 transition hover:translate-x-1">
+                            <h3 class="text-lg font-bold leading-tight text-[#002521]">Conseil stratégique</h3>
+                            <div class="text-3xl text-[#002521]">→</div>
+                        </article>
                     </div>
-                    <div class="self-end text-4xl font-black text-[#002045]/10">WEB.CORE</div>
-                </article>
-
-                <article class="flex flex-col justify-between rounded-[2rem] bg-[#d5e3fc] p-8">
-                    <div class="text-3xl text-[#002045]">🚚</div>
-                    <h3 class="text-lg font-bold leading-tight text-[#002045]">Gestion de flotte</h3>
-                </article>
-
-                <article id="carrieres"
-                    class="flex cursor-pointer flex-col justify-between rounded-[2rem] bg-[#8df5e4] p-8 transition hover:translate-x-1">
-                    <h3 class="text-lg font-bold leading-tight text-[#002521]">Conseil stratégique</h3>
-                    <div class="text-3xl text-[#002521]">→</div>
-                </article>
-            </div>
-        </div>
-    </section>
+                </div>
+            </section> -->
 
     <section id="dms-products" class="bg-[#eff4ff] py-24">
         <div class="mx-auto max-w-7xl px-6 lg:px-8">

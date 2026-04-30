@@ -1,17 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 90" width="260" height="90" role="img" aria-label="CGL – Gestion financière &amp; ERP">
-  <!-- Dark green "C" arc -->
-  <path d="M46 10 A36 36 0 1 0 46 70" fill="none" stroke="#1a3b2e" stroke-width="14" stroke-linecap="round"/>
-  <!-- Chart bars inside C -->
-  <rect x="28" y="42" width="5" height="12" rx="1" fill="#3a9e44"/>
-  <rect x="35" y="36" width="5" height="18" rx="1" fill="#3a9e44"/>
-  <rect x="42" y="30" width="5" height="24" rx="1" fill="#3a9e44"/>
-  <!-- Arrow trend line -->
-  <polyline points="25,46 35,36 43,28 52,20" fill="none" stroke="#1a2040" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <polygon points="52,20 58,22 54,26" fill="#1a2040"/>
-  <!-- "G" -->
-  <text x="72" y="68" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" fill="#3a9e44" letter-spacing="-2">G</text>
-  <!-- "L" -->
-  <text x="138" y="68" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" fill="#1a2040" letter-spacing="-2">L</text>
-  <!-- Tagline -->
-  <text x="0" y="85" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="600" fill="#3a9e44" letter-spacing="0.5" aria-hidden="true">Gestion financière &amp; ERP</text>
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="svg" href="#object-0" path="Sans titre.svg"/>
+      <bx:file format="svg" href="#object-1" path="Sans titre 2.svg"/>
+      <bx:file format="svg" href="#object-2" path="Sans titre 3.svg"/>
+      <bx:file format="svg" href="#object-3" path="Sans titre 4.svg"/>
+      <bx:file format="svg" href="#object-4" path="Sans titre 5.svg"/>
+      <bx:file format="svg" href="#object-5" path="Sans titre 6.svg"/>
+    </bx:export>
+  </defs>
+  <title id="title">CGL – Gestion financière &amp; ERP</title>
+  <desc id="desc">Logo carré 1:1 pour CGL, optimisé pour le web et compatible mode clair/sombre.</desc>
+  <style>
+    svg {
+      --cgl-green-dark: #0B5A35;
+      --cgl-green: #43A047;
+      --cgl-ink: #0E1B2A;
+      --cgl-muted: #597061;
+      --cgl-bg: #FFFFFF;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --cgl-bg: #0B1320;
+        --cgl-ink: #FFFFFF;
+        --cgl-muted: #CFE8D4;
+        --cgl-green-dark: #2EBA6B;
+        --cgl-green: #77D95D;
+      }
+    }
+    .bg { fill: var(--cgl-bg); }
+    .c-dark { fill: var(--cgl-green-dark); }
+    .green { fill: var(--cgl-green); }
+    .ink { fill: var(--cgl-ink); }
+    .muted { fill: var(--cgl-muted); }
+    .line { stroke: var(--cgl-ink); stroke-width: 26; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    .arrow { fill: var(--cgl-ink); }
+    .wordmark { font-family: Inter, Montserrat, Arial, sans-serif; font-weight: 800; letter-spacing: -8px; }
+    .subtitle { font-family: Inter, Montserrat, Arial, sans-serif; font-weight: 600; letter-spacing: 1px; }
+  </style>
+  <rect class="bg" width="1024" height="1024" rx="220" id="object-0"/>
+  <path class="green" d="M 491.417 183.646 L 804.417 183.646 C 832.417 183.646 850.417 213.646 836.417 238.646 L 794.417 313.646 L 597.417 313.646 C 511.417 313.646 441.417 383.646 441.417 469.646 C 441.417 555.646 511.417 625.646 597.417 625.646 L 707.417 625.646 L 707.417 558.646 L 594.417 558.646 L 594.417 466.646 L 820.417 466.646 L 820.417 717.646 L 597.417 717.646 C 457.417 717.646 343.417 604.646 343.417 463.646 C 343.417 322.646 457.417 183.646 597.417 183.646 L 491.417 183.646 Z" id="object-1"/>
+  <g transform="matrix(1, 0, 0, 1, 46.592561, 131.616594)" id="object-2">
+    <path class="c-dark" d="M 238.389 15.966 C 326.389 15.966 404.389 54.966 457.389 116.966 L 383.389 186.966 C 348.389 144.966 297.389 118.966 238.389 118.966 C 134.389 118.966 50.389 202.966 50.389 306.966 C 50.389 410.966 134.389 494.966 238.389 494.966 C 297.389 494.966 350.389 467.966 385.389 424.966 L 459.389 494.966 C 406.389 557.966 327.389 597.966 238.389 597.966 C 77.389 597.966 -52.611 467.966 -52.611 306.966 C -52.611 145.966 77.389 15.966 238.389 15.966 Z"/>
+    <rect class="green" x="113" y="347" width="38" height="91" rx="8"/>
+    <rect class="green" x="176" y="302" width="38" height="136" rx="8"/>
+    <rect class="green" x="239" y="241" width="38" height="197" rx="8"/>
+    <path class="line" d="M103 315l92-92 70 70 134-151"/>
+    <path class="arrow" d="M 357.165 111.68 L 451.165 88.68 L 423.165 180.68 L 402.165 136.68 L 356.165 111.68 L 357.165 111.68 Z"/>
+  </g>
+  <path class="ink" d="M 775.971 185.097 L 858.971 185.097 C 875.971 185.097 889.971 199.097 889.971 216.097 L 889.971 611.097 L 1030.97 611.097 L 1030.97 719.097 L 775.971 719.097 L 775.971 185.097 Z" id="object-3"/>
+  <text x="512" y="831.612" text-anchor="middle" font-size="126" class="wordmark ink" style="white-space: pre; font-size: 126px;" id="object-4">CGL</text>
+  <text x="514.903" y="887.549" text-anchor="middle" font-size="35" class="subtitle muted" style="white-space: pre; font-size: 35px;" id="object-5">Gestion financière &amp; ERP</text>
 </svg>
