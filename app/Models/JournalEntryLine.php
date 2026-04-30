@@ -32,13 +32,15 @@ class JournalEntryLine extends Model
 
             if ($debit < 0 || $credit < 0) {
                 throw ValidationException::withMessages([
-                    'debit' => 'Debit and credit amounts must be non-negative.',
+                    'debit'  => 'Debit amount must be non-negative.',
+                    'credit' => 'Credit amount must be non-negative.',
                 ]);
             }
 
             if ($debit > 0 && $credit > 0) {
                 throw ValidationException::withMessages([
-                    'debit' => 'A journal entry line cannot have both a debit and a credit amount.',
+                    'debit'  => 'A journal entry line cannot have both a debit and a credit amount.',
+                    'credit' => 'A journal entry line cannot have both a debit and a credit amount.',
                 ]);
             }
         });

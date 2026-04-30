@@ -227,6 +227,10 @@ class JournalEntryResource extends Resource
                     ->requiresConfirmation()
                     ->action(function (JournalEntry $record, array $data): void {
                         try {
+                            if ($record->hasReversal()) {
+                                Notification::make()->danger()->title(__('erp.ledger.already_reversed'))->send();
+                                return;
+                            }
                             app(LedgerPostingService::class)->reverse(
                                 $record,
                                 auth()->id(),

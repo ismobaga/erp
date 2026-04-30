@@ -266,9 +266,9 @@ class LedgerPostingService
             ]);
         }
 
-        $entry->loadMissing('lines');
-
         return DB::transaction(function () use ($entry, $userId, $reason): JournalEntry {
+            // Load lines inside the transaction for data consistency.
+            $entry->loadMissing('lines');
             $description = __('erp.ledger.reversal_of') . ': ' . $entry->entry_number;
 
             if ($reason) {
