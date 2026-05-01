@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use App\Services\InvoiceNumberService;
 use App\Services\TaxProfileResolver;
@@ -33,6 +34,7 @@ use Illuminate\Validation\ValidationException;
 ])]
 class Invoice extends Model
 {
+    use HasCompanyScope;
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');

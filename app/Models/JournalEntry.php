@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,6 +30,7 @@ use Illuminate\Validation\ValidationException;
 ])]
 class JournalEntry extends Model
 {
+    use HasCompanyScope;
     protected function casts(): array
     {
         return [

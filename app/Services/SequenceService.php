@@ -9,45 +9,62 @@ use Illuminate\Support\Facades\DB;
  * concurrency-safe manner using a dedicated `sequences` table with
  * row-level locking.
  *
- * This replaces the previous pattern of pluck()-ing all existing numbers
- * into PHP memory and finding the max, which was subject to race conditions
- * and O(n) memory growth.
+ * In a multi-tenant setup sequences are scoped to the current company so that
+ * each company has its own independent numbering series.
  */
 class SequenceService
 {
     /**
-     * Acquire and return the next integer value for a given (key, period)
+     * Acquire and return the next integer value for a given (company_id, key, period)
      * combination.  A `SELECT … FOR UPDATE` inside a transaction ensures
      * that two concurrent requests cannot receive the same value.
      *
-     * @param  string  $key     Sequence identifier, e.g. 'invoice', 'quote', 'journal_entry'.
-     * @param  string  $period  Scoping period, e.g. '2026', '2026-04', or 'all' for non-resetting sequences.
+     * @param  string  $key       Sequence identifier, e.g. 'invoice', 'quote', 'journal_entry'.
+     * @param  string  $period    Scoping period, e.g. '2026', '2026-04', or 'all' for non-resetting sequences.
+     * @param  int|null $companyId Company to scope the sequence to. Defaults to the current company.
      */
-    public function next(string $key, string $period): int
+    public function next(string $key, string $period, ?int $companyId = null): int
     {
-        return DB::transaction(function () use ($key, $period): int {
-            $row = DB::table('sequences')
+        $resolvedCompanyId = $companyId ?? (app()->bound('currentCompany') ? app('currentCompany')->id : null);
+
+        return DB::transaction(function () use ($key, $period, $resolvedCompanyId): int {
+            $query = DB::table('sequences')
                 ->where('key', $key)
-                ->where('period', $period)
-                ->lockForUpdate()
-                ->first();
+                ->where('period', $period);
+
+            if ($resolvedCompanyId !== null) {
+                $query->where('company_id', $resolvedCompanyId);
+            }
+
+            $row = $query->lockForUpdate()->first();
 
             if ($row === null) {
-                DB::table('sequences')->insert([
+                $insert = [
                     'key'      => $key,
                     'period'   => $period,
                     'next_val' => 2,
-                ]);
+                ];
+
+                if ($resolvedCompanyId !== null) {
+                    $insert['company_id'] = $resolvedCompanyId;
+                }
+
+                DB::table('sequences')->insert($insert);
 
                 return 1;
             }
 
             $current = (int) $row->next_val;
 
-            DB::table('sequences')
+            $updateQuery = DB::table('sequences')
                 ->where('key', $key)
-                ->where('period', $period)
-                ->update(['next_val' => $current + 1]);
+                ->where('period', $period);
+
+            if ($resolvedCompanyId !== null) {
+                $updateQuery->where('company_id', $resolvedCompanyId);
+            }
+
+            $updateQuery->update(['next_val' => $current + 1]);
 
             return $current;
         });

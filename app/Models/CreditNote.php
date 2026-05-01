@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ use Illuminate\Validation\ValidationException;
 ])]
 class CreditNote extends Model
 {
+    use HasCompanyScope;
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');

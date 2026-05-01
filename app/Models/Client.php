@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\Services\TaxProfileResolver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,7 @@ use Illuminate\Support\Str;
 ])]
 class Client extends Model
 {
+    use HasCompanyScope;
     protected static function booted(): void
     {
         static::creating(function (Client $client): void {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\DB;
 ])]
 class Quote extends Model
 {
+    use HasCompanyScope;
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
