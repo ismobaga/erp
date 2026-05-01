@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\Model;
     'bank_account_name',
     'bank_account_number',
     'bank_swift_code',
+    'whatsapp_device_id',
+    'whatsapp_enabled',
 ])]
 class CompanySetting extends Model
 {
