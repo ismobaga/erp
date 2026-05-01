@@ -75,7 +75,6 @@ class SendWhatsAppReminderAction extends Action
                 continue;
             }
 
-            $phone   = $this->normalizePhone($client->phone);
             $amount  = 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
             $dueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
 
@@ -90,7 +89,7 @@ class SendWhatsAppReminderAction extends Action
             ]);
 
             try {
-                $whatsapp->sendMessage($phone, $message);
+                $whatsapp->sendMessage($whatsapp->normalizePhone($client->phone), $message);
             } catch (\Throwable $e) {
                 report($e);
                 continue;
@@ -108,21 +107,5 @@ class SendWhatsAppReminderAction extends Action
         }
 
         return $sent;
-    }
-
-    /**
-     * Ensure the phone number is formatted as a WhatsApp JID.
-     * If the value already contains "@", it is returned as-is.
-     * Otherwise append "@s.whatsapp.net".
-     */
-    private function normalizePhone(string $phone): string
-    {
-        $phone = preg_replace('/[^0-9@.]/', '', $phone) ?? $phone;
-
-        if (str_contains($phone, '@')) {
-            return $phone;
-        }
-
-        return $phone . '@s.whatsapp.net';
     }
 }

@@ -164,10 +164,9 @@ class DunningService
      */
     public function runWhatsAppDunning(?int $systemUserId = null): int
     {
-        $invoices  = $this->eligibleInvoices();
-        $whatsapp  = app(WhatsAppService::class);
-        $audit     = app(AuditTrailService::class);
-        $count     = 0;
+        $invoices = $this->eligibleInvoices();
+        $whatsapp = app(WhatsAppService::class);
+        $count    = 0;
 
         foreach ($invoices as $invoice) {
             $client = $invoice->client;
@@ -176,7 +175,7 @@ class DunningService
                 continue;
             }
 
-            $phone   = $this->normalizePhone($client->phone);
+            $phone   = $whatsapp->normalizePhone($client->phone);
             $amount  = 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
             $dueDate = optional($invoice->due_date)->format('d/m/Y') ?? '—';
             $days    = $this->daysOverdue($invoice);
@@ -201,16 +200,6 @@ class DunningService
         }
 
         return $count;
-    }
-
-    /**
-     * Ensure the phone number is formatted as a WhatsApp JID.
-     */
-    private function normalizePhone(string $phone): string
-    {
-        $phone = preg_replace('/[^0-9@.]/', '', $phone) ?? $phone;
-
-        return str_contains($phone, '@') ? $phone : $phone . '@s.whatsapp.net';
     }
 
     public function daysOverdue(Invoice $invoice): int

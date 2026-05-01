@@ -108,6 +108,18 @@ class WhatsAppService
     }
 
     /**
+     * Ensure the phone number is formatted as a WhatsApp JID.
+     * If the value already contains "@", it is returned as-is.
+     * Otherwise "@s.whatsapp.net" is appended.
+     */
+    public function normalizePhone(string $phone): string
+    {
+        $phone = preg_replace('/[^0-9@.]/', '', $phone) ?? $phone;
+
+        return str_contains($phone, '@') ? $phone : $phone . '@s.whatsapp.net';
+    }
+
+    /**
      * Throw a RuntimeException when the API response indicates failure.
      */
     private function assertSuccess(Response $response, string $operation): void
