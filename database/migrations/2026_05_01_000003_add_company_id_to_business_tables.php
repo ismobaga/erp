@@ -6,45 +6,40 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     /**
-     * List of business tables that must be scoped per company.
-     * Each entry maps a table name to whether a nullable FK is used.
-     * All tables use cascadeOnDelete unless specified otherwise.
+     * Business tables that require a company_id foreign key.
+     * All use non-nullable cascadeOnDelete.
      */
     private array $tables = [
-        'clients'           => false,
-        'services'          => false,
-        'quotes'            => false,
-        'quote_items'       => false,
-        'invoices'          => false,
-        'invoice_items'     => false,
-        'payments'          => false,
-        'expenses'          => false,
-        'projects'          => false,
-        'notes'             => false,
-        'attachments'       => false,
-        'sequences'         => false,
-        'activity_logs'     => false,
-        'financial_periods' => false,
-        'ledger_accounts'   => false,
-        'journal_entries'   => false,
-        'journal_entry_lines' => false,
-        'credit_notes'      => false,
-        'recurring_invoices' => false,
-        'report_schedules'  => false,
-        'dunning_logs'      => false,
+        'clients',
+        'services',
+        'quotes',
+        'quote_items',
+        'invoices',
+        'invoice_items',
+        'payments',
+        'expenses',
+        'projects',
+        'notes',
+        'attachments',
+        'sequences',
+        'activity_logs',
+        'financial_periods',
+        'ledger_accounts',
+        'journal_entries',
+        'journal_entry_lines',
+        'credit_notes',
+        'recurring_invoices',
+        'report_schedules',
+        'dunning_logs',
     ];
 
     public function up(): void
     {
-        foreach ($this->tables as $table => $nullable) {
-            Schema::table($table, function (Blueprint $blueprint) use ($nullable): void {
-                $col = $blueprint->foreignId('company_id');
-
-                if ($nullable) {
-                    $col->nullable();
-                }
-
-                $col->constrained('companies')->cascadeOnDelete();
+        foreach ($this->tables as $table) {
+            Schema::table($table, function (Blueprint $blueprint) use ($table): void {
+                $blueprint->foreignId('company_id')
+                    ->constrained('companies')
+                    ->cascadeOnDelete();
             });
         }
 
@@ -63,7 +58,7 @@ return new class extends Migration {
             $table->unique(['key', 'period']);
         });
 
-        foreach (array_keys($this->tables) as $table) {
+        foreach ($this->tables as $table) {
             Schema::table($table, function (Blueprint $blueprint) use ($table): void {
                 $blueprint->dropConstrainedForeignId('company_id');
             });
