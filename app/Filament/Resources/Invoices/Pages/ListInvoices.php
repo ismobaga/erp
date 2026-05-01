@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Pages;
 
 use App\Filament\Actions\SendInvoiceRemindersAction;
+use App\Filament\Actions\SendWhatsAppReminderAction;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Invoices\Widgets\InvoiceLedgerStats;
 use Filament\Actions\CreateAction;
@@ -31,6 +32,7 @@ class ListInvoices extends ListRecords
             // Reminder dispatch is encapsulated in its own action class so
             // it can be tested and reused without the ListInvoices page.
             SendInvoiceRemindersAction::make(),
+            SendWhatsAppReminderAction::make(),
             CreateAction::make()->label('Nouvelle facture'),
         ];
     }

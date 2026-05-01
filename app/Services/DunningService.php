@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DunningLog;
 use App\Models\Invoice;
 use App\Services\AuditTrailService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -153,6 +154,63 @@ class DunningService
         }
 
         return $count;
+    }
+
+    /**
+     * Process all eligible invoices and dispatch automated WhatsApp reminders.
+     *
+     * Skips invoices whose client has no phone number.
+     * Returns the count of WhatsApp messages successfully sent.
+     */
+    public function runWhatsAppDunning(?int $systemUserId = null): int
+    {
+        $invoices  = $this->eligibleInvoices();
+        $whatsapp  = app(WhatsAppService::class);
+        $audit     = app(AuditTrailService::class);
+        $count     = 0;
+
+        foreach ($invoices as $invoice) {
+            $client = $invoice->client;
+
+            if (! $client || blank($client->phone)) {
+                continue;
+            }
+
+            $phone   = $this->normalizePhone($client->phone);
+            $amount  = 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
+            $dueDate = optional($invoice->due_date)->format('d/m/Y') ?? '—';
+            $days    = $this->daysOverdue($invoice);
+
+            $message = implode("\n", [
+                "Bonjour {$client->contact_name},",
+                '',
+                "Votre facture *{$invoice->invoice_number}* d'un montant de *{$amount}* est en retard de paiement depuis {$days} jour(s) (échéance : {$dueDate}).",
+                '',
+                'Merci de régulariser votre situation dans les meilleurs délais.',
+            ]);
+
+            try {
+                $whatsapp->sendMessage($phone, $message);
+            } catch (\Throwable $e) {
+                report($e);
+                continue;
+            }
+
+            $this->logReminder($invoice, 'whatsapp', $systemUserId);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Ensure the phone number is formatted as a WhatsApp JID.
+     */
+    private function normalizePhone(string $phone): string
+    {
+        $phone = preg_replace('/[^0-9@.]/', '', $phone) ?? $phone;
+
+        return str_contains($phone, '@') ? $phone : $phone . '@s.whatsapp.net';
     }
 
     public function daysOverdue(Invoice $invoice): int
