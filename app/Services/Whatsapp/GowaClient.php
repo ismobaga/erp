@@ -32,12 +32,20 @@ class GowaClient
 
     public function sendFile(string $phone, string $filePath, ?string $caption = null, ?string $deviceId = null): array
     {
-        $response = $this->client($deviceId)
-            ->attach('file', file_get_contents($filePath), basename($filePath))
-            ->post($this->baseUrl . '/send/file', array_filter([
-                'phone' => $phone,
-                'caption' => $caption,
-            ]));
+        $stream = fopen($filePath, 'r');
+
+        try {
+            $response = $this->client($deviceId)
+                ->attach('file', $stream, basename($filePath))
+                ->post($this->baseUrl . '/send/file', array_filter([
+                    'phone' => $phone,
+                    'caption' => $caption,
+                ]));
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
 
         return $response->json() ?? [];
     }

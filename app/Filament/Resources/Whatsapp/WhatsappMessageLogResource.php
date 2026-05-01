@@ -47,7 +47,7 @@ class WhatsappMessageLogResource extends Resource
             ->columns([
                 TextColumn::make('client.company_name')
                     ->label('Client')
-                    ->default(fn(WhatsappMessageLog $record): string => $record->client?->contact_name ?? '-')
+                    ->formatStateUsing(fn(?string $state, WhatsappMessageLog $record): string => $state ?: ($record->client?->contact_name ?? '-'))
                     ->searchable(),
                 TextColumn::make('phone')
                     ->label('Téléphone')

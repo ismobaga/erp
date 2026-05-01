@@ -234,7 +234,8 @@ class WhatsappSendService
             ])
             ->setPaper('a4');
 
-        $filename = 'whatsapp/' . $invoice->invoice_number . '_' . now()->timestamp . '.pdf';
+        $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $invoice->invoice_number);
+        $filename = 'whatsapp/' . $safeNumber . '_' . now()->timestamp . '.pdf';
         Storage::put($filename, $pdf->output());
 
         return $filename;
@@ -273,7 +274,8 @@ class WhatsappSendService
             ])
             ->setPaper('a4');
 
-        $filename = 'whatsapp/' . $quote->quote_number . '_' . now()->timestamp . '.pdf';
+        $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $quote->quote_number);
+        $filename = 'whatsapp/' . $safeNumber . '_' . now()->timestamp . '.pdf';
         Storage::put($filename, $pdf->output());
 
         return $filename;
