@@ -17,6 +17,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -146,6 +147,18 @@ class CompanySettingResource extends Resource
                                 Textarea::make('quote_default_notes')
                                     ->label('Notes de devis')
                                     ->rows(5),
+                            ]),
+                        Section::make('Intégration WhatsApp')
+                            ->description('Configurez l\'intégration GoWA pour envoyer des documents via WhatsApp.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
+                            ->columnSpanFull()
+                            ->columns(['lg' => 2])
+                            ->schema([
+                                Toggle::make('whatsapp_enabled')
+                                    ->label('Activer WhatsApp'),
+                                TextInput::make('whatsapp_device_id')
+                                    ->label('WhatsApp Device ID')
+                                    ->helperText('Device ID utilisé par GoWA'),
                             ]),
                     ]),
             ])

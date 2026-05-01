@@ -246,6 +246,22 @@ class QuoteResource extends Resource
 
                         redirect(InvoiceResource::getUrl('edit', ['record' => $invoice]));
                     }),
+                Action::make('sendWhatsapp')
+                    ->label('Envoyer via WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('success')
+                    ->visible(fn(Quote $record): bool => filled($record->client?->phone) && (auth()->user()?->can('quotes.view') ?? false))
+                    ->requiresConfirmation()
+                    ->modalHeading('Envoyer le devis via WhatsApp')
+                    ->modalDescription('Le devis sera envoyé en PDF via WhatsApp au numéro du client.')
+                    ->action(function (Quote $record, \App\Services\Whatsapp\WhatsappSendService $service): void {
+                        $log = $service->sendQuote($record);
+                        if ($log->status === 'sent') {
+                            Notification::make()->title('Devis envoyé via WhatsApp')->success()->send();
+                        } else {
+                            Notification::make()->title('Échec de l\'envoi WhatsApp')->body($log->error_message)->danger()->send();
+                        }
+                    }),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),

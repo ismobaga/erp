@@ -202,6 +202,25 @@ class ClientResource extends Resource
                     ->icon(Heroicon::OutlinedEye)
                     ->color('gray')
                     ->url(fn(Client $client): string => static::getUrl('details', ['record' => $client])),
+                Action::make('sendWhatsapp')
+                    ->label('Message WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('success')
+                    ->visible(fn(Client $record): bool => filled($record->phone) && (auth()->user()?->can('clients.view') ?? false))
+                    ->form([
+                        \Filament\Forms\Components\Textarea::make('message')
+                            ->label('Message')
+                            ->required()
+                            ->rows(4),
+                    ])
+                    ->action(function (Client $record, array $data, \App\Services\Whatsapp\WhatsappSendService $service): void {
+                        $log = $service->sendTextToClient($record, $data['message']);
+                        if ($log->status === 'sent') {
+                            \Filament\Notifications\Notification::make()->title('Message envoyé via WhatsApp')->success()->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()->title('Échec de l\'envoi WhatsApp')->body($log->error_message)->danger()->send();
+                        }
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
