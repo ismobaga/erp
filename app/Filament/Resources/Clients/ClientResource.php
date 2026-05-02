@@ -287,7 +287,7 @@ class ClientResource extends Resource
         $secondaryOptions = collect($allCountries)
             ->reject(fn (string $c): bool => in_array($c, $taxProfileCountries, true))
             ->sort()
-            ->combine(fn (string $c): string => $c)
+            ->mapWithKeys(fn (string $c): array => [$c => $c])
             ->all();
 
         return array_merge($primaryOptions, $secondaryOptions);
