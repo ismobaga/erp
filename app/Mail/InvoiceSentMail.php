@@ -26,7 +26,9 @@ class InvoiceSentMail extends Mailable
 
     public function __construct(public readonly Invoice $invoice)
     {
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($invoice->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
         $this->companyName = $company?->company_name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedTotal = 'FCFA '.number_format((float) $invoice->total, 0, '.', ' ');

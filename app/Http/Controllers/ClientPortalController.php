@@ -15,7 +15,9 @@ class ClientPortalController extends Controller
     {
         $client = Client::query()->where('portal_token', $token)->firstOrFail();
 
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->where('company_id', $client->company_id)
+            ->first();
 
         $invoices = $client->invoices()
             ->with(['items'])
@@ -39,7 +41,9 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'payments']);
 
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->where('company_id', $client->company_id)
+            ->first();
         $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [
@@ -66,7 +70,9 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->where('company_id', $client->company_id)
+            ->first();
         $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [

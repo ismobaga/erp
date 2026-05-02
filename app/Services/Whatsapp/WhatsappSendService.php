@@ -15,7 +15,9 @@ class WhatsappSendService
 {
     public function sendInvoice(Invoice $invoice): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($invoice->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
         $client = $invoice->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -69,7 +71,9 @@ class WhatsappSendService
 
     public function sendQuote(Quote $quote): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($quote->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
         $client = $quote->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -123,7 +127,9 @@ class WhatsappSendService
 
     public function sendPaymentReminder(Invoice $invoice): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($invoice->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
         $client = $invoice->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -172,7 +178,9 @@ class WhatsappSendService
 
     public function sendTextToClient(Client $client, string $message): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($client->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 

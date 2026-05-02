@@ -42,11 +42,12 @@ class OperationalResilienceService
                 continue;
             }
 
-            $rows = DB::table($table)
-                ->orderBy('id')
-                ->get()
-                ->map(fn($row): array => (array) $row)
-                ->all();
+            $rows = [];
+            DB::table($table)->orderBy('id')->chunk(500, function ($chunk) use (&$rows): void {
+                foreach ($chunk as $row) {
+                    $rows[] = (array) $row;
+                }
+            });
 
             $payload['data'][$table] = $rows;
             $payload['metadata']['tables'][] = $table;

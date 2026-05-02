@@ -46,7 +46,13 @@ class CompanySettingResource extends Resource
 
     public static function canCreate(): bool
     {
-        return static::canAccessPermission('update') && CompanySetting::query()->doesntExist();
+        $company = currentCompany();
+
+        return static::canAccessPermission('update') && (
+            $company === null
+                ? CompanySetting::query()->doesntExist()
+                : CompanySetting::query()->where('company_id', $company->id)->doesntExist()
+        );
     }
 
     public static function form(Schema $schema): Schema

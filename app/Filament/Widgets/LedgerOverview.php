@@ -341,7 +341,9 @@ class LedgerOverview extends Widget
         $efficiency = $total > 0 ? min(99, max(42, (int) round((($completed + ($active * 0.65)) / $total) * 100))) : 94;
 
         return [
-            'organization' => CompanySetting::query()->value('company_name') ?: config('app.name', 'ERP'),
+            'organization' => CompanySetting::query()
+                ->when(currentCompany(), fn($q, $c) => $q->where('company_id', $c->id))
+                ->value('company_name') ?: config('app.name', 'ERP'),
             'efficiency' => $efficiency,
             'headline' => __('erp.dashboard.efficiency_headline', ['rate' => $efficiency]),
             'active_contracts' => $active,
@@ -559,7 +561,7 @@ class LedgerOverview extends Widget
     protected function placeholderBoardSummary(): array
     {
         return [
-            'organization' => CompanySetting::query()->value('company_name') ?: config('app.name', 'ERP'),
+            'organization' => CompanySetting::query()->when(currentCompany(), fn($q, $c) => $q->where('company_id', $c->id))->value('company_name') ?: config('app.name', 'ERP'),
             'efficiency' => 0,
             'headline' => '0% d’efficacité sur le portefeuille projets',
             'active_contracts' => 0,

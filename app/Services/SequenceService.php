@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -18,6 +19,10 @@ class SequenceService
      * Acquire and return the next integer value for a given (company_id, key, period)
      * combination.  A `SELECT … FOR UPDATE` inside a transaction ensures
      * that two concurrent requests cannot receive the same value.
+     *
+     * On first insert a race condition is possible when two requests arrive
+     * simultaneously and both find no row. We guard against this by using
+     * `insertOrIgnore()` and re-fetching when the row already exists.
      *
      * @param  string  $key       Sequence identifier, e.g. 'invoice', 'quote', 'journal_entry'.
      * @param  string  $period    Scoping period, e.g. '2026', '2026-04', or 'all' for non-resetting sequences.
@@ -49,9 +54,33 @@ class SequenceService
                     $insert['company_id'] = $resolvedCompanyId;
                 }
 
-                DB::table('sequences')->insert($insert);
+                try {
+                    DB::table('sequences')->insertOrIgnore($insert);
+                } catch (UniqueConstraintViolationException) {
+                    // Another request inserted the row concurrently; fall through
+                    // to the UPDATE path below by re-fetching the existing row.
+                }
 
-                return 1;
+                // Re-fetch after insert attempt. If insertOrIgnore succeeded the
+                // row has next_val=2 and we return 1. If another process won the
+                // race we fall through and increment their value instead.
+                $row = DB::table('sequences')
+                    ->where('key', $key)
+                    ->where('period', $period)
+                    ->when($resolvedCompanyId !== null, fn($q) => $q->where('company_id', $resolvedCompanyId))
+                    ->lockForUpdate()
+                    ->first();
+
+                // If the row was just inserted by us (next_val == 2), consume 1.
+                if ($row !== null && (int) $row->next_val === 2) {
+                    return 1;
+                }
+
+                // Otherwise another process inserted next_val=2; fall through to increment.
+                if ($row === null) {
+                    // Should not happen, but defensively return 1.
+                    return 1;
+                }
             }
 
             $current = (int) $row->next_val;

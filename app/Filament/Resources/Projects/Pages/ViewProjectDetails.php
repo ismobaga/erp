@@ -72,7 +72,6 @@ class ViewProjectDetails extends ViewRecord
             'notable_type' => Project::class,
             'notable_id' => $project->getKey(),
             'user_id' => $author->getKey(),
-            'created_by' => $creator->getKey(),
             'noted_at' => $payload['noteDate'],
             'body' => $payload['internalNote'],
         ]);

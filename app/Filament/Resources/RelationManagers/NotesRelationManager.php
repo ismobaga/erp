@@ -59,17 +59,11 @@ class NotesRelationManager extends RelationManager
                     ->limit(120)
                     ->wrap()
                     ->searchable(),
-                TextColumn::make('creator.name')
-                    ->label('Saisie par')
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->mutateDataUsing(function (array $data): array {
-                        $userId = auth()->id();
-
-                        $data['created_by'] = $userId;
-                        $data['user_id'] ??= $userId;
+                        $data['user_id'] ??= auth()->id();
 
                         return $data;
                     }),

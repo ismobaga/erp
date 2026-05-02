@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
+    'company_id',
     'company_name',
     'legal_name',
     'slogan',
@@ -29,4 +32,17 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class CompanySetting extends Model
 {
+    use HasCompanyScope;
+
+    protected function casts(): array
+    {
+        return [
+            'whatsapp_enabled' => 'boolean',
+        ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 }

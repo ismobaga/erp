@@ -23,7 +23,9 @@ class InvoicePdfController extends Controller
             'download' => $request->boolean('download'),
         ], auth()->id());
 
-        $company = CompanySetting::query()->first();
+        $company = CompanySetting::query()
+            ->when($invoice->company_id, fn($q, $id) => $q->where('company_id', $id))
+            ->first();
         $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [

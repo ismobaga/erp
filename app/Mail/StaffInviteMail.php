@@ -23,7 +23,9 @@ class StaffInviteMail extends Mailable
         public readonly string $temporaryPassword,
         public readonly string $roleLabel,
     ) {
-        $company = CompanySetting::query()->first();
+        $company = currentCompany()
+            ? CompanySetting::query()->where('company_id', currentCompany()->id)->first()
+            : CompanySetting::query()->first();
         $this->companyName = $company?->company_name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->loginUrl = url('/admin/login');

@@ -24,6 +24,7 @@ use Illuminate\Validation\ValidationException;
     'status',
     'subtotal',
     'discount_total',
+    'credit_total',
     'tax_total',
     'total',
     'paid_total',
@@ -47,6 +48,7 @@ class Invoice extends Model
             'due_date' => 'date',
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
+            'credit_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
             'total' => 'decimal:2',
             'paid_total' => 'decimal:2',
@@ -183,10 +185,10 @@ class Invoice extends Model
             ? Money::of((string) $taxComputation['total'])
             : $currentSubtotal->add($taxTotal);
 
-        $newTotal = Money::zero()->max($baseTotal->subtract($creditedTotal));
+        $newTotal = Money::zero()->max($baseTotal->subtract($storedDiscount)->subtract($creditedTotal));
 
         $this->forceFill([
-            'discount_total' => $creditedTotal->toString(),
+            'credit_total'   => $creditedTotal->toString(),
             'tax_total'      => $taxTotal->toString(),
             'total'          => $newTotal->toString(),
         ])->saveQuietly();

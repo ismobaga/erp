@@ -16,7 +16,11 @@ class ListCompanySettings extends ListRecords
     {
         parent::mount();
 
-        $record = CompanySetting::query()->first();
+        $company = currentCompany();
+
+        $record = $company !== null
+            ? CompanySetting::query()->where('company_id', $company->id)->first()
+            : CompanySetting::query()->first();
 
         if ($record) {
             $this->redirect($this->getResource()::getUrl('edit', ['record' => $record]));

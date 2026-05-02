@@ -20,7 +20,10 @@ class SendWhatsappMessageJob implements ShouldQueue
 
     public function handle(GowaClient $gowa): void
     {
-        $deviceId = \App\Models\CompanySetting::query()->first()?->whatsapp_device_id;
+        $companyId = $this->log->company_id;
+        $deviceId = \App\Models\CompanySetting::query()
+            ->when($companyId !== null, fn($q) => $q->where('company_id', $companyId))
+            ->value('whatsapp_device_id');
 
         try {
             if ($this->log->type === 'file' && filled($this->log->file_path)) {
