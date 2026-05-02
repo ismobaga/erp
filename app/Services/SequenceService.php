@@ -78,8 +78,9 @@ class SequenceService
 
                 // Otherwise another process inserted next_val=2; fall through to increment.
                 if ($row === null) {
-                    // Should not happen, but defensively return 1.
-                    return 1;
+                    throw new \RuntimeException(
+                        "Sequence row for [{$key}/{$period}] could not be created or fetched after concurrent insert attempt."
+                    );
                 }
             }
 

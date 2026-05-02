@@ -561,7 +561,9 @@ class LedgerOverview extends Widget
     protected function placeholderBoardSummary(): array
     {
         return [
-            'organization' => CompanySetting::query()->when(currentCompany(), fn($q, $c) => $q->where('company_id', $c->id))->value('company_name') ?: config('app.name', 'ERP'),
+            'organization' => CompanySetting::query()
+                ->when(currentCompany(), fn($q, $c) => $q->where('company_id', $c->id))
+                ->value('company_name') ?: config('app.name', 'ERP'),
             'efficiency' => 0,
             'headline' => '0% d’efficacité sur le portefeuille projets',
             'active_contracts' => 0,
