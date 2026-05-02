@@ -3,14 +3,10 @@
 namespace App\Filament\Resources\CompanySettings;
 
 use App\Filament\Concerns\HasPermissionAccess;
-use App\Filament\Resources\CompanySettings\Pages\CreateCompanySetting;
 use App\Filament\Resources\CompanySettings\Pages\EditCompanySetting;
 use App\Filament\Resources\CompanySettings\Pages\ListCompanySettings;
-use App\Models\CompanySetting;
+use App\Models\Company;
 use BackedEnum;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -32,7 +28,7 @@ class CompanySettingResource extends Resource
 
     protected static string $permissionScope = 'settings';
 
-    protected static ?string $model = CompanySetting::class;
+    protected static ?string $model = Company::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
@@ -42,11 +38,11 @@ class CompanySettingResource extends Resource
 
     protected static ?string $navigationLabel = 'Paramètres société';
 
-    protected static ?string $recordTitleAttribute = 'company_name';
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canCreate(): bool
     {
-        return static::canAccessPermission('update') && CompanySetting::query()->doesntExist();
+        return false;
     }
 
     public static function form(Schema $schema): Schema
@@ -61,8 +57,8 @@ class CompanySettingResource extends Resource
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
                             ->schema([
-                                TextInput::make('company_name')
-                                    ->label('Nom de l’entreprise')
+                                TextInput::make('name')
+                                    ->label('Nom de l\'entreprise')
                                     ->required(),
                                 TextInput::make('legal_name')
                                     ->label('Raison sociale'),
@@ -81,7 +77,7 @@ class CompanySettingResource extends Resource
                             ->columnSpan(['lg' => 4])
                             ->schema([
                                 FileUpload::make('logo_path')
-                                    ->label('Logo de l’entreprise')
+                                    ->label('Logo de l\'entreprise')
                                     ->directory('company-assets')
                                     ->image()
                                     ->disk('public'),
@@ -89,7 +85,7 @@ class CompanySettingResource extends Resource
                                     ->label('Slogan'),
                             ]),
                         Section::make('Communications')
-                            ->description('Définissez les canaux de contact par défaut pour les clients et l’équipe finance.')
+                            ->description('Définissez les canaux de contact par défaut pour les clients et l\'équipe finance.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
@@ -169,7 +165,7 @@ class CompanySettingResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('company_name')
+                TextColumn::make('name')
                     ->label('Organisation')
                     ->searchable(),
                 TextColumn::make('email')
@@ -183,12 +179,6 @@ class CompanySettingResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
@@ -201,7 +191,6 @@ class CompanySettingResource extends Resource
     {
         return [
             'index' => ListCompanySettings::route('/'),
-            'create' => CreateCompanySetting::route('/create'),
             'edit' => EditCompanySetting::route('/{record}/edit'),
         ];
     }

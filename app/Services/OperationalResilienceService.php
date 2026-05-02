@@ -313,7 +313,7 @@ class OperationalResilienceService
     protected function backupTables(): array
     {
         return [
-            'company_settings',
+            'companies',
             'clients',
             'services',
             'quotes',

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use App\Models\CompanySetting;
+use App\Models\Company;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
@@ -13,11 +13,11 @@ class ClientPortalController extends Controller
 {
     public function index(string $token): Response
     {
-        // Use withoutCompanyScope() so the token lookup works without an
-        // authenticated session; each client's UUID token is globally unique.
+        // withoutCompanyScope() is correct here: the portal is public, there
+        // is no authenticated session, and portal tokens are globally unique.
         $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
 
-        $company = $this->resolveCompanySettings($client);
+        $company = $this->resolveCompany($client);
 
         $invoices = $client->invoices()
             ->withoutCompanyScope()
@@ -42,8 +42,8 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'payments']);
 
-        $company = $this->resolveCompanySettings($client);
-        $companyName = $company?->company_name ?: config('app.name');
+        $company = $this->resolveCompany($client);
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
@@ -69,8 +69,8 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
-        $company = $this->resolveCompanySettings($client);
-        $companyName = $company?->company_name ?: config('app.name');
+        $company = $this->resolveCompany($client);
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
@@ -97,23 +97,16 @@ class ClientPortalController extends Controller
     }
 
     /**
-     * Resolve company settings scoped to the client's own company.
-     * Falls back to the first available settings row for backwards compatibility
-     * with single-tenant deployments that have not yet migrated.
+     * Resolve the Company record that owns this client.
+     * Falls back to the first active company for single-tenant deployments.
      */
-    protected function resolveCompanySettings(Client $client): ?CompanySetting
+    protected function resolveCompany(Client $client): ?Company
     {
         if ($client->company_id !== null) {
-            $settings = CompanySetting::withoutCompanyScope()
-                ->where('company_id', $client->company_id)
-                ->first();
-
-            if ($settings !== null) {
-                return $settings;
-            }
+            return Company::find($client->company_id);
         }
 
-        return CompanySetting::withoutCompanyScope()->first();
+        return Company::query()->where('is_active', true)->first();
     }
 
     protected function resolveLogoDataUri(?string $path): ?string

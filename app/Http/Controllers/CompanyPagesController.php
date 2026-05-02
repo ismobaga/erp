@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\CompanySetting;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,42 +12,38 @@ use Illuminate\View\View;
  * Serves public-facing marketing and legal pages for the company.
  *
  * Company data is resolved from the current tenant context when available,
- * falling back to the first CompanySetting row for single-tenant deployments.
+ * falling back to the first active Company row for single-tenant deployments.
  */
 class CompanyPagesController extends Controller
 {
     public function presentation(): View
     {
-        $company = $this->settings();
-
-        return view('company.presentation', $this->viewData($company));
+        return view('company.presentation', $this->viewData());
     }
 
     public function confidentialite(): View
     {
-        return view('company.confidentialite', $this->viewData($this->settings()));
+        return view('company.confidentialite', $this->viewData());
     }
 
     public function conditions(): View
     {
-        return view('company.conditions', $this->viewData($this->settings()));
+        return view('company.conditions', $this->viewData());
     }
 
     public function cookies(): View
     {
-        return view('company.cookies', $this->viewData($this->settings()));
+        return view('company.cookies', $this->viewData());
     }
 
     public function bureaux(): View
     {
-        return view('company.bureaux', $this->viewData($this->settings()));
+        return view('company.bureaux', $this->viewData());
     }
 
     public function dmsPresentation(): View
     {
-        $company = $this->settings();
-
-        return view('company.dms-presentation', $this->viewData($company));
+        return view('company.dms-presentation', $this->viewData());
     }
 
     public function contactRequest(Request $request): RedirectResponse
@@ -85,25 +80,25 @@ class CompanyPagesController extends Controller
     }
 
     /**
-     * Resolve the active company settings.
-     *
-     * When a company is bound in the IoC container (authenticated admin
-     * context), its scoped settings are used.  For public pages we fall back
-     * to the first available settings row.
+     * Resolve the active company for public pages.
+     * For public pages there is no authenticated session, so we fall back to
+     * the first active Company row.
      */
-    protected function settings(): ?CompanySetting
+    protected function company(): ?Company
     {
-        return CompanySetting::withoutCompanyScope()->first();
+        return Company::query()->where('is_active', true)->first();
     }
 
     /**
-     * Build a standard view data array from a CompanySetting instance.
+     * Build a standard view data array from the resolved Company.
      */
-    protected function viewData(?CompanySetting $company): array
+    protected function viewData(): array
     {
+        $company = $this->company();
+
         return [
             'company'        => $company,
-            'companyName'    => $company?->company_name ?: config('app.name'),
+            'companyName'    => $company?->name ?: config('app.name'),
             'companyEmail'   => $company?->email ?: '',
             'companyPhone'   => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),

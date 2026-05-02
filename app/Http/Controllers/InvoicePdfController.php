@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CompanySetting;
 use App\Models\Invoice;
 use App\Services\AuditTrailService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,8 +22,8 @@ class InvoicePdfController extends Controller
             'download' => $request->boolean('download'),
         ], auth()->id());
 
-        $company = CompanySetting::query()->first();
-        $companyName = $company?->company_name ?: config('app.name');
+        $company = currentCompany();
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,

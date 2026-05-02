@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\CompanySetting;
 use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -26,8 +25,8 @@ class InvoiceSentMail extends Mailable
 
     public function __construct(public readonly Invoice $invoice)
     {
-        $company = CompanySetting::query()->first();
-        $this->companyName = $company?->company_name ?? config('app.name', 'ERP');
+        $company = currentCompany();
+        $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedTotal = 'FCFA '.number_format((float) $invoice->total, 0, '.', ' ');
         $this->formattedDueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
