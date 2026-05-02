@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Support\ResolvesLogoDataUri;
 use App\Services\AuditTrailService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoicePdfController extends Controller
 {
+    use ResolvesLogoDataUri;
+
     public function __invoke(Request $request, Invoice $invoice): Response
     {
         abort_unless(auth()->user()?->canAny(['invoices.view', 'reports.view']), 403);
@@ -53,38 +55,4 @@ class InvoicePdfController extends Controller
         return response()->view('invoices.pdf', $viewData);
     }
 
-    protected function resolveLogoDataUri(?string $path): ?string
-    {
-        if (blank($path)) {
-            return null;
-        }
-
-        if (Str::startsWith($path, ['data:', 'http://', 'https://'])) {
-            return $path;
-        }
-
-        $normalizedPath = ltrim($path, '/');
-        $candidates = [
-            storage_path('app/' . $normalizedPath),
-            storage_path('app/public/' . Str::after($normalizedPath, 'public/')),
-            public_path($normalizedPath),
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (!is_file($candidate)) {
-                continue;
-            }
-
-            $mime = mime_content_type($candidate) ?: 'image/png';
-            $content = file_get_contents($candidate);
-
-            if ($content === false) {
-                continue;
-            }
-
-            return 'data:' . $mime . ';base64,' . base64_encode($content);
-        }
-
-        return null;
-    }
 }

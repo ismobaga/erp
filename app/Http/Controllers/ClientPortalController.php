@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Support\ResolvesLogoDataUri;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClientPortalController extends Controller
 {
+    use ResolvesLogoDataUri;
+
     public function index(string $token): Response
     {
         // withoutCompanyScope() is correct here: the portal is public, there
@@ -93,7 +95,7 @@ class ClientPortalController extends Controller
                 'defaultFont' => 'DejaVu Sans',
             ])
             ->setPaper('a4')
-            ->download($invoice->invoice_number.'.pdf');
+            ->download($invoice->invoice_number . '.pdf');
     }
 
     /**
@@ -109,38 +111,4 @@ class ClientPortalController extends Controller
         return Company::query()->where('is_active', true)->first();
     }
 
-    protected function resolveLogoDataUri(?string $path): ?string
-    {
-        if (blank($path)) {
-            return null;
-        }
-
-        if (Str::startsWith($path, ['data:', 'http://', 'https://'])) {
-            return $path;
-        }
-
-        $normalizedPath = ltrim($path, '/');
-        $candidates = [
-            storage_path('app/'.$normalizedPath),
-            storage_path('app/public/'.Str::after($normalizedPath, 'public/')),
-            public_path($normalizedPath),
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (! is_file($candidate)) {
-                continue;
-            }
-
-            $mime = mime_content_type($candidate) ?: 'image/png';
-            $content = file_get_contents($candidate);
-
-            if ($content === false) {
-                continue;
-            }
-
-            return 'data:'.$mime.';base64,'.base64_encode($content);
-        }
-
-        return null;
-    }
 }

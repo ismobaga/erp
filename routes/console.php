@@ -52,8 +52,14 @@ Artisan::command('erp:backup-run', function (OperationalResilienceService $servi
     $this->info('Backup created at ' . ($backup['path'] ?? 'unknown path') . '.');
 })->purpose('Create an operational resilience backup archive');
 
-Artisan::command('erp:restore-backup {path?}', function (OperationalResilienceService $service, ?string $path = null) {
-    $result = $service->restoreBackup($path);
+Artisan::command('erp:restore-backup {path?} {--force : Confirm destructive restore}', function (OperationalResilienceService $service, ?string $path = null) {
+    $forced = (bool) $this->option('force');
+
+    if (!$forced && $this->input->isInteractive()) {
+        $forced = (bool) $this->confirm('This will delete current data and restore from backup. Continue?', false);
+    }
+
+    $result = $service->restoreBackup($path, null, $forced);
 
     $this->info('Backup restored from ' . ($result['path'] ?? 'unknown path') . '.');
 })->purpose('Restore the latest or specified resilience backup archive');

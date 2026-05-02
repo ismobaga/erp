@@ -6,7 +6,7 @@ namespace App\States;
  * Defines all valid Invoice statuses and the allowed state transitions.
  *
  * Allowed transitions:
- *   draft          → sent
+ *   draft          → sent (typically via explicit issuance flow)
  *   sent           → partially_paid | paid | overdue
  *   partially_paid → paid | overdue
  *   overdue        → paid
@@ -34,18 +34,18 @@ final class InvoiceStateMachine
      * 'draft' is allowed to transition directly to 'partially_paid', 'paid',
      * and 'overdue' (in addition to the canonical 'sent') because payments
      * can be recorded against a draft invoice before it is formally sent.
-     * This preserves the implicit behaviour of refreshFinancials() while
-     * making the transitions explicit and auditable.
+     * Note: Invoice::refreshFinancials() intentionally keeps unpaid drafts in
+     * 'draft', so draft -> sent should remain an explicit issuance action.
      *
      * @var array<string, list<string>>
      */
     private const TRANSITIONS = [
-        'draft'          => ['sent', 'partially_paid', 'paid', 'overdue', 'cancelled'],
-        'sent'           => ['partially_paid', 'paid', 'overdue', 'cancelled'],
+        'draft' => ['sent', 'partially_paid', 'paid', 'overdue', 'cancelled'],
+        'sent' => ['partially_paid', 'paid', 'overdue', 'cancelled'],
         'partially_paid' => ['paid', 'overdue', 'cancelled'],
-        'overdue'        => ['paid', 'cancelled'],
-        'paid'           => ['cancelled'],
-        'cancelled'      => [],
+        'overdue' => ['paid', 'cancelled'],
+        'paid' => ['cancelled'],
+        'cancelled' => [],
     ];
 
     /**
@@ -87,7 +87,7 @@ final class InvoiceStateMachine
         }
 
         $balanceDue = $total - $paidTotal;
-        $isSettled  = $balanceDue <= 0.00001;
+        $isSettled = $balanceDue <= 0.00001;
 
         // Determine the "ideal" next status purely from the financials.
         if ($isSettled && $total > 0) {

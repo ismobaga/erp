@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\URL;
 
 class ReportExportService
 {
+    private const QUERY_CHUNK_SIZE = 500;
+
     public function generate(Carbon $start, Carbon $end, array $selectedModules, string $format = 'pdf', bool $includeCharts = true, ?int $userId = null): array
     {
         $format = match (strtolower($format)) {
@@ -176,37 +178,165 @@ class ReportExportService
             'audit' => false,
         ], $selectedModules);
 
-        $invoices = Invoice::query()
-            ->with('client')
-            ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('issue_date')
-            ->get();
+        $includeRevenue = !empty($selectedModules['revenue']);
+        $includeExpenses = !empty($selectedModules['expenses']);
+        $includePayments = !empty($selectedModules['payments']);
+        $includeTaxes = !empty($selectedModules['taxes']);
+        $includeAudit = !empty($selectedModules['audit']);
 
-        $payments = Payment::query()
-            ->with(['client', 'invoice'])
-            ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('payment_date')
-            ->get();
-
-        $expenses = Expense::query()
-            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
-            ->latest('expense_date')
-            ->get();
-
-        $activityLogs = !empty($selectedModules['audit'])
-            ? ActivityLog::query()
-                ->whereBetween('created_at', [$start, $end])
-                ->latest('created_at')
-                ->get()
-            : collect();
-
-        $revenue = !empty($selectedModules['revenue']) ? (float) $invoices->sum('total') : 0.0;
-        $expenseTotal = !empty($selectedModules['expenses']) ? (float) $expenses->sum('amount') : 0.0;
-        $paymentTotal = !empty($selectedModules['payments']) ? (float) $payments->sum('amount') : 0.0;
-        $taxTotal = !empty($selectedModules['taxes']) ? (float) $invoices->sum('tax_total') : 0.0;
+        $revenue = $includeRevenue
+            ? (float) Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->sum('total')
+            : 0.0;
+        $expenseTotal = $includeExpenses
+            ? (float) Expense::query()->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->sum('amount')
+            : 0.0;
+        $paymentTotal = $includePayments
+            ? (float) Payment::query()->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])->sum('amount')
+            : 0.0;
+        $taxTotal = $includeTaxes
+            ? (float) Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->sum('tax_total')
+            : 0.0;
         $netResult = $paymentTotal - $expenseTotal;
-        $ledgerRows = $this->buildLedgerRows($invoices, $payments, $expenses, $selectedModules);
-        $auditRows = !empty($selectedModules['audit']) ? $this->buildAuditRows($activityLogs) : [];
+
+        $rows = [];
+        $ledgerRows = [];
+        $auditRows = [];
+
+        if ($includeRevenue) {
+            Invoice::query()
+                ->with('client')
+                ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
+                ->orderBy('id')
+                ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
+                    foreach ($chunk as $invoice) {
+                        /** @var Invoice $invoice */
+                        $rows[] = [
+                            'sort_date' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'title' => $invoice->invoice_number,
+                            'subtitle' => __('erp.reports.rows.client_invoice'),
+                            'amount' => $this->formatMoney((float) $invoice->total),
+                            'badge' => __('erp.resources.invoice.statuses.' . $invoice->status),
+                        ];
+
+                        $ledgerRows[] = [
+                            'date_key' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'document_type' => __('erp.common.invoice'),
+                            'reference' => $invoice->invoice_number,
+                            'counterparty' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: __('erp.common.account_client'),
+                            'description' => __('erp.reports.rows.client_invoice'),
+                            'debit' => '',
+                            'credit' => $this->formatMoney((float) $invoice->total),
+                            'tax' => $this->formatMoney((float) $invoice->tax_total),
+                            'balance_due' => $this->formatMoney((float) $invoice->balance_due),
+                            'status' => __('erp.resources.invoice.statuses.' . $invoice->status),
+                        ];
+                    }
+                });
+        }
+
+        if ($includePayments) {
+            Payment::query()
+                ->with(['client', 'invoice'])
+                ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
+                ->orderBy('id')
+                ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
+                    foreach ($chunk as $payment) {
+                        /** @var Payment $payment */
+                        $rows[] = [
+                            'sort_date' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'title' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                            'subtitle' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
+                            'amount' => $this->formatMoney((float) $payment->amount),
+                            'badge' => __('erp.common.transaction'),
+                        ];
+
+                        $ledgerRows[] = [
+                            'date_key' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'document_type' => __('erp.common.transaction'),
+                            'reference' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                            'counterparty' => $payment->client?->company_name ?: $payment->client?->contact_name ?: __('erp.common.account_client'),
+                            'description' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
+                            'debit' => '',
+                            'credit' => $this->formatMoney((float) $payment->amount),
+                            'tax' => '',
+                            'balance_due' => $this->formatMoney((float) ($payment->invoice?->balance_due ?? 0)),
+                            'status' => __('erp.resources.payment.reconciliation.' . $payment->reconciliationState()),
+                        ];
+                    }
+                });
+        }
+
+        if ($includeExpenses) {
+            Expense::query()
+                ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+                ->orderBy('id')
+                ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
+                    foreach ($chunk as $expense) {
+                        /** @var Expense $expense */
+                        $rows[] = [
+                            'sort_date' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'title' => $expense->title,
+                            'subtitle' => __('erp.reports.rows.expense_prefix', ['category' => __('erp.resources.expense.categories.' . $expense->category)]),
+                            'amount' => $this->formatMoney((float) $expense->amount),
+                            'badge' => __('erp.common.expense'),
+                        ];
+
+                        $ledgerRows[] = [
+                            'date_key' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
+                            'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                            'document_type' => __('erp.common.expense'),
+                            'reference' => $expense->reference ?: ('EXP-' . $expense->getKey()),
+                            'counterparty' => $expense->vendor ?: __('erp.common.not_provided'),
+                            'description' => $expense->title,
+                            'debit' => $this->formatMoney((float) $expense->amount),
+                            'credit' => '',
+                            'tax' => '',
+                            'balance_due' => '',
+                            'status' => __('erp.resources.expense.approval_statuses.' . ($expense->approval_status ?? 'pending')),
+                        ];
+                    }
+                });
+        }
+
+        if ($includeAudit) {
+            ActivityLog::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->orderBy('id')
+                ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$auditRows): void {
+                    foreach ($chunk as $log) {
+                        /** @var ActivityLog $log */
+                        $rows[] = [
+                            'sort_date' => optional($log->created_at)?->format('Y-m-d H:i:s') ?? '',
+                            'date' => optional($log->created_at)?->format('d/m/Y H:i') ?? __('erp.common.none'),
+                            'title' => $log->action,
+                            'subtitle' => __('erp.reports.rows.audit_event'),
+                            'amount' => __('erp.common.none'),
+                            'badge' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+                        ];
+
+                        $auditRows[] = [
+                            'timestamp' => optional($log->created_at)?->format('d/m/Y H:i:s') ?? __('erp.common.none'),
+                            'user' => (string) ($log->user_id ?? 'system'),
+                            'action' => $log->action,
+                            'subject' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+                            'subject_id' => (string) ($log->subject_id ?? ''),
+                            'context' => json_encode($log->meta_json ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        ];
+                    }
+                });
+        }
+
+        usort($rows, static fn(array $a, array $b): int => strcmp((string) $b['sort_date'], (string) $a['sort_date']));
+        usort($ledgerRows, static fn(array $a, array $b): int => strcmp((string) $a['date_key'], (string) $b['date_key']));
+
+        $rows = array_map(static fn(array $row): array => Arr::except($row, ['sort_date']), $rows);
+        $previewRows = array_slice($rows, 0, 8);
+        $ledgerRows = array_map(static fn(array $row): array => Arr::except($row, ['date_key']), $ledgerRows);
 
         $summary = [
             ['label' => __('erp.reports.summary.revenue'), 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
@@ -219,61 +349,10 @@ class ReportExportService
             ['label' => __('erp.reports.summary.format'), 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
         ];
 
-        $rows = collect();
-
-        if (!empty($selectedModules['revenue'])) {
-            $rows = $rows->merge($invoices->map(fn(Invoice $invoice): array => [
-                'sort_date' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
-                'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'title' => $invoice->invoice_number,
-                'subtitle' => __('erp.reports.rows.client_invoice'),
-                'amount' => $this->formatMoney((float) $invoice->total),
-                'badge' => __('erp.resources.invoice.statuses.' . $invoice->status),
-            ]));
-        }
-
-        if (!empty($selectedModules['payments'])) {
-            $rows = $rows->merge($payments->map(fn(Payment $payment): array => [
-                'sort_date' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
-                'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'title' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
-                'subtitle' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
-                'amount' => $this->formatMoney((float) $payment->amount),
-                'badge' => __('erp.common.transaction'),
-            ]));
-        }
-
-        if (!empty($selectedModules['expenses'])) {
-            $rows = $rows->merge($expenses->map(fn(Expense $expense): array => [
-                'sort_date' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
-                'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'title' => $expense->title,
-                'subtitle' => __('erp.reports.rows.expense_prefix', ['category' => __('erp.resources.expense.categories.' . $expense->category)]),
-                'amount' => $this->formatMoney((float) $expense->amount),
-                'badge' => __('erp.common.expense'),
-            ]));
-        }
-
-        if (!empty($selectedModules['audit'])) {
-            $rows = $rows->merge($activityLogs->map(fn(ActivityLog $log): array => [
-                'sort_date' => optional($log->created_at)?->format('Y-m-d H:i:s') ?? '',
-                'date' => optional($log->created_at)?->format('d/m/Y H:i') ?? __('erp.common.none'),
-                'title' => $log->action,
-                'subtitle' => __('erp.reports.rows.audit_event'),
-                'amount' => __('erp.common.none'),
-                'badge' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
-            ]));
-        }
-
-        $rows = $rows
-            ->sortByDesc('sort_date')
-            ->values()
-            ->map(fn(array $row): array => Arr::except($row, ['sort_date']));
-
         return [
             'summary' => $summary,
-            'previewRows' => $rows->take(8)->all(),
-            'rows' => $rows->all(),
+            'previewRows' => $previewRows,
+            'rows' => $rows,
             'ledgerRows' => $ledgerRows,
             'auditRows' => $auditRows,
             'meta' => [
@@ -362,80 +441,6 @@ class ReportExportService
         fclose($handle);
 
         return $content;
-    }
-
-    protected function buildLedgerRows($invoices, $payments, $expenses, array $selectedModules): array
-    {
-        $rows = collect();
-
-        if (!empty($selectedModules['revenue'])) {
-            $rows = $rows->merge($invoices->map(fn(Invoice $invoice): array => [
-                'date_key' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
-                'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'document_type' => __('erp.common.invoice'),
-                'reference' => $invoice->invoice_number,
-                'counterparty' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: __('erp.common.account_client'),
-                'description' => __('erp.reports.rows.client_invoice'),
-                'debit' => '',
-                'credit' => $this->formatMoney((float) $invoice->total),
-                'tax' => $this->formatMoney((float) $invoice->tax_total),
-                'balance_due' => $this->formatMoney((float) $invoice->balance_due),
-                'status' => __('erp.resources.invoice.statuses.' . $invoice->status),
-            ]));
-        }
-
-        if (!empty($selectedModules['payments'])) {
-            $rows = $rows->merge($payments->map(fn(Payment $payment): array => [
-                'date_key' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
-                'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'document_type' => __('erp.common.transaction'),
-                'reference' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
-                'counterparty' => $payment->client?->company_name ?: $payment->client?->contact_name ?: __('erp.common.account_client'),
-                'description' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
-                'debit' => '',
-                'credit' => $this->formatMoney((float) $payment->amount),
-                'tax' => '',
-                'balance_due' => $this->formatMoney((float) ($payment->invoice?->balance_due ?? 0)),
-                'status' => __('erp.resources.payment.reconciliation.' . $payment->reconciliationState()),
-            ]));
-        }
-
-        if (!empty($selectedModules['expenses'])) {
-            $rows = $rows->merge($expenses->map(fn(Expense $expense): array => [
-                'date_key' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
-                'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
-                'document_type' => __('erp.common.expense'),
-                'reference' => $expense->reference ?: ('EXP-' . $expense->getKey()),
-                'counterparty' => $expense->vendor ?: __('erp.common.not_provided'),
-                'description' => $expense->title,
-                'debit' => $this->formatMoney((float) $expense->amount),
-                'credit' => '',
-                'tax' => '',
-                'balance_due' => '',
-                'status' => __('erp.resources.expense.approval_statuses.' . ($expense->approval_status ?? 'pending')),
-            ]));
-        }
-
-        return $rows
-            ->sortBy('date_key')
-            ->values()
-            ->map(fn(array $row): array => Arr::except($row, ['date_key']))
-            ->all();
-    }
-
-    protected function buildAuditRows($activityLogs): array
-    {
-        return $activityLogs
-            ->map(fn(ActivityLog $log): array => [
-                'timestamp' => optional($log->created_at)?->format('d/m/Y H:i:s') ?? __('erp.common.none'),
-                'user' => (string) ($log->user_id ?? 'system'),
-                'action' => $log->action,
-                'subject' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
-                'subject_id' => (string) ($log->subject_id ?? ''),
-                'context' => json_encode($log->meta_json ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            ])
-            ->values()
-            ->all();
     }
 
     protected function formatMoney(float $amount): string

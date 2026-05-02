@@ -70,8 +70,12 @@ class OperationalResilienceService
         return Arr::only($payload['metadata'], ['disk', 'path', 'record_count']);
     }
 
-    public function restoreBackup(?string $path = null, ?int $userId = null): array
+    public function restoreBackup(?string $path = null, ?int $userId = null, bool $force = false): array
     {
+        if (!$force) {
+            throw new RuntimeException('Backup restore is destructive. Re-run with force enabled.');
+        }
+
         $disk = (string) config('erp.resilience.backups.disk', 'local');
         $path ??= $this->latestBackupPath();
 
@@ -159,7 +163,7 @@ class OperationalResilienceService
         return [
             'failed_jobs' => $failedJobs,
             'queued_jobs' => $queuedJobs,
-            'open_alerts' => $openAlerts + ActivityLog::query()->where('action', 'system_alert_raised')->where('created_at', '>=', now()->subMinute())->count(),
+            'open_alerts' => $openAlerts,
             'latest_backup' => $latestBackup,
             'audit_events_24h' => ActivityLog::query()->where('created_at', '>=', now()->subDay())->count(),
         ];

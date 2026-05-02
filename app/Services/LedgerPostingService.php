@@ -14,12 +14,13 @@ use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
 {
-    /** @var array<string, LedgerAccount|null> Per-request account lookup cache. */
+    /** @var array<string, LedgerAccount|null> Per-request account lookup cache keyed by company + account key. */
     private array $accountCache = [];
 
     public function __construct(
         private readonly SequenceService $sequences,
-    ) {}
+    ) {
+    }
 
     /**
      * Default account codes used by automated posting rules.
@@ -57,9 +58,11 @@ class LedgerPostingService
             return null;
         }
 
-        $ar = $this->account('accounts_receivable');
-        $revenue = $this->account('sales_revenue');
-        $tax = $this->account('tax_payable');
+        $companyId = $this->resolveCompanyId($invoice->company_id ?? null);
+
+        $ar = $this->account('accounts_receivable', $companyId);
+        $revenue = $this->account('sales_revenue', $companyId);
+        $tax = $this->account('tax_payable', $companyId);
 
         if (!$ar || !$revenue) {
             return null;
@@ -120,8 +123,10 @@ class LedgerPostingService
             return null;
         }
 
-        $cash = $this->account('cash');
-        $ar = $this->account('accounts_receivable');
+        $companyId = $this->resolveCompanyId($payment->company_id ?? null);
+
+        $cash = $this->account('cash', $companyId);
+        $ar = $this->account('accounts_receivable', $companyId);
 
         if (!$cash || !$ar) {
             return null;
@@ -170,8 +175,10 @@ class LedgerPostingService
             return null;
         }
 
-        $expenseAccount = $this->account($this->expenseAccountKey((string) $expense->category));
-        $ap = $this->account('accounts_payable');
+        $companyId = $this->resolveCompanyId($expense->company_id ?? null);
+
+        $expenseAccount = $this->account($this->expenseAccountKey((string) $expense->category), $companyId);
+        $ap = $this->account('accounts_payable', $companyId);
 
         if (!$expenseAccount || !$ap) {
             return null;
@@ -220,8 +227,10 @@ class LedgerPostingService
             return null;
         }
 
-        $revenue = $this->account('sales_revenue');
-        $ar = $this->account('accounts_receivable');
+        $companyId = $this->resolveCompanyId($creditNote->company_id ?? null);
+
+        $revenue = $this->account('sales_revenue', $companyId);
+        $ar = $this->account('accounts_receivable', $companyId);
 
         if (!$revenue || !$ar) {
             return null;
@@ -279,22 +288,22 @@ class LedgerPostingService
             }
 
             $reversal = JournalEntry::create([
-                'entry_number'       => $this->generateEntryNumber(now()->toDateString()),
-                'entry_date'         => now()->toDateString(),
-                'description'        => $description,
-                'status'             => 'draft',
-                'source_type'        => null,
-                'source_id'          => null,
-                'reversal_of'        => $entry->id,
+                'entry_number' => $this->generateEntryNumber(now()->toDateString()),
+                'entry_date' => now()->toDateString(),
+                'description' => $description,
+                'status' => 'draft',
+                'source_type' => null,
+                'source_id' => null,
+                'reversal_of' => $entry->id,
                 'financial_period_id' => $this->resolvePeriodId(now()),
-                'created_by'         => $userId,
+                'created_by' => $userId,
             ]);
 
             foreach ($entry->lines as $line) {
                 $reversal->lines()->create([
-                    'account_id'  => $line->account_id,
-                    'debit'       => $line->credit,
-                    'credit'      => $line->debit,
+                    'account_id' => $line->account_id,
+                    'debit' => $line->credit,
+                    'credit' => $line->debit,
                     'description' => $line->description,
                 ]);
             }
@@ -363,24 +372,43 @@ class LedgerPostingService
         });
     }
 
-    private function account(string $key): ?LedgerAccount
+    private function account(string $key, ?int $companyId = null): ?LedgerAccount
     {
-        if (array_key_exists($key, $this->accountCache)) {
-            return $this->accountCache[$key];
+        if ($companyId === null) {
+            return null;
+        }
+
+        $cacheKey = $companyId . ':' . $key;
+
+        if (array_key_exists($cacheKey, $this->accountCache)) {
+            return $this->accountCache[$cacheKey];
         }
 
         $code = (string) config('erp.ledger.accounts.' . $key, self::DEFAULTS[$key] ?? '');
 
         if (blank($code)) {
-            return $this->accountCache[$key] = null;
+            return $this->accountCache[$cacheKey] = null;
         }
 
-        return $this->accountCache[$key] = LedgerAccount::findByCode($code);
+        return $this->accountCache[$cacheKey] = LedgerAccount::findByCode($code, $companyId);
+    }
+
+    private function resolveCompanyId(?int $companyId = null): ?int
+    {
+        if ($companyId !== null) {
+            return $companyId;
+        }
+
+        if (app()->bound('currentCompany')) {
+            return (int) app('currentCompany')->id;
+        }
+
+        return null;
     }
 
     private function generateEntryNumber(string $date): string
     {
-        $year   = substr($date, 0, 4);
+        $year = substr($date, 0, 4);
         $prefix = 'JE-' . $year . '-';
 
         $seq = $this->sequences->next('journal_entry', $year);

@@ -89,8 +89,11 @@ class LedgerAccount extends Model
         return (string) __('erp.ledger.account_types.' . $this->type, [], null) ?: ucfirst((string) $this->type);
     }
 
-    public static function findByCode(string $code): ?self
+    public static function findByCode(string $code, int $companyId): ?self
     {
-        return static::where('code', $code)->first();
+        return static::withoutCompanyScope()
+            ->where('company_id', $companyId)
+            ->where('code', $code)
+            ->first();
     }
 }
