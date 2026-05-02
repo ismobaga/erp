@@ -26,8 +26,11 @@ class ReportExportService
             default => throw new \InvalidArgumentException("Unsupported report format: {$format}. Allowed: csv, pdf."),
         };
 
-        $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts, $userId);
-        $path = $this->storeExport($report, $format, $userId);
+        $includeFullData = $format === 'pdf';
+        $report = $this->buildReport($start, $end, $selectedModules, $format, $includeCharts, $userId, $includeFullData);
+        $path = $format === 'csv'
+            ? $this->storeCsvExportStreamed($start, $end, $selectedModules, $report, $userId)
+            : $this->storeExport($report, $format, $userId);
         $generatedAt = now()->format('d/m/Y H:i');
 
         app(\App\Services\AuditTrailService::class)->log('report_generated', null, [
@@ -168,8 +171,15 @@ class ReportExportService
         ]);
     }
 
-    protected function buildReport(Carbon $start, Carbon $end, array $selectedModules, string $format, bool $includeCharts, ?int $userId = null): array
-    {
+    protected function buildReport(
+        Carbon $start,
+        Carbon $end,
+        array $selectedModules,
+        string $format,
+        bool $includeCharts,
+        ?int $userId = null,
+        bool $includeFullData = true,
+    ): array {
         $selectedModules = array_merge([
             'revenue' => false,
             'expenses' => false,
@@ -197,6 +207,43 @@ class ReportExportService
             ? (float) Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->sum('tax_total')
             : 0.0;
         $netResult = $paymentTotal - $expenseTotal;
+
+        $entryCount =
+            ($includeRevenue ? (int) Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->count() : 0)
+            + ($includePayments ? (int) Payment::query()->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])->count() : 0)
+            + ($includeExpenses ? (int) Expense::query()->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->count() : 0);
+        $auditCount = $includeAudit
+            ? (int) ActivityLog::query()->whereBetween('created_at', [$start, $end])->count()
+            : 0;
+
+        if (!$includeFullData) {
+            $summary = [
+                ['label' => __('erp.reports.summary.revenue'), 'value' => $this->formatMoney($revenue), 'tone' => 'text-primary'],
+                ['label' => __('erp.reports.summary.payments'), 'value' => $this->formatMoney($paymentTotal), 'tone' => 'text-emerald-600'],
+                ['label' => __('erp.reports.summary.expenses'), 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
+                ['label' => __('erp.reports.summary.taxes'), 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
+                ['label' => __('erp.reports.summary.net'), 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
+                ['label' => __('erp.reports.summary.entries'), 'value' => number_format($entryCount), 'tone' => 'text-slate-600'],
+                ['label' => __('erp.reports.summary.audit'), 'value' => number_format($auditCount), 'tone' => 'text-violet-600'],
+                ['label' => __('erp.reports.summary.format'), 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
+            ];
+
+            return [
+                'summary' => $summary,
+                'previewRows' => $this->collectPreviewRows($start, $end, $selectedModules),
+                'rows' => [],
+                'ledgerRows' => [],
+                'auditRows' => [],
+                'meta' => [
+                    'startDate' => $start->format('d/m/Y'),
+                    'endDate' => $end->format('d/m/Y'),
+                    'generatedAt' => now()->format('d/m/Y H:i'),
+                    'format' => strtoupper($format),
+                    'includeCharts' => $includeCharts,
+                    'generatedBy' => $userId ? 'Utilisateur #' . $userId : 'Système',
+                ],
+            ];
+        }
 
         $rows = [];
         $ledgerRows = [];
@@ -344,8 +391,8 @@ class ReportExportService
             ['label' => __('erp.reports.summary.expenses'), 'value' => $this->formatMoney($expenseTotal), 'tone' => 'text-rose-600'],
             ['label' => __('erp.reports.summary.taxes'), 'value' => $this->formatMoney($taxTotal), 'tone' => 'text-amber-600'],
             ['label' => __('erp.reports.summary.net'), 'value' => $this->formatMoney($netResult), 'tone' => $netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'],
-            ['label' => __('erp.reports.summary.entries'), 'value' => number_format(count($ledgerRows)), 'tone' => 'text-slate-600'],
-            ['label' => __('erp.reports.summary.audit'), 'value' => number_format(count($auditRows)), 'tone' => 'text-violet-600'],
+            ['label' => __('erp.reports.summary.entries'), 'value' => number_format($entryCount), 'tone' => 'text-slate-600'],
+            ['label' => __('erp.reports.summary.audit'), 'value' => number_format($auditCount), 'tone' => 'text-violet-600'],
             ['label' => __('erp.reports.summary.format'), 'value' => strtoupper($format), 'tone' => 'text-sky-600'],
         ];
 
@@ -384,6 +431,226 @@ class ReportExportService
         Storage::disk('local')->put($path, $content);
 
         return $path;
+    }
+
+    protected function storeCsvExportStreamed(
+        Carbon $start,
+        Carbon $end,
+        array $selectedModules,
+        array $report,
+        ?int $userId = null,
+    ): string {
+        $folder = 'reports/' . now()->format('Y/m');
+        $fileName = 'rapport-financier-' . now()->format('Ymd-His') . '-' . ($userId ?? 'system') . '.csv';
+        $path = $folder . '/' . $fileName;
+
+        Storage::disk('local')->makeDirectory($folder);
+        $absolutePath = Storage::disk('local')->path($path);
+
+        $handle = fopen($absolutePath, 'wb');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to create CSV export file.');
+        }
+
+        try {
+            fputcsv($handle, ['Journal comptable prêt pour audit', $report['meta']['generatedAt']], ';');
+            fputcsv($handle, ['Période', $report['meta']['startDate'] . ' -> ' . $report['meta']['endDate']], ';');
+            fputcsv($handle, ['Généré par', $report['meta']['generatedBy'] ?? 'Système'], ';');
+            fputcsv($handle, []);
+            fputcsv($handle, ['Indicateur', 'Valeur'], ';');
+
+            foreach ($report['summary'] as $item) {
+                fputcsv($handle, [$item['label'], $item['value']], ';');
+            }
+
+            fputcsv($handle, []);
+            fputcsv($handle, ['Journal comptable'], ';');
+            fwrite($handle, "Date;Type de pièce;Référence;Tiers;Description;Débit;Crédit;Taxes;Solde dû;Statut\n");
+
+            $selectedModules = array_merge([
+                'revenue' => false,
+                'expenses' => false,
+                'payments' => false,
+                'taxes' => false,
+                'audit' => false,
+            ], $selectedModules);
+
+            if (!empty($selectedModules['revenue'])) {
+                Invoice::query()
+                    ->with('client')
+                    ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
+                    ->orderBy('id')
+                    ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
+                        foreach ($chunk as $invoice) {
+                            /** @var Invoice $invoice */
+                            fputcsv($handle, [
+                                optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                                __('erp.common.invoice'),
+                                $invoice->invoice_number,
+                                $invoice->client?->company_name ?: $invoice->client?->contact_name ?: __('erp.common.account_client'),
+                                __('erp.reports.rows.client_invoice'),
+                                '',
+                                $this->formatMoney((float) $invoice->total),
+                                $this->formatMoney((float) $invoice->tax_total),
+                                $this->formatMoney((float) $invoice->balance_due),
+                                __('erp.resources.invoice.statuses.' . $invoice->status),
+                            ], ';');
+                        }
+                    });
+            }
+
+            if (!empty($selectedModules['payments'])) {
+                Payment::query()
+                    ->with(['client', 'invoice'])
+                    ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
+                    ->orderBy('id')
+                    ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
+                        foreach ($chunk as $payment) {
+                            /** @var Payment $payment */
+                            fputcsv($handle, [
+                                optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                                __('erp.common.transaction'),
+                                $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                                $payment->client?->company_name ?: $payment->client?->contact_name ?: __('erp.common.account_client'),
+                                $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
+                                '',
+                                $this->formatMoney((float) $payment->amount),
+                                '',
+                                $this->formatMoney((float) ($payment->invoice?->balance_due ?? 0)),
+                                __('erp.resources.payment.reconciliation.' . $payment->reconciliationState()),
+                            ], ';');
+                        }
+                    });
+            }
+
+            if (!empty($selectedModules['expenses'])) {
+                Expense::query()
+                    ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+                    ->orderBy('id')
+                    ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
+                        foreach ($chunk as $expense) {
+                            /** @var Expense $expense */
+                            fputcsv($handle, [
+                                optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                                __('erp.common.expense'),
+                                $expense->reference ?: ('EXP-' . $expense->getKey()),
+                                $expense->vendor ?: __('erp.common.not_provided'),
+                                $expense->title,
+                                $this->formatMoney((float) $expense->amount),
+                                '',
+                                '',
+                                '',
+                                __('erp.resources.expense.approval_statuses.' . ($expense->approval_status ?? 'pending')),
+                            ], ';');
+                        }
+                    });
+            }
+
+            if (!empty($selectedModules['audit'])) {
+                fputcsv($handle, []);
+                fputcsv($handle, ['Piste d\'audit'], ';');
+                fwrite($handle, "Horodatage;Utilisateur;Action;Sujet;Identifiant;Contexte\n");
+
+                ActivityLog::query()
+                    ->whereBetween('created_at', [$start, $end])
+                    ->orderBy('id')
+                    ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
+                        foreach ($chunk as $log) {
+                            /** @var ActivityLog $log */
+                            fputcsv($handle, [
+                                optional($log->created_at)?->format('d/m/Y H:i:s') ?? __('erp.common.none'),
+                                (string) ($log->user_id ?? 'system'),
+                                $log->action,
+                                class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+                                (string) ($log->subject_id ?? ''),
+                                json_encode($log->meta_json ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                            ], ';');
+                        }
+                    });
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $path;
+    }
+
+    protected function collectPreviewRows(Carbon $start, Carbon $end, array $selectedModules): array
+    {
+        $selectedModules = array_merge([
+            'revenue' => false,
+            'expenses' => false,
+            'payments' => false,
+            'taxes' => false,
+            'audit' => false,
+        ], $selectedModules);
+
+        $limit = 8;
+        $rows = [];
+
+        if (!empty($selectedModules['revenue'])) {
+            foreach (Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->latest('issue_date')->take($limit)->get() as $invoice) {
+                /** @var Invoice $invoice */
+                $rows[] = [
+                    'sort_date' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
+                    'date' => optional($invoice->issue_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                    'title' => $invoice->invoice_number,
+                    'subtitle' => __('erp.reports.rows.client_invoice'),
+                    'amount' => $this->formatMoney((float) $invoice->total),
+                    'badge' => __('erp.resources.invoice.statuses.' . $invoice->status),
+                ];
+            }
+        }
+
+        if (!empty($selectedModules['payments'])) {
+            foreach (Payment::query()->with('invoice')->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])->latest('payment_date')->take($limit)->get() as $payment) {
+                /** @var Payment $payment */
+                $rows[] = [
+                    'sort_date' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
+                    'date' => optional($payment->payment_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                    'title' => $payment->reference ?: __('erp.reports.rows.unreferenced_payment'),
+                    'subtitle' => $payment->invoice?->invoice_number ?: __('erp.reports.rows.free_payment'),
+                    'amount' => $this->formatMoney((float) $payment->amount),
+                    'badge' => __('erp.common.transaction'),
+                ];
+            }
+        }
+
+        if (!empty($selectedModules['expenses'])) {
+            foreach (Expense::query()->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->latest('expense_date')->take($limit)->get() as $expense) {
+                /** @var Expense $expense */
+                $rows[] = [
+                    'sort_date' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
+                    'date' => optional($expense->expense_date)?->format('d/m/Y') ?? __('erp.common.none'),
+                    'title' => $expense->title,
+                    'subtitle' => __('erp.reports.rows.expense_prefix', ['category' => __('erp.resources.expense.categories.' . $expense->category)]),
+                    'amount' => $this->formatMoney((float) $expense->amount),
+                    'badge' => __('erp.common.expense'),
+                ];
+            }
+        }
+
+        if (!empty($selectedModules['audit'])) {
+            foreach (ActivityLog::query()->whereBetween('created_at', [$start, $end])->latest('created_at')->take($limit)->get() as $log) {
+                /** @var ActivityLog $log */
+                $rows[] = [
+                    'sort_date' => optional($log->created_at)?->format('Y-m-d H:i:s') ?? '',
+                    'date' => optional($log->created_at)?->format('d/m/Y H:i') ?? __('erp.common.none'),
+                    'title' => $log->action,
+                    'subtitle' => __('erp.reports.rows.audit_event'),
+                    'amount' => __('erp.common.none'),
+                    'badge' => class_basename((string) ($log->subject_type ?: ActivityLog::class)),
+                ];
+            }
+        }
+
+        usort($rows, static fn(array $a, array $b): int => strcmp((string) $b['sort_date'], (string) $a['sort_date']));
+
+        return array_map(
+            static fn(array $row): array => Arr::except($row, ['sort_date']),
+            array_slice($rows, 0, $limit),
+        );
     }
 
     protected function buildCsvContent(array $report): string

@@ -2,6 +2,8 @@
 
 use App\Console\Commands\RunAutomatedDunning;
 use App\Models\ActivityLog;
+use App\Models\Company;
+use App\Models\Quote;
 use App\Services\OperationalResilienceService;
 use App\Services\ReportExportService;
 use Illuminate\Foundation\Inspiring;
@@ -108,9 +110,36 @@ Artisan::command('invoices:send-due-reminders', function () {
     $this->info($sent . ' reminder(s) queued for invoices due tomorrow. ' . $skipped . ' skipped (no client email).');
 })->purpose('Queue payment reminder emails for invoices due tomorrow');
 
+Artisan::command('quotes:expire-due', function () {
+    $today = today()->toDateString();
+    $totalExpired = 0;
+
+    Company::query()->where('is_active', true)->each(function (Company $company) use (&$totalExpired, $today): void {
+        app()->instance('currentCompany', $company);
+
+        $expiredForCompany = Quote::query()
+            ->whereIn('status', ['draft', 'sent'])
+            ->whereNotNull('valid_until')
+            ->whereDate('valid_until', '<', $today)
+            ->update([
+                'status' => 'expired',
+                'updated_at' => now(),
+            ]);
+
+        $totalExpired += $expiredForCompany;
+    });
+
+    $this->info(
+        $totalExpired > 0
+        ? $totalExpired . ' quote(s) marked as expired.'
+        : 'No quotes required expiry update.'
+    );
+})->purpose('Mark due quotes as expired based on valid_until date');
+
 Schedule::command('erp:backup-run')->dailyAt('01:00');
 Schedule::command('invoices:send-due-reminders')->dailyAt('08:00');
 Schedule::command('invoices:generate-recurring')->dailyAt('06:00');
+Schedule::command('quotes:expire-due')->dailyAt('05:30');
 Schedule::command('reports:run-scheduled-exports')->everyThirtyMinutes();
 Schedule::command('erp:monitor-health')->everyFifteenMinutes();
 Schedule::command('reports:cleanup-exports')->dailyAt('02:00');

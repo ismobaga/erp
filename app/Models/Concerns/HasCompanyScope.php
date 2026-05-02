@@ -5,6 +5,8 @@ namespace App\Models\Concerns;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\GlobalScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
  * Automatically scopes all queries and new records to the current company.
@@ -23,6 +25,36 @@ trait HasCompanyScope
                     $query->getModel()->getTable() . '.company_id',
                     app('currentCompany')->id,
                 );
+
+                return;
+            }
+
+            if (!app()->runningInConsole()) {
+                return;
+            }
+
+            $modelClass = $query->getModel()::class;
+            $strict = (bool) config('erp.tenancy.require_company_context_in_console', false);
+            $logMissing = (bool) config('erp.tenancy.log_missing_console_context', true);
+
+            if ($strict) {
+                throw new RuntimeException(sprintf(
+                    'Missing currentCompany binding while querying tenant-scoped model %s in console context.',
+                    $modelClass,
+                ));
+            }
+
+            if ($logMissing) {
+                static $warnedModels = [];
+
+                if (!isset($warnedModels[$modelClass])) {
+                    Log::warning('Tenant query executed without company context in console mode.', [
+                        'model' => $modelClass,
+                        'table' => $query->getModel()->getTable(),
+                    ]);
+
+                    $warnedModels[$modelClass] = true;
+                }
             }
         });
 

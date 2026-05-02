@@ -138,4 +138,12 @@ return [
             'backups_stale_after_hours' => max(1, (int) env('ERP_BACKUPS_STALE_AFTER_HOURS', 24)),
         ],
     ],
+
+    'tenancy' => [
+        // When enabled, tenant-scoped model queries in console context
+        // must bind currentCompany, otherwise an exception is thrown.
+        'require_company_context_in_console' => (bool) env('ERP_REQUIRE_COMPANY_CONTEXT_IN_CONSOLE', false),
+        // Keep warning logs enabled by default to surface unsafe command/job flows.
+        'log_missing_console_context' => (bool) env('ERP_LOG_MISSING_COMPANY_CONTEXT', true),
+    ],
 ];
