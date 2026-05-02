@@ -9,6 +9,7 @@ use App\Filament\Resources\Clients\Pages\ListClients;
 use App\Filament\Resources\Clients\Pages\ViewClientDetails;
 use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
+use App\Services\TaxProfileResolver;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -125,32 +126,25 @@ class ClientResource extends Resource
                                     ->placeholder('Dakar')
                                     ->helperText('Utilisée pour résoudre les profils fiscaux régionaux quand ils existent.'),
                                 Select::make('country')
-                                    ->options([
-                                        'Mali' => 'Mali',
-                                        'Senegal' => 'Senegal',
-                                        'Ghana' => 'Ghana',
-                                        'France' => 'France',
-                                        'United Arab Emirates' => 'United Arab Emirates',
-                                    ])
+                                    ->options(static::countryOptions())
                                     ->helperText('Le pays détermine le profil de TVA ou de taxe par défaut pour ce client.')
                                     ->searchable()
                                     ->native(false),
                                 Placeholder::make('tax_profile_preview')
                                     ->label('Profil fiscal appliqué')
                                     ->content(function (Get $get): string {
-                                        $profiles = (array) config('erp.tax_profiles.countries', []);
                                         $country = (string) ($get('country') ?? '');
-                                        $region = (string) ($get('city') ?? '');
-                                        $countryProfile = $profiles[$country] ?? [];
-                                        $regionProfile = ($countryProfile['regions'][$region] ?? []);
-                                        $profile = array_merge((array) config('erp.tax_profiles.default', []), $countryProfile, $regionProfile);
+                                        $city    = (string) ($get('city') ?? '');
 
-                                        if (blank($country) && blank($region)) {
+                                        if (blank($country) && blank($city)) {
                                             return 'Aucun profil fiscal spécifique sélectionné.';
                                         }
 
+                                        $fakeClient = new Client(['country' => $country, 'city' => $city]);
+                                        $profile    = app(TaxProfileResolver::class)->resolveForClient($fakeClient);
+
                                         $label = $profile['label'] ?? 'Profil standard';
-                                        $rate = number_format((float) ($profile['rate'] ?? 0), 2, ',', ' ');
+                                        $rate  = number_format((float) ($profile['rate'] ?? 0), 2, ',', ' ');
 
                                         return $label . ' · ' . $rate . ' %';
                                     })
@@ -175,6 +169,7 @@ class ClientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('updated_at', 'desc')
             ->recordUrl(fn(Client $client): string => static::getUrl('details', ['record' => $client]))
             ->columns([
                 TextColumn::make('identity')
@@ -249,5 +244,52 @@ class ClientResource extends Resource
             'details' => ViewClientDetails::route('/{record}/details'),
             'edit' => EditClient::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Build the country select options.
+     *
+     * Countries that have a configured tax profile appear first for easy
+     * access; all other ISO 3166-1 common names follow in alphabetical order.
+     */
+    protected static function countryOptions(): array
+    {
+        $taxProfileCountries = array_keys((array) config('erp.tax_profiles.countries', []));
+
+        $primaryOptions = array_combine($taxProfileCountries, $taxProfileCountries);
+
+        $allCountries = [
+            'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia',
+            'Australia', 'Austria', 'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belarus', 'Belgium',
+            'Benin', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Bulgaria',
+            'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde',
+            'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+            'Congo', 'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark',
+            'Djibouti', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea',
+            'Eritrea', 'Estonia', 'Ethiopia', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia',
+            'Germany', 'Ghana', 'Greece', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Haiti',
+            'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
+            'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
+            'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya',
+            'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali',
+            'Malta', 'Mauritania', 'Mauritius', 'Mexico', 'Moldova', 'Mongolia', 'Montenegro',
+            'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal', 'Netherlands', 'New Zealand',
+            'Nicaragua', 'Niger', 'Nigeria', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
+            'Panama', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania',
+            'Russia', 'Rwanda', 'Saudi Arabia', 'Senegal', 'Serbia', 'Sierra Leone', 'Singapore',
+            'Slovakia', 'Slovenia', 'Somalia', 'South Africa', 'South Sudan', 'Spain', 'Sri Lanka',
+            'Sudan', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania',
+            'Thailand', 'Togo', 'Tunisia', 'Turkey', 'Turkmenistan', 'Uganda', 'Ukraine',
+            'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+            'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+        ];
+
+        $secondaryOptions = collect($allCountries)
+            ->reject(fn (string $c): bool => in_array($c, $taxProfileCountries, true))
+            ->sort()
+            ->combine(fn (string $c): string => $c)
+            ->all();
+
+        return array_merge($primaryOptions, $secondaryOptions);
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
+    'company_id',
     'company_name',
     'legal_name',
     'slogan',
@@ -29,4 +31,5 @@ use Illuminate\Database\Eloquent\Model;
 ])]
 class CompanySetting extends Model
 {
+    use HasCompanyScope;
 }

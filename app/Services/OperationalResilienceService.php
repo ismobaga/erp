@@ -24,34 +24,43 @@ class OperationalResilienceService
             'path' => $path,
         ], $userId);
 
-        $payload = [
-            'metadata' => [
-                'generated_at' => now()->toIso8601String(),
-                'disk' => $disk,
-                'path' => $path,
-                'application' => config('app.name'),
-                'environment' => app()->environment(),
-                'tables' => [],
-                'record_count' => 0,
-            ],
-            'data' => [],
+        $metadata = [
+            'generated_at' => now()->toIso8601String(),
+            'disk' => $disk,
+            'path' => $path,
+            'application' => config('app.name'),
+            'environment' => app()->environment(),
+            'tables' => [],
+            'record_count' => 0,
         ];
+
+        // Build the payload incrementally to avoid loading the entire
+        // database into a single PHP array (OOM risk on large datasets).
+        $tableData = [];
+        $totalRecords = 0;
 
         foreach ($this->backupTables() as $table) {
             if (!Schema::hasTable($table)) {
                 continue;
             }
 
-            $rows = DB::table($table)
-                ->orderBy('id')
-                ->get()
-                ->map(fn($row): array => (array) $row)
-                ->all();
+            $rows = [];
+            DB::table($table)->orderBy('id')->chunk(500, function ($chunk) use (&$rows): void {
+                foreach ($chunk as $row) {
+                    $rows[] = (array) $row;
+                }
+            });
 
-            $payload['data'][$table] = $rows;
-            $payload['metadata']['tables'][] = $table;
-            $payload['metadata']['record_count'] += count($rows);
+            $tableData[$table] = $rows;
+            $metadata['tables'][] = $table;
+            $metadata['record_count'] += count($rows);
+            $totalRecords += count($rows);
         }
+
+        $payload = [
+            'metadata' => $metadata,
+            'data' => $tableData,
+        ];
 
         Storage::disk($disk)->makeDirectory($directory);
         Storage::disk($disk)->put($path, Crypt::encryptString(json_encode($payload, JSON_UNESCAPED_SLASHES)));

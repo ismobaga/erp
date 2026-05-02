@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
 {
+    /** @var array<string, LedgerAccount|null> Per-request account lookup cache. */
+    private array $accountCache = [];
+
     public function __construct(
         private readonly SequenceService $sequences,
     ) {}
@@ -362,13 +365,17 @@ class LedgerPostingService
 
     private function account(string $key): ?LedgerAccount
     {
+        if (array_key_exists($key, $this->accountCache)) {
+            return $this->accountCache[$key];
+        }
+
         $code = (string) config('erp.ledger.accounts.' . $key, self::DEFAULTS[$key] ?? '');
 
         if (blank($code)) {
-            return null;
+            return $this->accountCache[$key] = null;
         }
 
-        return LedgerAccount::findByCode($code);
+        return $this->accountCache[$key] = LedgerAccount::findByCode($code);
     }
 
     private function generateEntryNumber(string $date): string

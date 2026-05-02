@@ -129,6 +129,7 @@ class ProjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->recordUrl(fn(Project $record): string => static::getUrl('details', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')

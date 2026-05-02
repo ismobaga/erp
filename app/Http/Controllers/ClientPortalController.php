@@ -13,11 +13,14 @@ class ClientPortalController extends Controller
 {
     public function index(string $token): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        // Use withoutCompanyScope() so the token lookup works without an
+        // authenticated session; each client's UUID token is globally unique.
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
 
-        $company = CompanySetting::query()->first();
+        $company = $this->resolveCompanySettings($client);
 
         $invoices = $client->invoices()
+            ->withoutCompanyScope()
             ->with(['items'])
             ->orderByDesc('issue_date')
             ->get();
@@ -32,14 +35,14 @@ class ClientPortalController extends Controller
 
     public function showInvoice(string $token, Invoice $invoice): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
 
         // Ensure this invoice belongs to the authenticated client.
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
 
         $invoice->loadMissing(['client', 'items.service', 'payments']);
 
-        $company = CompanySetting::query()->first();
+        $company = $this->resolveCompanySettings($client);
         $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [
@@ -61,12 +64,12 @@ class ClientPortalController extends Controller
 
     public function downloadPdf(string $token, Invoice $invoice): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
-        $company = CompanySetting::query()->first();
+        $company = $this->resolveCompanySettings($client);
         $companyName = $company?->company_name ?: config('app.name');
 
         $viewData = [
@@ -91,6 +94,26 @@ class ClientPortalController extends Controller
             ])
             ->setPaper('a4')
             ->download($invoice->invoice_number.'.pdf');
+    }
+
+    /**
+     * Resolve company settings scoped to the client's own company.
+     * Falls back to the first available settings row for backwards compatibility
+     * with single-tenant deployments that have not yet migrated.
+     */
+    protected function resolveCompanySettings(Client $client): ?CompanySetting
+    {
+        if ($client->company_id !== null) {
+            $settings = CompanySetting::withoutCompanyScope()
+                ->where('company_id', $client->company_id)
+                ->first();
+
+            if ($settings !== null) {
+                return $settings;
+            }
+        }
+
+        return CompanySetting::withoutCompanyScope()->first();
     }
 
     protected function resolveLogoDataUri(?string $path): ?string

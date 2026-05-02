@@ -177,9 +177,8 @@ class PaymentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('payment_date', 'desc')
             ->columns([
-                TextColumn::make('reference')
-                    ->label(__('erp.common.transaction'))
                     ->state(fn(Payment $record): string => $record->reference ?: ('PAY-' . str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
                     ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? __('erp.common.none')) . ' • ' . __('erp.payment_methods.' . $record->payment_method))
                     ->searchable(['reference'])

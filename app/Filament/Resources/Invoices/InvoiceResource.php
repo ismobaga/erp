@@ -228,6 +228,7 @@ class InvoiceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('issue_date', 'desc')
             ->recordUrl(fn (Invoice $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('invoice_number')
