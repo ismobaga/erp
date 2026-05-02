@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         Schema::create('report_schedules', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('description');
             $table->string('frequency');

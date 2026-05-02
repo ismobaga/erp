@@ -9,7 +9,8 @@ return new class extends Migration {
     {
         Schema::create('ledger_accounts', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->string('code');
             $table->string('name');
             $table->string('type'); // asset | liability | equity | revenue | expense
             $table->string('category')->nullable();
@@ -21,10 +22,19 @@ return new class extends Migration {
 
             $table->index(['type', 'is_active']);
             $table->index('parent_id');
+
+            $table->unique(['company_id', 'code'], 'ledger_accounts_company_id_code_unique');
+
         });
 
         Schema::create('journal_entries', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('reversal_of')
+                ->nullable()
+                ->after('void_reason')
+                ->constrained('journal_entries')
+                ->nullOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('entry_number')->unique();
             $table->date('entry_date');
             $table->text('description');
@@ -42,12 +52,15 @@ return new class extends Migration {
 
             $table->index(['status', 'entry_date']);
             $table->index(['source_type', 'source_id']);
+            $table->index(['company_id', 'status', 'entry_date'], 'journal_entries_company_status_date_index');
+
         });
 
         Schema::create('journal_entry_lines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('journal_entry_id')->constrained('journal_entries')->cascadeOnDelete();
             $table->foreignId('account_id')->constrained('ledger_accounts')->restrictOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('description')->nullable();
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);
@@ -55,6 +68,7 @@ return new class extends Migration {
 
             $table->index('journal_entry_id');
             $table->index('account_id');
+
         });
     }
 

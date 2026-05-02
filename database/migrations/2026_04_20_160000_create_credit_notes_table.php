@@ -14,9 +14,10 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->string('credit_number')->unique();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->date('issue_date');
             $table->decimal('amount', 15, 2);
-            $table->text('reason')->nullable();
+            $table->text('reason');
             $table->string('status')->default('issued');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();

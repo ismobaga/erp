@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         Schema::create('whatsapp_message_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->nullableMorphs('sendable');
             $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
             $table->string('phone');

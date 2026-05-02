@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         Schema::create('dunning_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->string('stage'); // 1 | 2 | 3 | final

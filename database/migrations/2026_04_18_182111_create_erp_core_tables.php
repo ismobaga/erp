@@ -12,6 +12,9 @@ return new class extends Migration {
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')
+                ->constrained('companies')
+                ->cascadeOnDelete();
             $table->string('type');
             $table->string('company_name')->nullable();
             $table->string('contact_name')->nullable();
@@ -29,6 +32,9 @@ return new class extends Migration {
 
         Schema::create('services', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')
+                ->constrained('companies')
+                ->cascadeOnDelete();
             $table->string('code')->unique();
             $table->string('name');
             $table->string('category')->nullable();
@@ -41,6 +47,7 @@ return new class extends Migration {
         Schema::create('quotes', function (Blueprint $table) {
             $table->id();
             $table->string('quote_number')->unique();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->date('issue_date');
             $table->date('valid_until')->nullable();
@@ -53,10 +60,14 @@ return new class extends Migration {
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['company_id', 'status', 'issue_date'], 'quotes_company_status_date_index');
+
         });
 
         Schema::create('quote_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('quote_id')->constrained('quotes')->cascadeOnDelete();
             $table->foreignId('service_id')->nullable()->constrained('services')->nullOnDelete();
             $table->text('description');
@@ -70,6 +81,7 @@ return new class extends Migration {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->string('invoice_number')->unique();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->foreignId('quote_id')->nullable()->constrained('quotes')->nullOnDelete();
             $table->date('issue_date');
@@ -77,6 +89,7 @@ return new class extends Migration {
             $table->string('status')->default('draft');
             $table->decimal('subtotal', 15, 2)->default(0);
             $table->decimal('discount_total', 15, 2)->default(0);
+            $table->decimal('credit_total', 15, 2)->default(0);
             $table->decimal('tax_total', 15, 2)->default(0);
             $table->decimal('total', 15, 2)->default(0);
             $table->decimal('paid_total', 15, 2)->default(0);
@@ -85,10 +98,15 @@ return new class extends Migration {
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['company_id', 'status', 'due_date'], 'invoices_company_status_due_date_index');
+            $table->index(['company_id', 'issue_date'], 'invoices_company_issue_date_index');
+
         });
 
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->foreignId('service_id')->nullable()->constrained('services')->nullOnDelete();
             $table->text('description');
@@ -96,17 +114,18 @@ return new class extends Migration {
             $table->decimal('unit_price', 15, 2);
             $table->decimal('line_total', 15, 2)->default(0);
             $table->timestamps();
-            $table->index('invoice_id', 'invoice_items_invoice_id_index');
-
+            $table->index(['company_id', 'invoice_id'], 'invoice_items_company_invoice_index');
         });
 
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->foreignId('client_id')->index()->constrained('clients')->cascadeOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->date('payment_date')->index();
             $table->decimal('amount', 15, 2);
             $table->string('payment_method');
+            $table->string('mobile_money_operator')->nullable();
             $table->string('reference')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('allow_overpayment')->default(false);
@@ -116,10 +135,14 @@ return new class extends Migration {
             $table->foreignId('flagged_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['company_id', 'payment_date'], 'payments_company_payment_date_index');
+
         });
 
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('category');
             $table->string('title');
             $table->text('description')->nullable();
@@ -136,6 +159,8 @@ return new class extends Migration {
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->index('approval_status', 'expenses_approval_status_index');
+            $table->index(['company_id', 'approval_status', 'expense_date'], 'expenses_company_status_date_index');
+
 
         });
 
@@ -143,6 +168,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('client_id')->nullable()->constrained('clients')->nullOnDelete();
             $table->foreignId('service_id')->nullable()->constrained('services')->nullOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('status')->default('planned');
@@ -160,6 +186,7 @@ return new class extends Migration {
         });
         Schema::create('notes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->morphs('notable');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
@@ -172,6 +199,7 @@ return new class extends Migration {
 
         Schema::create('attachments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('attachable_type');
             $table->unsignedBigInteger('attachable_id');
             $table->string('file_name');
@@ -186,16 +214,19 @@ return new class extends Migration {
         });
         Schema::create('sequences', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->string('key');
             $table->string('period');
             $table->unsignedBigInteger('next_val')->default(1);
             $table->timestamps();
 
-            $table->unique(['key', 'period']);
+            $table->unique(['company_id', 'key', 'period'], 'sequences_company_key_period_unique');
+
         });
 
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action');
             $table->string('subject_type')->nullable();
@@ -206,6 +237,8 @@ return new class extends Migration {
             $table->index('action');
             $table->index('created_at');
             $table->index(['subject_type', 'subject_id']);
+            $table->index(['company_id', 'action', 'created_at'], 'activity_logs_company_action_date_index');
+
         });
     }
 
