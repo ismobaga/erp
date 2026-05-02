@@ -10,6 +10,7 @@ use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
 use App\Models\Payment;
 use App\Services\AuditTrailService;
+use App\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
@@ -69,7 +70,9 @@ class LedgerPostingService
         }
 
         $taxAmount = (float) $invoice->tax_total;
-        $revenueAmount = $total - $taxAmount;
+        $revenueAmount = (float) Money::of((string) $invoice->total)
+            ->subtract(Money::of((string) $invoice->tax_total))
+            ->toString();
 
         $lines = [
             [

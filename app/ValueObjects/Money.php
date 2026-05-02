@@ -67,6 +67,19 @@ final class Money
     }
 
     /**
+     * Divide by a scalar (rate divisor, ratio, etc.).
+     * Throws if divisor is zero.
+     */
+    public function divide(string|int|float $divisor): self
+    {
+        if (bccomp((string) $divisor, '0', self::SCALE) === 0) {
+            throw new \DivisionByZeroError('Division by zero in Money::divide().');
+        }
+
+        return new self(bcdiv($this->amount, (string) $divisor, self::SCALE));
+    }
+
+    /**
      * Return the larger of this or $other (identical to PHP max() for floats).
      */
     public function max(self $other): self

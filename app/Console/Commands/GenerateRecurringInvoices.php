@@ -53,8 +53,23 @@ class GenerateRecurringInvoices extends Command
 
             foreach ($templates as $template) {
                 /** @var RecurringInvoice $template */
-                if (! $isDry) {
+                if (!$isDry) {
                     DB::transaction(function () use ($template, $audit): void {
+                        // Optimistic lock: atomically claim this template for the
+                        // expected next_due_date. If another worker already advanced
+                        // it (next_due_date changed), the update returns 0 rows and
+                        // we skip to avoid generating a duplicate invoice.
+                        $claimed = RecurringInvoice::query()
+                            ->where('id', $template->id)
+                            ->where('is_active', true)
+                            ->whereDate('next_due_date', $template->next_due_date)
+                            ->lockForUpdate()
+                            ->exists();
+
+                        if (!$claimed) {
+                            return;
+                        }
+
                         $issueDate = $template->next_due_date;
                         $dueDate = $issueDate->copy()->addDays((int) $template->net_days);
 
@@ -66,7 +81,7 @@ class GenerateRecurringInvoices extends Command
                             'notes' => $template->notes,
                         ]);
 
-                        if (! empty($template->items)) {
+                        if (!empty($template->items)) {
                             foreach ((array) $template->items as $item) {
                                 InvoiceItem::create([
                                     'invoice_id' => $invoice->id,
@@ -113,12 +128,12 @@ class GenerateRecurringInvoices extends Command
         });
 
         if ($totalGenerated === 0) {
-            $this->info('No recurring invoices are due on '.$targetDate->toDateString().'.');
+            $this->info('No recurring invoices are due on ' . $targetDate->toDateString() . '.');
         } else {
             $this->info(
                 $isDry
-                    ? $totalGenerated.' recurring invoice(s) would be generated.'
-                    : $totalGenerated.' recurring invoice(s) generated successfully.'
+                ? $totalGenerated . ' recurring invoice(s) would be generated.'
+                : $totalGenerated . ' recurring invoice(s) generated successfully.'
             );
         }
 

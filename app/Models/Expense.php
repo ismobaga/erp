@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use App\Services\AuditTrailService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -113,17 +114,16 @@ class Expense extends Model
 
     protected function logActivity(string $action, User $user, ?string $notes = null): void
     {
-        ActivityLog::create([
-            'user_id' => $user->getKey(),
-            'action' => $action,
-            'subject_type' => self::class,
-            'subject_id' => $this->getKey(),
-            'meta_json' => [
+        app(AuditTrailService::class)->log(
+            $action,
+            $this,
+            [
                 'title' => $this->title,
                 'approval_status' => $this->approval_status,
                 'notes' => $notes,
             ],
-        ]);
+            $user->getKey(),
+        );
     }
 
     protected static function normalizeCategory(mixed $category): string

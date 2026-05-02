@@ -38,6 +38,8 @@ class Company extends Model
         return [
             'is_active' => 'boolean',
             'whatsapp_enabled' => 'boolean',
+            'bank_account_number' => 'encrypted',
+            'bank_swift_code' => 'encrypted',
         ];
     }
 

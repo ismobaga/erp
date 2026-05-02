@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Client;
+use App\ValueObjects\Money;
 use Illuminate\Support\Arr;
 
 class TaxProfileResolver
@@ -47,23 +48,30 @@ class TaxProfileResolver
             return [
                 'profile' => $profile,
                 'tax_total' => 0.0,
-                'total' => $subtotal,
+                'total' => (float) Money::of((string) $subtotal)->toString(),
                 'matched' => (bool) ($profile['matched'] ?? false),
             ];
         }
 
-        $taxTotal = match ($mode) {
-            'inclusive' => round($subtotal - ($subtotal / (1 + ($rate / 100))), 2),
-            'exempt', 'none' => 0.0,
-            default => round($subtotal * ($rate / 100), 2),
+        $subtotalMoney = Money::of((string) $subtotal);
+        $rateString = number_format($rate, 4, '.', '');
+        $rateRatio = bcdiv($rateString, '100', 6);
+        $inclusiveDivisor = bcadd('1', $rateRatio, 6);
+
+        $taxMoney = match ($mode) {
+            'inclusive' => $subtotalMoney->subtract($subtotalMoney->divide($inclusiveDivisor)),
+            'exempt', 'none' => Money::zero(),
+            default => $subtotalMoney->multiply($rateRatio),
         };
 
-        $total = $mode === 'inclusive' ? $subtotal : round($subtotal + $taxTotal, 2);
+        $totalMoney = $mode === 'inclusive'
+            ? $subtotalMoney
+            : $subtotalMoney->add($taxMoney);
 
         return [
             'profile' => $profile,
-            'tax_total' => $taxTotal,
-            'total' => $total,
+            'tax_total' => (float) $taxMoney->toString(),
+            'total' => (float) $totalMoney->toString(),
             'matched' => true,
         ];
     }

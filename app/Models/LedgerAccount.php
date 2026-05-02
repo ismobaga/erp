@@ -62,6 +62,10 @@ class LedgerAccount extends Model
 
     public function debitBalance(): float
     {
+        if (array_key_exists('debit_sum', $this->getAttributes())) {
+            return (float) $this->getAttribute('debit_sum');
+        }
+
         return (float) $this->journalLines()
             ->whereHas('entry', fn(Builder $q) => $q->where('status', 'posted'))
             ->sum('debit');
@@ -69,6 +73,10 @@ class LedgerAccount extends Model
 
     public function creditBalance(): float
     {
+        if (array_key_exists('credit_sum', $this->getAttributes())) {
+            return (float) $this->getAttribute('credit_sum');
+        }
+
         return (float) $this->journalLines()
             ->whereHas('entry', fn(Builder $q) => $q->where('status', 'posted'))
             ->sum('credit');

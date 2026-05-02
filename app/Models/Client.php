@@ -70,16 +70,33 @@ class Client extends Model
 
     public function totalBalance(): float
     {
+        // Use pre-loaded withSum aggregate to avoid N+1 in list views.
+        if (array_key_exists('invoices_sum_balance_due', $this->getAttributes())) {
+            return (float) $this->getAttribute('invoices_sum_balance_due');
+        }
+
         return (float) $this->invoices()->sum('balance_due');
     }
 
     public function totalPaid(): float
     {
+        if (array_key_exists('payments_sum_amount', $this->getAttributes())) {
+            return (float) $this->getAttribute('payments_sum_amount');
+        }
+
         return (float) $this->payments()->sum('amount');
     }
 
     public function taxProfile(): array
     {
         return app(TaxProfileResolver::class)->resolveForClient($this);
+    }
+
+    /**
+     * Rotate the portal token, invalidating any previously shared portal links.
+     */
+    public function regeneratePortalToken(): void
+    {
+        $this->forceFill(['portal_token' => (string) Str::uuid()])->save();
     }
 }

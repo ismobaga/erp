@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\ReportReadyMail;
 use App\Models\Company;
 use App\Models\ReportSchedule;
 use App\Services\AuditTrailService;
@@ -9,6 +10,7 @@ use App\Services\ReportExportService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 class GenerateScheduledReportJob implements ShouldQueue
@@ -67,6 +69,11 @@ class GenerateScheduledReportJob implements ShouldQueue
             'next_execution_at' => $schedule->nextRun(),
             'status' => 'active',
         ])->save();
+
+        if (filled($schedule->schedule_email)) {
+            Mail::to($schedule->schedule_email)
+                ->queue(new ReportReadyMail($result['path'], $result['generatedAt']));
+        }
 
         $auditTrail->log('scheduled_report_generated', null, [
             'schedule_id' => $schedule->id,
