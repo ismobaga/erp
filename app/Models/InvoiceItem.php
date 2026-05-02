@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCompanyScope;
 use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 ])]
 class InvoiceItem extends Model
 {
+    use HasCompanyScope;
     protected function casts(): array
     {
         return [
