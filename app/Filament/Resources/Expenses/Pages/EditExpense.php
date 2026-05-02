@@ -20,6 +20,11 @@ class EditExpense extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('exportPdf')
+                ->label('PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn(): string => route('expenses.pdf', ['expense' => $this->getRecord(), 'download' => 1])),
             DeleteAction::make(),
         ];
     }

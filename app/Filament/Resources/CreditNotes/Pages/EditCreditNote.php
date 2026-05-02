@@ -27,6 +27,11 @@ class EditCreditNote extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('exportPdf')
+                ->label('PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn(): string => route('credit-notes.pdf', ['creditNote' => $this->getRecord(), 'download' => 1])),
             DeleteAction::make(),
         ];
     }

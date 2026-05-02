@@ -115,9 +115,9 @@ class PaymentResource extends Resource
                                     ->label('Opérateur Mobile Money')
                                     ->options([
                                         'Orange Money' => 'Orange Money',
-                                        'Wave'         => 'Wave',
-                                        'Moov Money'   => 'Moov Money',
-                                        'MTN MoMo'     => 'MTN MoMo',
+                                        'Wave' => 'Wave',
+                                        'Moov Money' => 'Moov Money',
+                                        'MTN MoMo' => 'MTN MoMo',
                                     ])
                                     ->native(false)
                                     ->visible(fn(Get $get): bool => $get('payment_method') === 'mobile_money')
@@ -289,6 +289,11 @@ class PaymentResource extends Resource
                                 ->send();
                         }
                     }),
+                Action::make('exportPdf')
+                    ->label('Reçu PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn(Payment $record): string => route('payments.pdf', ['payment' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

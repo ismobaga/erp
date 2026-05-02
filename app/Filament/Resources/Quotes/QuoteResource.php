@@ -201,7 +201,7 @@ class QuoteResource extends Resource
     {
         return $table
             ->defaultSort('issue_date', 'desc')
-            ->recordUrl(fn (Quote $record): string => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn(Quote $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('quote_number')
                     ->searchable(),
@@ -263,6 +263,11 @@ class QuoteResource extends Resource
                             Notification::make()->title('Échec de l\'envoi WhatsApp')->body($log->error_message)->danger()->send();
                         }
                     }),
+                Action::make('exportPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn(Quote $record): string => route('quotes.pdf', ['quote' => $record, 'download' => 1])),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
@@ -289,19 +294,19 @@ class QuoteResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListQuotes::route('/'),
+            'index' => ListQuotes::route('/'),
             'create' => CreateQuote::route('/create'),
-            'view'   => ViewQuote::route('/{record}'),
-            'edit'   => EditQuote::route('/{record}/edit'),
+            'view' => ViewQuote::route('/{record}'),
+            'edit' => EditQuote::route('/{record}/edit'),
         ];
     }
 
     public static function generateQuoteNumber(): string
     {
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
         $prefix = 'QT-' . $year;
-        $sep    = '-';
-        $seq    = app(SequenceService::class)->next('quote', $year);
+        $sep = '-';
+        $seq = app(SequenceService::class)->next('quote', $year);
 
         return $prefix . $sep . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }

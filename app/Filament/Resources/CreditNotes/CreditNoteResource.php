@@ -11,6 +11,7 @@ use App\Models\CreditNote;
 use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -170,6 +171,11 @@ class CreditNoteResource extends Resource
                     ]),
             ])
             ->recordActions([
+                Action::make('exportPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn(CreditNote $record): string => route('credit-notes.pdf', ['creditNote' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

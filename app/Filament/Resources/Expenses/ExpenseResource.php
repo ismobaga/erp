@@ -201,6 +201,11 @@ class ExpenseResource extends Resource
                             ->warning()
                             ->send();
                     }),
+                Action::make('exportPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn(Expense $record): string => route('expenses.pdf', ['expense' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

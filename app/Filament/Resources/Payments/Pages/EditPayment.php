@@ -20,6 +20,11 @@ class EditPayment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('exportPdf')
+                ->label('Reçu PDF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(fn(): string => route('payments.pdf', ['payment' => $this->getRecord(), 'download' => 1])),
             DeleteAction::make(),
         ];
     }

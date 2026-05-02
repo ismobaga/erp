@@ -4,7 +4,11 @@ use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\BackupDownloadController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\CompanyPagesController;
+use App\Http\Controllers\CreditNotePdfController;
+use App\Http\Controllers\ExpensePdfController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\PaymentPdfController;
+use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +34,18 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/invoices/{invoice}/pdf', InvoicePdfController::class)
         ->name('invoices.pdf');
+
+    Route::get('/quotes/{quote}/pdf', QuotePdfController::class)
+        ->name('quotes.pdf');
+
+    Route::get('/payments/{payment}/pdf', PaymentPdfController::class)
+        ->name('payments.pdf');
+
+    Route::get('/expenses/{expense}/pdf', ExpensePdfController::class)
+        ->name('expenses.pdf');
+
+    Route::get('/credit-notes/{creditNote}/pdf', CreditNotePdfController::class)
+        ->name('credit-notes.pdf');
 
     Route::get('/reports/download', ReportExportDownloadController::class)
         ->name('reports.download');

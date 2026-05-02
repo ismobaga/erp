@@ -8,6 +8,7 @@ use App\Models\Quote;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -35,7 +36,7 @@ class ViewQuote extends ViewRecord
                 ->label('Convertir en facture')
                 ->icon('heroicon-o-document-check')
                 ->color('success')
-                ->visible(fn (): bool =>
+                ->visible(fn(): bool =>
                     /** @var Quote $record */
                     in_array($this->getRecord()->status, ['draft', 'sent', 'accepted', 'expired'], true)
                     && !$this->getRecord()->invoice()->exists()
@@ -45,7 +46,7 @@ class ViewQuote extends ViewRecord
                 ->modalDescription('Une nouvelle facture sera créée à partir de ce devis. Le devis sera marqué comme accepté.')
                 ->action(function (): void {
                     /** @var Quote $record */
-                    $record  = $this->getRecord();
+                    $record = $this->getRecord();
                     $invoice = $record->convertToInvoice(auth()->id());
 
                     Notification::make()
@@ -56,6 +57,11 @@ class ViewQuote extends ViewRecord
 
                     $this->redirect(InvoiceResource::getUrl('view', ['record' => $invoice]));
                 }),
+            Action::make('exportPdf')
+                ->label('Télécharger PDF')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->url(fn(): string => route('quotes.pdf', ['quote' => $this->getRecord(), 'download' => 1])),
             EditAction::make()->label('Modifier'),
             DeleteAction::make(),
         ];
@@ -78,7 +84,7 @@ class ViewQuote extends ViewRecord
                                 ->copyable(),
                             TextEntry::make('client.company_name')
                                 ->label('Client')
-                                ->state(fn (Quote $record): string =>
+                                ->state(fn(Quote $record): string =>
                                     $record->client?->company_name
                                     ?: $record->client?->contact_name
                                     ?: '—'),
@@ -100,12 +106,12 @@ class ViewQuote extends ViewRecord
                             TextEntry::make('status')
                                 ->label('Statut')
                                 ->badge()
-                                ->formatStateUsing(fn (string $state): string => match ($state) {
-                                    'draft'    => 'Brouillon',
-                                    'sent'     => 'Envoyé au client',
+                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                    'draft' => 'Brouillon',
+                                    'sent' => 'Envoyé au client',
                                     'accepted' => 'Accepté',
-                                    'expired'  => 'Expiré',
-                                    default    => $state,
+                                    'expired' => 'Expiré',
+                                    default => $state,
                                 }),
                             TextEntry::make('invoice.invoice_number')
                                 ->label('Facture associée')
@@ -119,19 +125,19 @@ class ViewQuote extends ViewRecord
                         ->schema([
                             TextEntry::make('subtotal')
                                 ->label('Sous-total')
-                                ->formatStateUsing(fn ($state): string =>
+                                ->formatStateUsing(fn($state): string =>
                                     QuoteResource::formatMoney((float) $state)),
                             TextEntry::make('discount_total')
                                 ->label('Remise')
-                                ->formatStateUsing(fn ($state): string =>
+                                ->formatStateUsing(fn($state): string =>
                                     QuoteResource::formatMoney((float) $state)),
                             TextEntry::make('tax_total')
                                 ->label('Taxes')
-                                ->formatStateUsing(fn ($state): string =>
+                                ->formatStateUsing(fn($state): string =>
                                     QuoteResource::formatMoney((float) $state)),
                             TextEntry::make('total')
                                 ->label('Total général')
-                                ->formatStateUsing(fn ($state): string =>
+                                ->formatStateUsing(fn($state): string =>
                                     QuoteResource::formatMoney((float) $state))
                                 ->size(TextEntry\TextEntrySize::Large),
                         ]),
