@@ -19,6 +19,10 @@ class WhatsappSendService
         $company = currentCompany();
         $client = $invoice->client;
 
+        if ($client === null) {
+            throw new \RuntimeException('Invoice #' . $invoice->invoice_number . ' has no associated client.');
+        }
+
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 
         $clientName = $client->company_name ?: $client->contact_name ?: 'Client';
@@ -73,6 +77,10 @@ class WhatsappSendService
         $company = currentCompany();
         $client = $quote->client;
 
+        if ($client === null) {
+            throw new \RuntimeException('Quote #' . $quote->quote_number . ' has no associated client.');
+        }
+
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 
         $clientName = $client->company_name ?: $client->contact_name ?: 'Client';
@@ -126,6 +134,10 @@ class WhatsappSendService
     {
         $company = currentCompany();
         $client = $invoice->client;
+
+        if ($client === null) {
+            throw new \RuntimeException('Invoice #' . $invoice->invoice_number . ' has no associated client.');
+        }
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 

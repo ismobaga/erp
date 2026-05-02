@@ -96,8 +96,6 @@ class Expense extends Model
         $this->forceFill([
             'approval_status' => 'rejected',
             'approval_notes' => $notes,
-            'approved_by' => $user->getKey(),
-            'approved_at' => now(),
         ])->save();
 
         $this->logActivity('expense_rejected', $user, $notes);
@@ -108,8 +106,6 @@ class Expense extends Model
         $this->forceFill([
             'approval_status' => 'review',
             'approval_notes' => $notes,
-            'approved_by' => $user->getKey(),
-            'approved_at' => now(),
         ])->save();
 
         $this->logActivity('expense_review_requested', $user, $notes);

@@ -61,6 +61,10 @@ class ReportSchedule extends Model
 
     public function nextRun(): Carbon
     {
+        if ($this->next_execution_at === null) {
+            return now();
+        }
+
         return match ($this->frequency) {
             'Quotidienne' => $this->next_execution_at->copy()->addDay(),
             'Mensuelle' => $this->next_execution_at->copy()->addMonth(),
@@ -114,6 +118,8 @@ class ReportSchedule extends Model
 
     public function nextExecutionLabel(): string
     {
-        return $this->next_execution_at->format('d M Y - H:i');
+        return $this->next_execution_at
+            ? $this->next_execution_at->format('d M Y - H:i')
+            : __('erp.reports.scheduled_statuses.never');
     }
 }

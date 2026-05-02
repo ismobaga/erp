@@ -84,10 +84,6 @@ class Project extends Model
     {
         $this->forceFill(['status' => 'in_progress'])->save();
 
-        if ($this->approval_status === 'pending') {
-            $this->forceFill(['approval_status' => 'approved'])->saveQuietly();
-        }
-
         if ($user = auth()->user()) {
             $this->logActivity('project_started', $user);
         }

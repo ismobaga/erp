@@ -15,7 +15,7 @@ class PhoneFormatter
             $phone = substr($phone, 2);
         }
 
-        $phone = preg_replace('/\D+/', '', $phone);
+        $phone = (string) preg_replace('/\D+/', '', $phone);
 
         if (! str_starts_with($phone, $defaultCountryCode) && strlen($phone) <= 8) {
             $phone = $defaultCountryCode . $phone;

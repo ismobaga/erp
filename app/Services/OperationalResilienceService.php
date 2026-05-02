@@ -37,24 +37,22 @@ class OperationalResilienceService
         // Build the payload incrementally to avoid loading the entire
         // database into a single PHP array (OOM risk on large datasets).
         $tableData = [];
-        $totalRecords = 0;
 
         foreach ($this->backupTables() as $table) {
             if (!Schema::hasTable($table)) {
                 continue;
             }
 
-            $rows = [];
-            DB::table($table)->orderBy('id')->chunk(500, function ($chunk) use (&$rows): void {
+            $tableRows = [];
+            DB::table($table)->orderBy('id')->chunk(500, function ($chunk) use (&$tableRows): void {
                 foreach ($chunk as $row) {
-                    $rows[] = (array) $row;
+                    $tableRows[] = (array) $row;
                 }
             });
 
-            $tableData[$table] = $rows;
+            $tableData[$table] = $tableRows;
             $metadata['tables'][] = $table;
-            $metadata['record_count'] += count($rows);
-            $totalRecords += count($rows);
+            $metadata['record_count'] += count($tableRows);
         }
 
         $payload = [
@@ -114,7 +112,10 @@ class OperationalResilienceService
                     $rows = $data[$table] ?? [];
 
                     if (!empty($rows)) {
-                        DB::table($table)->insert($rows);
+                        // Chunk inserts to stay within MySQL's max_allowed_packet.
+                        collect($rows)->chunk(500)->each(
+                            fn ($chunk) => DB::table($table)->insert($chunk->all())
+                        );
                     }
                 }
             });

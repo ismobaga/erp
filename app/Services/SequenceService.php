@@ -27,58 +27,53 @@ class SequenceService
     {
         $resolvedCompanyId = $companyId ?? (app()->bound('currentCompany') ? app('currentCompany')->id : null);
 
+        if ($resolvedCompanyId === null) {
+            throw new \RuntimeException(
+                "SequenceService::next() requires a company ID. Bind 'currentCompany' before calling this method, " .
+                "or pass \$companyId explicitly (required in queue workers and Artisan commands)."
+            );
+        }
+
         return DB::transaction(function () use ($key, $period, $resolvedCompanyId): int {
-            $query = DB::table('sequences')
+            $row = DB::table('sequences')
                 ->where('key', $key)
-                ->where('period', $period);
-
-            if ($resolvedCompanyId !== null) {
-                $query->where('company_id', $resolvedCompanyId);
-            }
-
-            $row = $query->lockForUpdate()->first();
+                ->where('period', $period)
+                ->where('company_id', $resolvedCompanyId)
+                ->lockForUpdate()
+                ->first();
 
             if ($row === null) {
-                $insert = [
-                    'key'      => $key,
-                    'period'   => $period,
-                    'next_val' => 2,
-                ];
-
-                if ($resolvedCompanyId !== null) {
-                    $insert['company_id'] = $resolvedCompanyId;
-                }
-
-                // Use insertOrIgnore to handle the case where a concurrent
-                // request inserts the same row between our SELECT and INSERT.
-                // If the insert is ignored (duplicate key), re-read and take
-                // the normal update path on the next iteration.
-                $inserted = DB::table('sequences')->insertOrIgnore($insert);
+                $inserted = DB::table('sequences')->insertOrIgnore([
+                    'key'        => $key,
+                    'period'     => $period,
+                    'company_id' => $resolvedCompanyId,
+                    'next_val'   => 2,
+                ]);
 
                 if ($inserted) {
                     return 1;
                 }
 
                 // Another request inserted first; fall through to the update path.
-                $row = $query->lockForUpdate()->first();
+                $row = DB::table('sequences')
+                    ->where('key', $key)
+                    ->where('period', $period)
+                    ->where('company_id', $resolvedCompanyId)
+                    ->lockForUpdate()
+                    ->first();
 
                 if ($row === null) {
-                    // Should not happen, but guard defensively.
                     return 1;
                 }
             }
 
             $current = (int) $row->next_val;
 
-            $updateQuery = DB::table('sequences')
+            DB::table('sequences')
                 ->where('key', $key)
-                ->where('period', $period);
-
-            if ($resolvedCompanyId !== null) {
-                $updateQuery->where('company_id', $resolvedCompanyId);
-            }
-
-            $updateQuery->update(['next_val' => $current + 1]);
+                ->where('period', $period)
+                ->where('company_id', $resolvedCompanyId)
+                ->update(['next_val' => $current + 1]);
 
             return $current;
         });

@@ -128,6 +128,12 @@ class Quote extends Model
 
     public function canBeAccepted(?CarbonInterface $at = null): bool
     {
+        // Only draft/sent quotes can be accepted; rejected, cancelled, and
+        // already-accepted quotes must not pass through this gate.
+        if (!in_array($this->status, ['draft', 'sent', 'expired'], true)) {
+            return false;
+        }
+
         if ($this->status !== 'expired') {
             return true;
         }

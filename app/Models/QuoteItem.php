@@ -35,6 +35,9 @@ class QuoteItem extends Model
             if ((float) $item->quantity <= 0) {
                 throw ValidationException::withMessages(['quantity' => 'La quantité doit être supérieure à zéro.']);
             }
+            if ((float) $item->unit_price < 0) {
+                throw ValidationException::withMessages(['unit_price' => 'Le prix unitaire ne peut pas être négatif.']);
+            }
             // Use BCMath to avoid float precision errors when multiplying
             // quantity × unit_price for high-value or fractional amounts.
             $item->line_total = Money::of((string) $item->quantity)

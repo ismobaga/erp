@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,6 +46,16 @@ class Payment extends Model
             'is_flagged' => 'boolean',
             'flagged_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Wrap every save in a transaction so the SELECT FOR UPDATE lock
+     * acquired in the `saving` hook is held through the actual INSERT/UPDATE,
+     * preventing concurrent overpayment race conditions.
+     */
+    public function save(array $options = []): bool
+    {
+        return DB::transaction(fn (): bool => parent::save($options));
     }
 
     public function flag(string $reason, int $userId): void
@@ -104,48 +115,46 @@ class Payment extends Model
                 return;
             }
 
-            // Wrap the lock + overpayment check in a transaction so that
-            // lockForUpdate() holds until the INSERT/UPDATE is committed,
-            // preventing concurrent payments from racing past the guard.
-            DB::transaction(function () use ($payment): void {
-                /** @var Invoice|null $invoice */
-                $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
+            // Lock the invoice row so that the guard holds until the
+            // surrounding transaction (provided by the overridden save())
+            // commits, preventing concurrent payments from racing past.
+            /** @var Invoice|null $invoice */
+            $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
 
-                if ($invoice === null) {
-                    return;
-                }
+            if ($invoice === null) {
+                return;
+            }
 
-                if ($invoice->status === 'cancelled') {
-                    throw ValidationException::withMessages([
-                        'invoice_id' => 'Cancelled invoices cannot accept new payments.',
-                    ]);
-                }
+            if ($invoice->status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'invoice_id' => 'Cancelled invoices cannot accept new payments.',
+                ]);
+            }
 
-                if (
-                    $payment->payment_date !== null
-                    && $invoice->issue_date !== null
-                    && now()->parse((string) $payment->payment_date)->lt(now()->parse((string) $invoice->issue_date))
-                ) {
-                    throw ValidationException::withMessages([
-                        'payment_date' => 'Payment date cannot be earlier than the invoice issue date.',
-                    ]);
-                }
+            if (
+                $payment->payment_date !== null
+                && $invoice->issue_date !== null
+                && Carbon::parse((string) $payment->payment_date)->lt(Carbon::parse((string) $invoice->issue_date))
+            ) {
+                throw ValidationException::withMessages([
+                    'payment_date' => 'Payment date cannot be earlier than the invoice issue date.',
+                ]);
+            }
 
-                if ($payment->allow_overpayment) {
-                    return;
-                }
+            if ($payment->allow_overpayment) {
+                return;
+            }
 
-                $otherPayments = (float) $invoice->payments()
-                    ->when($payment->exists, fn ($query) => $query->whereKeyNot($payment->getKey()))
-                    ->lockForUpdate()
-                    ->sum('amount');
+            $otherPayments = (float) $invoice->payments()
+                ->when($payment->exists, fn ($query) => $query->whereKeyNot($payment->getKey()))
+                ->lockForUpdate()
+                ->sum('amount');
 
-                if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
-                    throw ValidationException::withMessages([
-                        'amount' => 'Total paid cannot exceed invoice total unless overpayment is explicitly allowed.',
-                    ]);
-                }
-            });
+            if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Total paid cannot exceed invoice total unless overpayment is explicitly allowed.',
+                ]);
+            }
         });
 
         static::deleting(function (Payment $payment): void {

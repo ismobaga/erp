@@ -81,7 +81,10 @@ class GenerateScheduledReportJob implements ShouldQueue
         $schedule = ReportSchedule::find($this->scheduleId);
 
         if ($schedule) {
-            $schedule->forceFill(['status' => 'active'])->save();
+            $schedule->forceFill([
+                'status' => 'failed',
+                'next_execution_at' => $schedule->nextRun(),
+            ])->save();
 
             app(AuditTrailService::class)->log('scheduled_report_failed', null, [
                 'schedule_id' => $schedule->id,

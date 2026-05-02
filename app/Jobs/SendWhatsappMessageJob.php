@@ -6,11 +6,12 @@ use App\Models\WhatsappMessageLog;
 use App\Services\Whatsapp\GowaClient;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 
 class SendWhatsappMessageJob implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SerializesModels;
 
     public int $tries = 3;
 

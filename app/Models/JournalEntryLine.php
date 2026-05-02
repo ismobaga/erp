@@ -45,6 +45,13 @@ class JournalEntryLine extends Model
                     'credit' => 'A journal entry line cannot have both a debit and a credit amount.',
                 ]);
             }
+
+            if ($debit === 0.0 && $credit === 0.0) {
+                throw ValidationException::withMessages([
+                    'debit'  => 'A journal entry line must have either a debit or a credit amount.',
+                    'credit' => 'A journal entry line must have either a debit or a credit amount.',
+                ]);
+            }
         });
     }
 

@@ -63,6 +63,10 @@ class RecurringInvoice extends Model
      */
     public function advanceNextDueDate(): void
     {
+        if ($this->next_due_date === null) {
+            return;
+        }
+
         $next = $this->next_due_date->copy();
 
         $next = match ($this->frequency) {

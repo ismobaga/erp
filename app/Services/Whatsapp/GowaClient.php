@@ -27,6 +27,8 @@ class GowaClient
                 'message' => $message,
             ]);
 
+        $response->throw();
+
         return $response->json() ?? [];
     }
 
@@ -47,6 +49,8 @@ class GowaClient
             }
         }
 
+        $response->throw();
+
         return $response->json() ?? [];
     }
 
@@ -57,7 +61,7 @@ class GowaClient
         }
 
         $response = $this->client($deviceId)
-            ->get($this->baseUrl . '/devices/' . $deviceId . '/status');
+            ->get($this->baseUrl . '/devices/' . urlencode((string) $deviceId) . '/status');
 
         return $response->json() ?? [];
     }
@@ -69,7 +73,7 @@ class GowaClient
         }
 
         $response = $this->client($deviceId)
-            ->get($this->baseUrl . '/devices/' . $deviceId . '/login');
+            ->get($this->baseUrl . '/devices/' . urlencode((string) $deviceId) . '/login');
 
         return $response->json() ?? [];
     }

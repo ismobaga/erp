@@ -126,6 +126,10 @@ class JournalEntry extends Model
 
     public function post(?int $userId = null): void
     {
+        if ($this->status === 'posted') {
+            return;
+        }
+
         $this->loadMissing('lines');
 
         if (!$this->isBalanced()) {
@@ -154,6 +158,8 @@ class JournalEntry extends Model
         if ($this->status === 'voided') {
             return;
         }
+
+        FinancialPeriod::ensureDateIsOpen($this->entry_date, 'journal entry');
 
         $this->forceFill([
             'status' => 'voided',

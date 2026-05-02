@@ -65,6 +65,10 @@ class FinancialPeriod extends Model
 
     public function containsDate(CarbonInterface|string $date): bool
     {
+        if ($this->starts_on === null || $this->ends_on === null) {
+            return false;
+        }
+
         $subjectDate = $date instanceof CarbonInterface ? $date : Carbon::parse($date);
 
         return $subjectDate->betweenIncluded(
@@ -75,6 +79,10 @@ class FinancialPeriod extends Model
 
     public function close(?int $userId = null, ?string $notes = null): void
     {
+        if ($this->isClosed()) {
+            return;
+        }
+
         $resolvedNotes = $notes ?? $this->notes;
 
         $this->forceFill([
@@ -95,6 +103,10 @@ class FinancialPeriod extends Model
 
     public function reopen(?int $userId = null, ?string $notes = null): void
     {
+        if ($this->isOpen()) {
+            return;
+        }
+
         $resolvedNotes = $notes ?? $this->notes;
 
         $this->forceFill([
