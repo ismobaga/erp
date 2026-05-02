@@ -177,6 +177,7 @@ class PaymentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('payment_date', 'desc')
             ->columns([
                 TextColumn::make('reference')
                     ->label(__('erp.common.transaction'))

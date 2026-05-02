@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Company;
 use App\Models\ReportSchedule;
 use App\Services\AuditTrailService;
 use App\Services\ReportExportService;
@@ -20,11 +21,22 @@ class GenerateScheduledReportJob implements ShouldQueue
 
     public function __construct(
         public readonly int $scheduleId,
+        public readonly int $companyId,
     ) {
     }
 
     public function handle(ReportExportService $exportService, AuditTrailService $auditTrail): void
     {
+        // Bind the owning company so that all HasCompanyScope queries inside
+        // this job are correctly scoped to the right tenant.
+        $company = Company::find($this->companyId);
+
+        if ($company === null) {
+            return;
+        }
+
+        app()->instance('currentCompany', $company);
+
         /** @var ReportSchedule|null $schedule */
         $schedule = ReportSchedule::find($this->scheduleId);
 

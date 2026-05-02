@@ -129,7 +129,7 @@ class ReportExportService
                 continue;
             }
 
-            GenerateScheduledReportJob::dispatch($schedule->id);
+            GenerateScheduledReportJob::dispatch($schedule->id, $schedule->company_id);
             $processed++;
         }
 

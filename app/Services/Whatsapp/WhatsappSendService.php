@@ -3,7 +3,8 @@
 namespace App\Services\Whatsapp;
 
 use App\Models\Client;
-use App\Models\CompanySetting;
+use App\Models\Company;
+
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\WhatsappMessageLog;
@@ -15,7 +16,7 @@ class WhatsappSendService
 {
     public function sendInvoice(Invoice $invoice): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = currentCompany();
         $client = $invoice->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -69,7 +70,7 @@ class WhatsappSendService
 
     public function sendQuote(Quote $quote): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = currentCompany();
         $client = $quote->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -123,7 +124,7 @@ class WhatsappSendService
 
     public function sendPaymentReminder(Invoice $invoice): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = currentCompany();
         $client = $invoice->client;
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -172,7 +173,7 @@ class WhatsappSendService
 
     public function sendTextToClient(Client $client, string $message): WhatsappMessageLog
     {
-        $company = CompanySetting::query()->first();
+        $company = currentCompany();
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 
@@ -208,9 +209,9 @@ class WhatsappSendService
         return $log;
     }
 
-    private function generateInvoicePdf(Invoice $invoice, ?CompanySetting $company): string
+    private function generateInvoicePdf(Invoice $invoice, ?Company $company): string
     {
-        $companyName = $company?->company_name ?: config('app.name');
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
@@ -241,9 +242,9 @@ class WhatsappSendService
         return $filename;
     }
 
-    private function generateQuotePdf(Quote $quote, ?CompanySetting $company): string
+    private function generateQuotePdf(Quote $quote, ?Company $company): string
     {
-        $companyName = $company?->company_name ?: config('app.name');
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'quote' => $quote,

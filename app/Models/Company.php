@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invoice_default_notes',
     'quote_default_notes',
     'is_active',
+    'whatsapp_device_id',
+    'whatsapp_enabled',
 ])]
 class Company extends Model
 {
@@ -35,7 +37,18 @@ class Company extends Model
     {
         return [
             'is_active' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Backward-compatible accessor so that views and services that previously
+     * read `CompanySetting->company_name` continue to work with the unified
+     * Company model without requiring view changes.
+     */
+    public function getCompanyNameAttribute(): string
+    {
+        return $this->name;
     }
 
     public function users(): BelongsToMany

@@ -26,6 +26,7 @@ use Illuminate\Validation\ValidationException;
     'discount_total',
     'tax_total',
     'total',
+    'credit_total',
     'paid_total',
     'balance_due',
     'notes',
@@ -49,6 +50,7 @@ class Invoice extends Model
             'discount_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
             'total' => 'decimal:2',
+            'credit_total' => 'decimal:2',
             'paid_total' => 'decimal:2',
             'balance_due' => 'decimal:2',
         ];
@@ -157,7 +159,7 @@ class Invoice extends Model
                 ->sum('amount'),
         );
 
-        // Re-derive the raw subtotal by reversing the stored totals.
+        // Re-derive the raw subtotal from the stored totals.
         $storedTotal    = Money::of((string) $this->total);
         $storedDiscount = Money::of((string) $this->discount_total);
         $storedTax      = Money::of((string) $this->tax_total);
@@ -183,12 +185,15 @@ class Invoice extends Model
             ? Money::of((string) $taxComputation['total'])
             : $currentSubtotal->add($taxTotal);
 
-        $newTotal = Money::zero()->max($baseTotal->subtract($creditedTotal));
+        // Apply commercial discount first, then credit notes.
+        $afterDiscount = Money::zero()->max($baseTotal->subtract($storedDiscount));
+        $newTotal      = Money::zero()->max($afterDiscount->subtract($creditedTotal));
 
+        // credit_total tracks only credit note reductions; discount_total is preserved.
         $this->forceFill([
-            'discount_total' => $creditedTotal->toString(),
-            'tax_total'      => $taxTotal->toString(),
-            'total'          => $newTotal->toString(),
+            'credit_total' => $creditedTotal->toString(),
+            'tax_total'    => $taxTotal->toString(),
+            'total'        => $newTotal->toString(),
         ])->saveQuietly();
 
         $this->refreshFinancials();

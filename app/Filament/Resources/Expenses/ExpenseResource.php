@@ -133,6 +133,7 @@ class ExpenseResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('expense_date', 'desc')
             ->columns([
                 TextColumn::make('title')
                     ->label(__('erp.common.expense'))

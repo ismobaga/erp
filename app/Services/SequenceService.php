@@ -49,9 +49,23 @@ class SequenceService
                     $insert['company_id'] = $resolvedCompanyId;
                 }
 
-                DB::table('sequences')->insert($insert);
+                // Use insertOrIgnore to handle the case where a concurrent
+                // request inserts the same row between our SELECT and INSERT.
+                // If the insert is ignored (duplicate key), re-read and take
+                // the normal update path on the next iteration.
+                $inserted = DB::table('sequences')->insertOrIgnore($insert);
 
-                return 1;
+                if ($inserted) {
+                    return 1;
+                }
+
+                // Another request inserted first; fall through to the update path.
+                $row = $query->lockForUpdate()->first();
+
+                if ($row === null) {
+                    // Should not happen, but guard defensively.
+                    return 1;
+                }
             }
 
             $current = (int) $row->next_val;

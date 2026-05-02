@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\CompanySettings\Pages;
 
 use App\Filament\Resources\CompanySettings\CompanySettingResource;
-use App\Models\CompanySetting;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -16,15 +14,11 @@ class ListCompanySettings extends ListRecords
     {
         parent::mount();
 
-        $record = CompanySetting::query()->first();
+        $company = currentCompany();
 
-        if ($record) {
-            $this->redirect($this->getResource()::getUrl('edit', ['record' => $record]));
-
-            return;
+        if ($company) {
+            $this->redirect($this->getResource()::getUrl('edit', ['record' => $company]));
         }
-
-        $this->redirect($this->getResource()::getUrl('create'));
     }
 
     public function getTitle(): string|Htmlable
@@ -34,8 +28,6 @@ class ListCompanySettings extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make()->label('Initialiser les paramètres'),
-        ];
+        return [];
     }
 }

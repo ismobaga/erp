@@ -6,6 +6,7 @@ use App\Models\Concerns\HasCompanyScope;
 use App\Services\TaxProfileResolver;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
@@ -40,6 +41,11 @@ class Client extends Model
     public function portalUrl(): string
     {
         return route('portal.index', ['token' => $this->portal_token]);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function noteRecords(): MorphMany

@@ -29,6 +29,8 @@ return new class extends Migration {
             $table->text('invoice_default_notes')->nullable();
             $table->text('quote_default_notes')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->string('whatsapp_device_id')->nullable();
+            $table->boolean('whatsapp_enabled')->default(false);
             $table->timestamps();
         });
     }

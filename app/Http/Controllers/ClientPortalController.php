@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use App\Models\CompanySetting;
+use App\Models\Company;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
@@ -13,11 +13,14 @@ class ClientPortalController extends Controller
 {
     public function index(string $token): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        // withoutCompanyScope() is correct here: the portal is public, there
+        // is no authenticated session, and portal tokens are globally unique.
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
 
-        $company = CompanySetting::query()->first();
+        $company = $this->resolveCompany($client);
 
         $invoices = $client->invoices()
+            ->withoutCompanyScope()
             ->with(['items'])
             ->orderByDesc('issue_date')
             ->get();
@@ -32,15 +35,15 @@ class ClientPortalController extends Controller
 
     public function showInvoice(string $token, Invoice $invoice): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
 
         // Ensure this invoice belongs to the authenticated client.
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
 
         $invoice->loadMissing(['client', 'items.service', 'payments']);
 
-        $company = CompanySetting::query()->first();
-        $companyName = $company?->company_name ?: config('app.name');
+        $company = $this->resolveCompany($client);
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
@@ -61,13 +64,13 @@ class ClientPortalController extends Controller
 
     public function downloadPdf(string $token, Invoice $invoice): Response
     {
-        $client = Client::query()->where('portal_token', $token)->firstOrFail();
+        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
-        $company = CompanySetting::query()->first();
-        $companyName = $company?->company_name ?: config('app.name');
+        $company = $this->resolveCompany($client);
+        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'invoice' => $invoice,
@@ -91,6 +94,19 @@ class ClientPortalController extends Controller
             ])
             ->setPaper('a4')
             ->download($invoice->invoice_number.'.pdf');
+    }
+
+    /**
+     * Resolve the Company record that owns this client.
+     * Falls back to the first active company for single-tenant deployments.
+     */
+    protected function resolveCompany(Client $client): ?Company
+    {
+        if ($client->company_id !== null) {
+            return Company::find($client->company_id);
+        }
+
+        return Company::query()->where('is_active', true)->first();
     }
 
     protected function resolveLogoDataUri(?string $path): ?string

@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\CompanySetting;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -23,8 +22,8 @@ class StaffInviteMail extends Mailable
         public readonly string $temporaryPassword,
         public readonly string $roleLabel,
     ) {
-        $company = CompanySetting::query()->first();
-        $this->companyName = $company?->company_name ?? config('app.name', 'ERP');
+        $company = currentCompany();
+        $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->loginUrl = url('/admin/login');
     }

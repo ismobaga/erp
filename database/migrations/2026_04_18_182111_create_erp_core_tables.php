@@ -10,29 +10,6 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('company_settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('company_name');
-            $table->string('legal_name')->nullable();
-            $table->string('slogan')->nullable();
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('website')->nullable();
-            $table->string('address')->nullable();
-            $table->string('city')->nullable();
-            $table->string('country')->nullable();
-            $table->string('currency')->default('FCFA');
-            $table->string('tax_number')->nullable();
-            $table->string('logo_path')->nullable();
-            $table->text('invoice_default_notes')->nullable();
-            $table->text('quote_default_notes')->nullable();
-            $table->string('bank_name')->nullable()->after('invoice_default_notes');
-            $table->string('bank_account_name')->nullable()->after('bank_name');
-            $table->string('bank_account_number')->nullable()->after('bank_account_name');
-            $table->string('bank_swift_code')->nullable()->after('bank_account_number');
-            $table->timestamps();
-        });
-
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->string('type');
@@ -251,6 +228,5 @@ return new class extends Migration {
         Schema::dropIfExists('quotes');
         Schema::dropIfExists('services');
         Schema::dropIfExists('clients');
-        Schema::dropIfExists('company_settings');
     }
 };

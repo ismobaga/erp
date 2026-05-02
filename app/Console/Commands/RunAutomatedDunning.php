@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Company;
 use App\Services\DunningService;
 use Illuminate\Console\Command;
 
@@ -13,10 +14,19 @@ class RunAutomatedDunning extends Command
 
     public function handle(DunningService $dunningService): int
     {
-        $count = $dunningService->runAutomatedDunning();
+        $totalCount = 0;
 
-        if ($count > 0) {
-            $this->info(trans('erp.dunning.auto_dunning_run', ['count' => $count]));
+        // Iterate over every active company so that HasCompanyScope isolates
+        // each tenant's overdue invoices correctly.
+        Company::query()->where('is_active', true)->each(function (Company $company) use ($dunningService, &$totalCount): void {
+            app()->instance('currentCompany', $company);
+
+            $count = $dunningService->runAutomatedDunning();
+            $totalCount += $count;
+        });
+
+        if ($totalCount > 0) {
+            $this->info(trans('erp.dunning.auto_dunning_run', ['count' => $totalCount]));
         } else {
             $this->info(trans('erp.dunning.no_auto_dunning'));
         }
