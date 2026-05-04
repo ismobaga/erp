@@ -6,6 +6,8 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,12 +20,15 @@ class DatabaseSeeder extends Seeder
         // Create the default company first so that subsequent seeders that
         // create company-scoped records (e.g. LedgerAccountsSeeder) have a
         // valid company_id to attach to.
+        $companyName = env('COMPANY_NAME', 'My Company');
+        $companySlug = env('COMPANY_SLUG', Str::slug($companyName));
+
         $company = Company::firstOrCreate(
-            ['slug' => 'crommix-mali'],
+            ['slug' => $companySlug],
             [
-                'name'      => env('COMPANY_NAME', 'CROMMIX MALI - SA'),
-                'currency'  => 'FCFA',
-                'email'     => env('COMPANY_EMAIL', 'contact@crommixmali.com'),
+                'name'      => $companyName,
+                'currency'  => env('COMPANY_CURRENCY', 'FCFA'),
+                'email'     => env('COMPANY_EMAIL', 'contact@example.com'),
                 'is_active' => true,
             ],
         );
@@ -35,11 +40,25 @@ class DatabaseSeeder extends Seeder
 
         $this->call(LedgerAccountsSeeder::class);
 
-        $user = User::factory()->create([
-            'name'   => 'Super Admin',
-            'email'  => env('ADMIN_EMAIL', 'admin@example.com'),
-            'status' => 'active',
-        ]);
+        $adminEmail    = env('ADMIN_EMAIL', 'admin@example.com');
+        $adminPassword = env('ADMIN_PASSWORD');
+
+        abort_if(
+            app()->isProduction() && blank($adminPassword),
+            1,
+            'ADMIN_PASSWORD must be set before seeding in production.',
+        );
+
+        // Use firstOrCreate so re-running the seeder does not produce duplicates.
+        $user = User::firstOrCreate(
+            ['email' => $adminEmail],
+            [
+                'name'              => env('ADMIN_NAME', 'Super Admin'),
+                'password'          => Hash::make($adminPassword ?? 'password'),
+                'email_verified_at' => now(),
+                'status'            => 'active',
+            ],
+        );
 
         $user->assignRole('Super Admin');
 
