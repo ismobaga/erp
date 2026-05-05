@@ -43,10 +43,12 @@ class LedgerAccountsSeeder extends Seeder
             ['code' => '5900', 'name' => 'Other Expenses',         'type' => 'expense',   'normal_balance' => 'debit',  'category' => 'operating_expense', 'parent_code' => '5000'],
         ];
 
+        $companyId = app('currentCompany')->id;
+
         // First pass: upsert all accounts without parent linkage
         foreach ($accounts as $data) {
             LedgerAccount::updateOrCreate(
-                ['code' => $data['code']],
+                ['company_id' => $companyId, 'code' => $data['code']],
                 [
                     'name' => $data['name'],
                     'type' => $data['type'],
