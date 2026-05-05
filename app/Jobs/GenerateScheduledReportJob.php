@@ -23,7 +23,7 @@ class GenerateScheduledReportJob implements ShouldQueue
 
     public function __construct(
         public readonly int $scheduleId,
-        public readonly int $companyId,
+        public readonly int $companyId = 0,
     ) {
     }
 
@@ -89,7 +89,7 @@ class GenerateScheduledReportJob implements ShouldQueue
 
         if ($schedule) {
             $schedule->forceFill([
-                'status' => 'failed',
+                'status' => 'active',
                 'next_execution_at' => $schedule->nextRun(),
             ])->save();
 

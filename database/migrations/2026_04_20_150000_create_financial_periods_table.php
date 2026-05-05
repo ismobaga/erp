@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('financial_periods', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('code')->unique();
             $table->date('starts_on');

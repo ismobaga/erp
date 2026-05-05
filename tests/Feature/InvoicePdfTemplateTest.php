@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
-use App\Models\CompanySetting;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\User;
@@ -24,8 +24,8 @@ class InvoicePdfTemplateTest extends TestCase
 
     public function test_authorized_user_can_view_the_invoice_pdf_template(): void
     {
-        CompanySetting::create([
-            'company_name' => 'CROMMIX MALI S.A.',
+        $this->setUpCompany(Company::create([
+            'name' => 'CROMMIX MALI S.A.',
             'email' => 'contact@crommix-mali.com',
             'phone' => '+223 20 22 45 88',
             'address' => 'Zone Industrielle, Rue 14',
@@ -34,7 +34,8 @@ class InvoicePdfTemplateTest extends TestCase
             'currency' => 'FCFA',
             'tax_number' => '1234567890',
             'invoice_default_notes' => 'Paiement dû sous 30 jours.',
-        ]);
+            'is_active' => true,
+        ]));
 
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
@@ -78,10 +79,11 @@ class InvoicePdfTemplateTest extends TestCase
 
     public function test_overdue_invoice_displays_a_visible_watermark(): void
     {
-        CompanySetting::create([
-            'company_name' => 'CROMMIX MALI S.A.',
+        $this->setUpCompany(Company::create([
+            'name' => 'CROMMIX MALI S.A.',
             'currency' => 'FCFA',
-        ]);
+            'is_active' => true,
+        ]));
 
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
@@ -117,8 +119,8 @@ class InvoicePdfTemplateTest extends TestCase
 
     public function test_authorized_user_can_download_a_real_invoice_pdf(): void
     {
-        CompanySetting::create([
-            'company_name' => 'CROMMIX MALI S.A.',
+        $this->setUpCompany(Company::create([
+            'name' => 'CROMMIX MALI S.A.',
             'email' => 'contact@crommix-mali.com',
             'phone' => '+223 20 22 45 88',
             'address' => 'Zone Industrielle, Rue 14',
@@ -126,7 +128,8 @@ class InvoicePdfTemplateTest extends TestCase
             'country' => 'Mali',
             'currency' => 'FCFA',
             'tax_number' => '1234567890',
-        ]);
+            'is_active' => true,
+        ]));
 
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');

@@ -66,8 +66,8 @@ class ReportSchedule extends Model
         }
 
         return match ($this->frequency) {
-            'daily' => $this->next_execution_at->copy()->addDay(),
-            'monthly' => $this->next_execution_at->copy()->addMonth(),
+            'Quotidienne', 'daily' => $this->next_execution_at->copy()->addDay(),
+            'Mensuelle', 'monthly' => $this->next_execution_at->copy()->addMonth(),
             default => $this->next_execution_at->copy()->addWeek(),
         };
     }
@@ -85,8 +85,8 @@ class ReportSchedule extends Model
     public function formatFrequencyLabel(): string
     {
         return match ($this->frequency) {
-            'daily' => __('erp.reports.schedule_frequencies.daily'),
-            'monthly' => __('erp.reports.schedule_frequencies.monthly'),
+            'Quotidienne', 'daily' => __('erp.reports.schedule_frequencies.daily'),
+            'Mensuelle', 'monthly' => __('erp.reports.schedule_frequencies.monthly'),
             default => __('erp.reports.schedule_frequencies.weekly'),
         };
     }

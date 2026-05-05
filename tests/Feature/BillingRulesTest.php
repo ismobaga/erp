@@ -413,7 +413,7 @@ class BillingRulesTest extends TestCase
 
         $invoice->refresh();
 
-        $this->assertSame('250.00', $invoice->discount_total);
+        $this->assertSame('250.00', $invoice->credit_total);
         $this->assertSame('750.00', $invoice->total);
         $this->assertSame('750.00', $invoice->balance_due);
         $this->assertDatabaseHas('activity_logs', [
