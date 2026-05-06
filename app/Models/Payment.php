@@ -55,7 +55,7 @@ class Payment extends Model
      */
     public function save(array $options = []): bool
     {
-        return DB::transaction(fn (): bool => parent::save($options));
+        return DB::transaction(fn(): bool => parent::save($options));
     }
 
     public function flag(string $reason, int $userId): void
@@ -99,7 +99,7 @@ class Payment extends Model
             }
 
             $referenceRequiredMethods = array_map(
-                static fn (string $method): string => static::normalizePaymentMethod($method),
+                static fn(string $method): string => static::normalizePaymentMethod($method),
                 config('erp.billing.payment_reference_required_methods', [])
             );
 
@@ -125,6 +125,14 @@ class Payment extends Model
                 return;
             }
 
+            // Defensive check: if both payment and invoice have company_id set,
+            // they must match (HasCompanyScope should ensure this, but this is a safety check)
+            if ($invoice->company_id && $payment->company_id && $invoice->company_id !== $payment->company_id) {
+                throw ValidationException::withMessages([
+                    'invoice_id' => 'The selected invoice does not belong to this company.',
+                ]);
+            }
+
             if ($invoice->status === 'cancelled') {
                 throw ValidationException::withMessages([
                     'invoice_id' => 'Cancelled invoices cannot accept new payments.',
@@ -146,8 +154,7 @@ class Payment extends Model
             }
 
             $otherPayments = (float) $invoice->payments()
-                ->when($payment->exists, fn ($query) => $query->whereKeyNot($payment->getKey()))
-                ->lockForUpdate()
+                ->when($payment->exists, fn($query) => $query->whereKeyNot($payment->getKey()))
                 ->sum('amount');
 
             if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
@@ -201,13 +208,13 @@ class Payment extends Model
             ->where('client_id', $this->client_id)
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->where('balance_due', '>', 0)
-            ->when(! $this->allow_overpayment, fn ($query) => $query->where('balance_due', '>=', (float) $this->amount))
+            ->when(!$this->allow_overpayment, fn($query) => $query->where('balance_due', '>=', (float) $this->amount))
             ->orderByRaw('case when due_date is null then 1 else 0 end')
             ->orderBy('due_date')
             ->orderBy('issue_date')
             ->first();
 
-        if (! $candidate) {
+        if (!$candidate) {
             return false;
         }
 

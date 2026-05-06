@@ -89,7 +89,8 @@ class PaymentResource extends Resource
                                             return;
                                         }
 
-                                        $invoice = Invoice::find($state);
+                                        // Use query builder to respect company scope instead of ::find()
+                                        $invoice = Invoice::query()->whereKey($state)->first();
 
                                         if (!$invoice) {
                                             return;

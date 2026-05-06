@@ -22,7 +22,7 @@ class CreateQuote extends CreateRecord
     {
         $data['created_by'] = auth()->id();
         $data['updated_by'] = auth()->id();
-        $data['quote_number'] = $data['quote_number'] ?: QuoteResource::generateQuoteNumber();
+        $data['quote_number'] = $data['quote_number'] ?: QuoteResource::generateQuoteNumber($data['company_id'] ?? null);
 
         return $data;
     }

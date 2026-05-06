@@ -301,12 +301,27 @@ class QuoteResource extends Resource
         ];
     }
 
-    public static function generateQuoteNumber(): string
+    /**
+     * Generate a quote number for Filament forms.
+     *
+     * @param int|null $companyId Company to scope the sequence to
+     */
+    public static function generateQuoteNumber(?int $companyId = null): string
     {
+        // If company_id not provided, try to resolve from current context
+        if (!$companyId) {
+            if (app()->bound('currentCompany')) {
+                $companyId = app('currentCompany')->id;
+            } elseif (auth()->check()) {
+                // Fallback to user's first company (multi-tenant pattern)
+                $companyId = auth()->user()->companies()->first()?->id;
+            }
+        }
+
         $year = now()->format('Y');
         $prefix = 'QT-' . $year;
         $sep = '-';
-        $seq = app(SequenceService::class)->next('quote', $year);
+        $seq = app(SequenceService::class)->next('quote', $year, $companyId);
 
         return $prefix . $sep . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }

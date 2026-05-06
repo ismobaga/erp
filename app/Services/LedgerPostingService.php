@@ -106,6 +106,7 @@ class LedgerPostingService
             lines: $lines,
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($invoice->issue_date),
+            companyId: $companyId,
         );
     }
 
@@ -158,6 +159,7 @@ class LedgerPostingService
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($payment->payment_date),
+            companyId: $companyId,
         );
     }
 
@@ -210,6 +212,7 @@ class LedgerPostingService
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($expense->expense_date),
+            companyId: $companyId,
         );
     }
 
@@ -260,6 +263,7 @@ class LedgerPostingService
             ],
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($creditNote->issue_date),
+            companyId: $companyId,
         );
     }
 
@@ -335,8 +339,9 @@ class LedgerPostingService
         array $lines,
         ?int $userId,
         ?int $financialPeriodId,
+        ?int $companyId = null,
     ): JournalEntry {
-        return DB::transaction(function () use ($date, $description, $sourceType, $sourceId, $lines, $userId, $financialPeriodId): JournalEntry {
+        return DB::transaction(function () use ($date, $description, $sourceType, $sourceId, $lines, $userId, $financialPeriodId, $companyId): JournalEntry {
             $existing = JournalEntry::query()
                 ->where('source_type', $sourceType)
                 ->where('source_id', $sourceId)
@@ -354,7 +359,7 @@ class LedgerPostingService
             }
 
             $entry = JournalEntry::create([
-                'entry_number' => $this->generateEntryNumber($date),
+                'entry_number' => $this->generateEntryNumber($date, $companyId),
                 'entry_date' => $date,
                 'description' => $description,
                 'status' => 'draft',
@@ -409,12 +414,17 @@ class LedgerPostingService
         return null;
     }
 
-    private function generateEntryNumber(string $date): string
+    private function generateEntryNumber(string $date, ?int $companyId = null): string
     {
         $year = substr($date, 0, 4);
         $prefix = 'JE-' . $year . '-';
 
-        $seq = $this->sequences->next('journal_entry', $year);
+        // Resolve company_id from currentCompany binding if not provided
+        if (!$companyId && app()->bound('currentCompany')) {
+            $companyId = app('currentCompany')->id;
+        }
+
+        $seq = $this->sequences->next('journal_entry', $year, $companyId);
 
         return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
