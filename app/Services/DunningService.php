@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\DunningLog;
 use App\Models\Invoice;
 use App\Services\AuditTrailService;
+use App\Services\Whatsapp\WhatsappSendService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class DunningService
 {
@@ -140,6 +142,8 @@ class DunningService
 
     /**
      * Process all eligible invoices and dispatch automated reminders.
+     * When WhatsApp is enabled for the current company and the client has a
+     * phone number, a WhatsApp dunning message is also sent.
      * Returns the count of reminders dispatched.
      */
     public function runAutomatedDunning(?int $systemUserId = null): int
@@ -149,10 +153,40 @@ class DunningService
 
         foreach ($invoices as $invoice) {
             $this->logReminder($invoice, 'email', $systemUserId);
+            $this->tryWhatsappDunning($invoice, $systemUserId);
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * Attempt to send a WhatsApp dunning notification if WhatsApp is enabled
+     * for the current company and the invoice's client has a phone number.
+     */
+    private function tryWhatsappDunning(Invoice $invoice, ?int $sentBy = null): void
+    {
+        $company = currentCompany();
+
+        if (!$company || !$company->whatsapp_enabled || blank($company->whatsapp_device_id)) {
+            return;
+        }
+
+        $client = $invoice->client;
+
+        if ($client === null || blank($client->phone)) {
+            return;
+        }
+
+        try {
+            app(WhatsappSendService::class)->sendPaymentReminder($invoice);
+            $this->logReminder($invoice, 'whatsapp', $sentBy);
+        } catch (\Throwable $e) {
+            Log::warning('WhatsApp dunning notification failed.', [
+                'invoice_id' => $invoice->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
     }
 
     public function daysOverdue(Invoice $invoice): int

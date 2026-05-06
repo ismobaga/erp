@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable([
+    'conversation_id',
     'sendable_type',
     'sendable_id',
     'client_id',
@@ -18,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'file_path',
     'status',
     'gowa_message_id',
+    'ack_status',
+    'delivered_at',
+    'read_at',
     'response',
     'error_message',
     'sent_by',
@@ -30,8 +34,10 @@ class WhatsappMessageLog extends Model
     protected function casts(): array
     {
         return [
-            'response' => 'array',
-            'sent_at' => 'datetime',
+            'response'     => 'array',
+            'sent_at'      => 'datetime',
+            'delivered_at' => 'datetime',
+            'read_at'      => 'datetime',
         ];
     }
 
@@ -48,5 +54,10 @@ class WhatsappMessageLog extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
+    }
+
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(WhatsappConversation::class, 'conversation_id');
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\PaymentPdfController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
+use App\Http\Controllers\WhatsappWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public company / marketing pages ─────────────────────────────────────────
@@ -66,3 +67,9 @@ Route::prefix('portal/{token}')->middleware('throttle:portal')->group(function (
     Route::get('/invoices/{invoice}', [ClientPortalController::class, 'showInvoice'])->whereNumber('invoice')->name('portal.invoice');
     Route::get('/invoices/{invoice}/pdf', [ClientPortalController::class, 'downloadPdf'])->whereNumber('invoice')->name('portal.invoice.pdf');
 });
+
+// ── GoWA Webhook (public, verified via X-Gowa-Secret header) ─────────────────
+Route::post('/webhooks/gowa', WhatsappWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('webhooks.gowa')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
