@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->string('code')->unique();
+            $table->string('code');
             $table->date('starts_on');
             $table->date('ends_on');
             $table->string('status')->default('open');
@@ -26,6 +26,8 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['status', 'starts_on', 'ends_on']);
+            $table->unique(['company_id', 'code'], 'financial_periods_company_id_code_unique');
+
         });
     }
 

@@ -35,18 +35,21 @@ return new class extends Migration {
             $table->foreignId('company_id')
                 ->constrained('companies')
                 ->cascadeOnDelete();
-            $table->string('code')->unique();
+            $table->string('code');
             $table->string('name');
             $table->string('category')->nullable();
             $table->text('description')->nullable();
             $table->decimal('default_price', 15, 2);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->unique(['company_id', 'code'], 'services_company_id_code_unique');
+
         });
 
         Schema::create('quotes', function (Blueprint $table) {
             $table->id();
-            $table->string('quote_number')->unique();
+            $table->string('quote_number');
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->date('issue_date');
@@ -62,6 +65,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['company_id', 'status', 'issue_date'], 'quotes_company_status_date_index');
+            $table->unique(['company_id', 'quote_number'], 'quotes_company_id_quote_number_unique');
 
         });
 
@@ -80,7 +84,7 @@ return new class extends Migration {
 
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
-            $table->string('invoice_number')->unique();
+            $table->string('invoice_number');
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('clients')->cascadeOnDelete();
             $table->foreignId('quote_id')->nullable()->constrained('quotes')->nullOnDelete();
@@ -101,6 +105,7 @@ return new class extends Migration {
 
             $table->index(['company_id', 'status', 'due_date'], 'invoices_company_status_due_date_index');
             $table->index(['company_id', 'issue_date'], 'invoices_company_issue_date_index');
+            $table->unique(['company_id', 'invoice_number'], 'invoices_company_id_invoice_number_unique');
 
         });
 

@@ -317,10 +317,18 @@ class OperationalResilienceService
 
     protected function backupTables(): array
     {
+        // Order matters: parent tables before child tables so that the restore
+        // path (which reverses this list before deleting rows) can satisfy FK
+        // constraints. Self-referencing FKs (ledger_accounts.parent_id,
+        // journal_entries.reversal_of) are defined with nullOnDelete(), so they
+        // do not block deletion order.
         return [
             'companies',
             'clients',
             'services',
+            'financial_periods',
+            'sequences',
+            'ledger_accounts',
             'quotes',
             'quote_items',
             'invoices',
@@ -329,8 +337,14 @@ class OperationalResilienceService
             'credit_notes',
             'expenses',
             'projects',
+            'notes',
             'attachments',
-            'financial_periods',
+            'recurring_invoices',
+            'journal_entries',
+            'journal_entry_lines',
+            'dunning_logs',
+            'report_schedules',
+            'whatsapp_message_logs',
             'activity_logs',
         ];
     }
