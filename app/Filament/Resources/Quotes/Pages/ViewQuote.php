@@ -8,6 +8,7 @@ use App\Models\Quote;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Enums\TextSize;
 use Filament\Support\Icons\Heroicon;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
@@ -139,7 +140,7 @@ class ViewQuote extends ViewRecord
                                 ->label('Total général')
                                 ->formatStateUsing(fn($state): string =>
                                     QuoteResource::formatMoney((float) $state))
-                                ->size(TextEntry\TextEntrySize::Large),
+                                ->size(TextSize::Large),
                         ]),
 
                     // ── Notes ─────────────────────────────────────────────────

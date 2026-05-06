@@ -26,7 +26,6 @@ class SequenceService
     public function next(string $key, string $period, ?int $companyId = null): int
     {
         $resolvedCompanyId = $companyId ?? (app()->bound('currentCompany') ? app('currentCompany')->id : null);
-
         if ($resolvedCompanyId === null) {
             throw new \RuntimeException(
                 "SequenceService::next() requires a company ID. Bind 'currentCompany' before calling this method, " .
@@ -44,10 +43,10 @@ class SequenceService
 
             if ($row === null) {
                 $inserted = DB::table('sequences')->insertOrIgnore([
-                    'key'        => $key,
-                    'period'     => $period,
+                    'key' => $key,
+                    'period' => $period,
                     'company_id' => $resolvedCompanyId,
-                    'next_val'   => 2,
+                    'next_val' => 2,
                 ]);
 
                 if ($inserted) {

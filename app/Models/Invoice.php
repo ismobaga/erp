@@ -70,7 +70,10 @@ class Invoice extends Model
 
         static::creating(function (Invoice $invoice): void {
             if (blank($invoice->invoice_number)) {
-                $invoice->invoice_number = app(InvoiceNumberService::class)->generate($invoice->issue_date);
+                $invoice->invoice_number = app(InvoiceNumberService::class)->generateForCompany(
+                    $invoice->issue_date,
+                    $invoice->company_id,
+                );
             }
         });
 
@@ -140,12 +143,12 @@ class Invoice extends Model
             : $subtotal->add($taxTotal);
 
         $discount = Money::of((string) $this->discount_total);
-        $total    = Money::zero()->max($baseTotal->subtract($discount));
+        $total = Money::zero()->max($baseTotal->subtract($discount));
 
         $this->forceFill([
-            'subtotal'  => $subtotal->toString(),
+            'subtotal' => $subtotal->toString(),
             'tax_total' => $taxTotal->toString(),
-            'total'     => $total->toString(),
+            'total' => $total->toString(),
         ])->saveQuietly();
 
         $this->refreshFinancials();
@@ -160,9 +163,9 @@ class Invoice extends Model
         );
 
         // Re-derive the raw subtotal from the stored totals.
-        $storedTotal    = Money::of((string) $this->total);
+        $storedTotal = Money::of((string) $this->total);
         $storedDiscount = Money::of((string) $this->discount_total);
-        $storedTax      = Money::of((string) $this->tax_total);
+        $storedTax = Money::of((string) $this->tax_total);
         $storedSubtotal = Money::of((string) $this->subtotal);
 
         $currentSubtotal = $storedSubtotal->isZero()
@@ -187,13 +190,13 @@ class Invoice extends Model
 
         // Apply commercial discount first, then credit notes.
         $afterDiscount = Money::zero()->max($baseTotal->subtract($storedDiscount));
-        $newTotal      = Money::zero()->max($afterDiscount->subtract($creditedTotal));
+        $newTotal = Money::zero()->max($afterDiscount->subtract($creditedTotal));
 
         // credit_total tracks only credit note reductions; discount_total is preserved.
         $this->forceFill([
             'credit_total' => $creditedTotal->toString(),
-            'tax_total'    => $taxTotal->toString(),
-            'total'        => $newTotal->toString(),
+            'tax_total' => $taxTotal->toString(),
+            'total' => $newTotal->toString(),
         ])->saveQuietly();
 
         $this->refreshFinancials();
@@ -202,17 +205,17 @@ class Invoice extends Model
     public function refreshFinancials(): void
     {
         // Use BCMath Money to avoid float precision drift when summing payments.
-        $paidMoney  = Money::of((string) $this->payments()->sum('amount'));
+        $paidMoney = Money::of((string) $this->payments()->sum('amount'));
         $totalMoney = Money::of((string) $this->total);
         $balanceMoney = Money::zero()->max($totalMoney->subtract($paidMoney));
 
-        $paidTotal  = $paidMoney->toFloat();
+        $paidTotal = $paidMoney->toFloat();
         $balanceDue = $balanceMoney->toFloat();
 
         // Statuses that must never be silently overridden by financial recomputation.
         if ($this->status === 'cancelled') {
             $this->forceFill([
-                'paid_total'  => $paidMoney->toString(),
+                'paid_total' => $paidMoney->toString(),
                 'balance_due' => $balanceMoney->toString(),
             ])->saveQuietly();
 
@@ -225,7 +228,7 @@ class Invoice extends Model
         // is effectively open, so we allow status to advance normally.
         if ($this->status === 'draft' && $paidMoney->isZero()) {
             $this->forceFill([
-                'paid_total'  => $paidMoney->toString(),
+                'paid_total' => $paidMoney->toString(),
                 'balance_due' => $balanceMoney->toString(),
             ])->saveQuietly();
 
@@ -243,15 +246,15 @@ class Invoice extends Model
         // allowed transitions and will prevent illegal status jumps.
         $newStatus = InvoiceStateMachine::computeNext(
             currentStatus: (string) $this->status,
-            total:         $totalMoney->toFloat(),
-            paidTotal:     $paidTotal,
-            isOverdue:     $isOverdue,
+            total: $totalMoney->toFloat(),
+            paidTotal: $paidTotal,
+            isOverdue: $isOverdue,
         );
 
         $this->forceFill([
-            'paid_total'  => $paidMoney->toString(),
+            'paid_total' => $paidMoney->toString(),
             'balance_due' => $balanceMoney->toString(),
-            'status'      => $newStatus,
+            'status' => $newStatus,
         ])->saveQuietly();
     }
 }

@@ -26,7 +26,10 @@ class CreateInvoice extends CreateRecord
         $invoiceNumber = $data['invoice_number'] ?? null;
         $data['invoice_number'] = filled($invoiceNumber)
             ? $invoiceNumber
-            : InvoiceResource::generateInvoiceNumber($data['issue_date'] ?? now());
+            : InvoiceResource::generateInvoiceNumber(
+                $data['issue_date'] ?? now(),
+                $data['company_id'] ?? null,
+            );
 
         return $data;
     }

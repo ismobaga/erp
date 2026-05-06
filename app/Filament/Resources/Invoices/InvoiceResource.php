@@ -229,7 +229,7 @@ class InvoiceResource extends Resource
     {
         return $table
             ->defaultSort('issue_date', 'desc')
-            ->recordUrl(fn (Invoice $record): string => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn(Invoice $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('invoice_number')
                     ->label(__('erp.common.invoice'))
@@ -409,15 +409,35 @@ class InvoiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListInvoices::route('/'),
+            'index' => ListInvoices::route('/'),
             'create' => CreateInvoice::route('/create'),
-            'view'   => ViewInvoice::route('/{record}'),
-            'edit'   => EditInvoice::route('/{record}/edit'),
+            'view' => ViewInvoice::route('/{record}'),
+            'edit' => EditInvoice::route('/{record}/edit'),
         ];
     }
 
-    public static function generateInvoiceNumber(mixed $issueDate = null): string
+    /**
+     * Generate an invoice number for Filament forms.
+     *
+     * @param mixed $issueDate Invoice issue date
+     * @param int|null $companyId Company to scope the sequence to
+     */
+    public static function generateInvoiceNumber(mixed $issueDate = null, ?int $companyId = null): string
     {
-        return app(InvoiceNumberService::class)->generate($issueDate ?? now());
+        // If company_id not provided, try to resolve from current context
+        if (!$companyId) {
+            if (app()->bound('currentCompany')) {
+                $companyId = app('currentCompany')->id;
+            } elseif (auth()->check()) {
+                // Fallback to user's first company (multi-tenant pattern)
+                $companyId = auth()->user()->companies()->first()?->id;
+            }
+        }
+
+        // Use explicit company_id to avoid currentCompany binding dependency
+        return app(InvoiceNumberService::class)->generateForCompany(
+            $issueDate ?? now(),
+            $companyId,
+        );
     }
 }
