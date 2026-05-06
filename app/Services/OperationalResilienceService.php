@@ -170,6 +170,99 @@ class OperationalResilienceService
         ];
     }
 
+    /**
+     * Return details of failed jobs for monitoring.
+     */
+    public function failedJobFeed(int $limit = 10): array
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return [];
+        }
+
+        return DB::table('failed_jobs')
+            ->orderByDesc('failed_at')
+            ->take($limit)
+            ->get()
+            ->map(function (object $row): array {
+                $payload = json_decode((string) ($row->payload ?? '{}'), true);
+                $jobClass = data_get($payload, 'displayName', data_get($payload, 'job', 'Unknown'));
+
+                return [
+                    'uuid' => (string) ($row->uuid ?? ''),
+                    'job' => is_string($jobClass) ? class_basename($jobClass) : 'Unknown',
+                    'queue' => (string) ($row->queue ?? 'default'),
+                    'exception' => mb_substr((string) ($row->exception ?? ''), 0, 256),
+                    'failed_at' => isset($row->failed_at)
+                        ? now()->createFromTimestamp(is_numeric($row->failed_at) ? (int) $row->failed_at : strtotime((string) $row->failed_at))->diffForHumans()
+                        : 'unknown',
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * Retry a specific failed job by UUID and log the action.
+     * Returns true when the job was found and re-queued, false otherwise.
+     */
+    public function retryFailedJob(string $uuid, ?int $userId = null): bool
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return false;
+        }
+
+        $row = DB::table('failed_jobs')->where('uuid', $uuid)->first();
+
+        if ($row === null) {
+            return false;
+        }
+
+        try {
+            $payload = json_decode((string) ($row->payload ?? '{}'), true, 512, JSON_THROW_ON_ERROR);
+            $connection = (string) ($row->connection ?? 'database');
+            $queue = (string) ($row->queue ?? 'default');
+
+            DB::connection($connection)->table($queue === 'default' ? 'jobs' : $queue)->insert([
+                'queue' => $queue,
+                'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES),
+                'attempts' => 0,
+                'reserved_at' => null,
+                'available_at' => now()->getTimestamp(),
+                'created_at' => now()->getTimestamp(),
+            ]);
+
+            DB::table('failed_jobs')->where('uuid', $uuid)->delete();
+
+            app(AuditTrailService::class)->log('failed_job_retried', null, [
+                'uuid' => $uuid,
+                'job' => data_get($payload, 'displayName', 'unknown'),
+                'queue' => $queue,
+            ], $userId);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Purge all failed jobs and log the action.
+     */
+    public function purgeFailedJobs(?int $userId = null): int
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return 0;
+        }
+
+        $count = (int) DB::table('failed_jobs')->count();
+        DB::table('failed_jobs')->delete();
+
+        app(AuditTrailService::class)->log('failed_jobs_purged', null, [
+            'count' => $count,
+        ], $userId);
+
+        return $count;
+    }
+
     public function dashboardSummary(): array
     {
         $summary = $this->evaluateHealth();

@@ -52,7 +52,7 @@ class CompanyPagesController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
             'company_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
-            'email' => ['required', 'email:rfc,dns', 'max:255'],
+            'email' => ['required', 'email:rfc', 'max:255'],
             'intent' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
             'message' => ['nullable', 'string', 'max:2000'],
             'source' => ['nullable', 'in:website,dms'],

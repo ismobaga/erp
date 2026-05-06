@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
     'subject_type',
     'subject_id',
     'meta_json',
+    'ip_address',
+    'user_agent',
 ])]
 class ActivityLog extends Model
 {
