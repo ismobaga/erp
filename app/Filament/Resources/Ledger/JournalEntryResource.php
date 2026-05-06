@@ -66,7 +66,7 @@ class JournalEntryResource extends Resource
     public static function canEdit(Model $record): bool
     {
         // Only draft entries may be edited. Posted and voided entries are immutable.
-        return $record->status === 'draft';
+        return static::canAccessPermission('update') && $record->status === 'draft';
     }
 
     public static function form(Schema $schema): Schema
@@ -190,7 +190,7 @@ class JournalEntryResource extends Resource
                     ->label(__('erp.ledger.post_action'))
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
-                    ->visible(fn(JournalEntry $record): bool => $record->status === 'draft')
+                    ->visible(fn(JournalEntry $record): bool => static::canAccessPermission('update') && $record->status === 'draft')
                     ->requiresConfirmation()
                     ->action(function (JournalEntry $record): void {
                         try {
@@ -204,7 +204,7 @@ class JournalEntryResource extends Resource
                     ->label(__('erp.ledger.void_action'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
-                    ->visible(fn(JournalEntry $record): bool => $record->status === 'posted')
+                    ->visible(fn(JournalEntry $record): bool => static::canAccessPermission('update') && $record->status === 'posted')
                     ->form([
                         Textarea::make('void_reason')
                             ->label(__('erp.ledger.void_reason'))
@@ -218,7 +218,7 @@ class JournalEntryResource extends Resource
                     ->label(__('erp.ledger.reverse_action'))
                     ->icon(Heroicon::OutlinedArrowPathRoundedSquare)
                     ->color('warning')
-                    ->visible(fn(JournalEntry $record): bool => $record->status === 'posted' && $record->reversal_of === null)
+                    ->visible(fn(JournalEntry $record): bool => static::canAccessPermission('update') && $record->status === 'posted' && $record->reversal_of === null)
                     ->form([
                         Textarea::make('reversal_reason')
                             ->label(__('erp.ledger.reversal_reason'))
@@ -248,9 +248,9 @@ class JournalEntryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListJournalEntries::route('/'),
+            'index' => ListJournalEntries::route('/'),
             'create' => CreateJournalEntry::route('/create'),
-            'edit'   => EditJournalEntry::route('/{record}/edit'),
+            'edit' => EditJournalEntry::route('/{record}/edit'),
         ];
     }
 }
