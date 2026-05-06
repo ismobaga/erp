@@ -82,7 +82,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ $companyName }}</h1>
+            <h1>{{ e($companyName) }}</h1>
             <p>Rapport programmé · {{ now()->format('d/m/Y') }}</p>
         </div>
         <div class="body">
@@ -96,7 +96,7 @@
             </div>
             <div class="meta-item">
                 <label>Fichier</label>
-                <span>{{ basename($reportPath) }}</span>
+                <span>{{ e(basename($reportPath)) }}</span>
             </div>
         </div>
         <div class="footer">

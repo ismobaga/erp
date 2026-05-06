@@ -125,25 +125,25 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ $companyName }}</h1>
+            <h1>{{ e($companyName) }}</h1>
             <p>Invitation collaborateur · {{ now()->format('d/m/Y') }}</p>
         </div>
         <div class="body">
             <p style="font-size:15px; margin-bottom:16px;">
-                Bonjour <strong>{{ $user->name }}</strong>,
+                Bonjour <strong>{{ e($user->name) }}</strong>,
             </p>
             <p style="font-size:14px; color:#374151; line-height:1.7; margin-bottom:24px;">
-                Vous avez été invité(e) à rejoindre la plateforme ERP de <strong>{{ $companyName }}</strong>
-                en tant que <strong>{{ $roleLabel }}</strong>.
+                Vous avez été invité(e) à rejoindre la plateforme ERP de <strong>{{ e($companyName) }}</strong>
+                en tant que <strong>{{ e($roleLabel) }}</strong>.
                 Voici vos identifiants de connexion provisoires :
             </p>
 
             <div class="credentials">
                 <label>Adresse e-mail</label>
-                <span>{{ $user->email }}</span>
+                <span>{{ e($user->email) }}</span>
 
                 <label>Mot de passe provisoire</label>
-                <code>{{ $temporaryPassword }}</code>
+                <code>{{ e($temporaryPassword) }}</code>
             </div>
 
             <a href="{{ $loginUrl }}" class="cta">Accéder à la plateforme</a>
@@ -155,12 +155,12 @@
 
             <p style="font-size:13px; color:#57657a; margin-top:24px; line-height:1.7;">
                 Pour toute question, contactez votre administrateur à
-                <a href="mailto:{{ $companyEmail }}" style="color:#002045;">{{ $companyEmail }}</a>.
+                <a href="mailto:{{ e($companyEmail) }}" style="color:#002045;">{{ e($companyEmail) }}</a>.
             </p>
         </div>
         <div class="footer">
             <p>
-                Ce message est généré automatiquement par le système ERP de <strong>{{ $companyName }}</strong>.<br>
+                Ce message est généré automatiquement par le système ERP de <strong>{{ e($companyName) }}</strong>.<br>
                 Si vous n'êtes pas le destinataire prévu, merci d'ignorer cet e-mail.
             </p>
         </div>

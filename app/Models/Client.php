@@ -30,6 +30,17 @@ use Illuminate\Support\Str;
 class Client extends Model
 {
     use HasCompanyScope;
+
+    /**
+     * Encrypt the portal token for secure token-based authentication.
+     */
+    protected function casts(): array
+    {
+        return [
+            'portal_token' => 'encrypted',
+        ];
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Client $client): void {

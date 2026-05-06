@@ -125,7 +125,7 @@
         </div>
         <div class="body">
             <p style="font-size:15px; margin-bottom:24px;">
-                Bonjour {{ $invoice->client?->contact_name ?? $invoice->client?->company_name ?? 'Client' }},
+                Bonjour {{ e($invoice->client?->contact_name ?? $invoice->client?->company_name ?? 'Client') }},
             </p>
             <p style="font-size:14px; color:#374151; margin-bottom:24px; line-height:1.7;">
                 Nous vous contactons au sujet de la facture ci-dessous qui demeure en attente de règlement.
@@ -140,7 +140,7 @@
             <div class="meta-grid">
                 <div class="meta-item">
                     <label>Numéro de facture</label>
-                    <span>{{ $invoice->invoice_number }}</span>
+                    <span>{{ e($invoice->invoice_number) }}</span>
                 </div>
                 <div class="meta-item">
                     <label>Date d'échéance</label>
@@ -158,18 +158,18 @@
 
             @if($invoice->notes)
                 <p style="font-size:13px;color:#57657a;margin-bottom:24px;">
-                    <strong>Note :</strong> {{ $invoice->notes }}
+                    <strong>Note :</strong> {{ e($invoice->notes) }}
                 </p>
             @endif
 
             <p style="font-size:14px;color:#374151;line-height:1.7;margin-bottom:8px;">
                 Pour toute question concernant cette facture, n'hésitez pas à nous contacter directement à
-                <a href="mailto:{{ $companyEmail }}" style="color:#002045;">{{ $companyEmail }}</a>.
+                <a href="mailto:{{ e($companyEmail) }}" style="color:#002045;">{{ e($companyEmail) }}</a>.
             </p>
         </div>
         <div class="footer">
             <p>
-                Ce message est généré automatiquement par le système ERP de <strong>{{ $companyName }}</strong>.<br>
+                Ce message est généré automatiquement par le système ERP de <strong>{{ e($companyName) }}</strong>.<br>
                 Merci de ne pas répondre directement à cet e-mail.
             </p>
         </div>

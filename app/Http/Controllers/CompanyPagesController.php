@@ -49,24 +49,29 @@ class CompanyPagesController extends Controller
     public function contactRequest(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'email'        => ['required', 'email', 'max:255'],
-            'intent'       => ['required', 'string', 'max:255'],
-            'message'      => ['nullable', 'string', 'max:2000'],
-            'source'       => ['nullable', 'in:website,dms'],
+            'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
+            'company_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
+            'email' => ['required', 'email:rfc,dns', 'max:255'],
+            'intent' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
+            'message' => ['nullable', 'string', 'max:2000'],
+            'source' => ['nullable', 'in:website,dms'],
+        ], [
+            'name.regex' => 'Le nom ne peut contenir que des lettres, espaces et tirets.',
+            'company_name.regex' => 'Le nom de l\'entreprise ne peut contenir que des lettres, espaces et tirets.',
+            'email.email' => 'Veuillez fournir une adresse email valide.',
+            'intent.regex' => 'L\'intention doit contenir des caractères valides.',
         ]);
 
         $source = $validated['source'] ?? 'website';
 
         ContactRequest::create([
-            'name'         => $validated['name'],
+            'name' => $validated['name'],
             'company_name' => $validated['company_name'] ?? null,
-            'email'        => $validated['email'],
-            'intent'       => $validated['intent'],
-            'message'      => $validated['message'] ?? null,
-            'status'       => 'new',
-            'source'       => $source,
+            'email' => $validated['email'],
+            'intent' => $validated['intent'],
+            'message' => $validated['message'] ?? null,
+            'status' => 'new',
+            'source' => $source,
         ]);
 
         $redirectTarget = $source === 'dms'
@@ -97,10 +102,10 @@ class CompanyPagesController extends Controller
         $company = $this->company();
 
         return [
-            'company'        => $company,
-            'companyName'    => $company?->name ?: config('app.name'),
-            'companyEmail'   => $company?->email ?: '',
-            'companyPhone'   => $company?->phone ?: '',
+            'company' => $company,
+            'companyName' => $company?->name ?: config('app.name'),
+            'companyEmail' => $company?->email ?: '',
+            'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),
             'companyWebsite' => $company?->website ?: '',
         ];
