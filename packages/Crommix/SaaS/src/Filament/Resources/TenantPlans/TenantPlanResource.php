@@ -43,12 +43,6 @@ class TenantPlanResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $featureOptions = array_map(
-            static fn(string $label, string $key): string => $label,
-            config('saas.features', []),
-            array_keys(config('saas.features', [])),
-        );
-
         return $schema->components([
             TextInput::make('name')
                 ->label('Plan Name')
