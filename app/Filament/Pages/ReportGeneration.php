@@ -114,11 +114,15 @@ class ReportGeneration extends Page
     {
         $validated = $this->validate([
             'startDate' => ['required', 'date'],
-            'endDate' => ['required', 'date', function (string $attribute, mixed $value, \Closure $fail): void {
-                if (filled($this->startDate) && \Carbon\Carbon::parse((string) $value)->lt(\Carbon\Carbon::parse($this->startDate))) {
-                    $fail(__('erp.reports.end_date_after_start'));
+            'endDate' => [
+                'required',
+                'date',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (filled($this->startDate) && \Carbon\Carbon::parse((string) $value)->lt(\Carbon\Carbon::parse($this->startDate))) {
+                        $fail(__('erp.reports.end_date_after_start'));
+                    }
                 }
-            }],
+            ],
             'exportFormat' => ['required', 'in:pdf,csv'],
             'selectedModules.revenue' => ['boolean'],
             'selectedModules.expenses' => ['boolean'],
@@ -127,14 +131,14 @@ class ReportGeneration extends Page
             'selectedModules.audit' => ['boolean'],
             'includeCharts' => ['boolean'],
             'autoScheduleEnabled' => ['boolean'],
-            'scheduleFrequency' => ['nullable', 'in:Quotidienne,Hebdomadaire,Mensuelle'],
+            'scheduleFrequency' => ['nullable', 'in:daily,weekly,monthly'],
             'nextExecutionAt' => ['nullable', 'date_format:Y-m-d\TH:i'],
             'scheduleEmail' => ['nullable', 'email'],
         ]);
 
         if ($this->autoScheduleEnabled) {
             $this->validate([
-                'scheduleFrequency' => ['required', 'in:Quotidienne,Hebdomadaire,Mensuelle'],
+                'scheduleFrequency' => ['required', 'in:daily,weekly,monthly'],
                 'nextExecutionAt' => ['required', 'date_format:Y-m-d\TH:i'],
                 'scheduleEmail' => ['required', 'email'],
             ]);

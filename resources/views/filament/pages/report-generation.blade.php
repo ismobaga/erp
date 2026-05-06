@@ -201,9 +201,9 @@
                                 de récurrence</label>
                             <select wire:model="scheduleFrequency"
                                 class="w-full appearance-none rounded-lg border-none bg-[#f8faff] p-3 text-sm text-[#0b1c30] focus:ring-1 focus:ring-[#dce9ff] dark:bg-slate-800 dark:text-white">
-                                <option>Quotidienne</option>
-                                <option>Hebdomadaire</option>
-                                <option>Mensuelle</option>
+                                <option value="daily">Quotidienne</option>
+                                <option value="weekly">Hebdomadaire</option>
+                                <option value="monthly">Mensuelle</option>
                             </select>
                         </div>
 
