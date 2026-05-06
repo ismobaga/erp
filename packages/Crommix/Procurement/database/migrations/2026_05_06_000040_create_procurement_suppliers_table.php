@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->string('tax_number')->nullable();
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 4)->default('XOF');
             $table->string('payment_terms')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
