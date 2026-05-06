@@ -33,6 +33,14 @@
         "psr-4": {
             "App\\": "app/",
             "Crommix\\Blog\\": "packages/Crommix/Blog/src/",
+            "Crommix\\Core\\": "packages/Crommix/Core/src/",
+            "Crommix\\HR\\": "packages/Crommix/HR/src/",
+            "Crommix\\Payroll\\": "packages/Crommix/Payroll/src/",
+            "Crommix\\CRM\\": "packages/Crommix/CRM/src/",
+            "Crommix\\Inventory\\": "packages/Crommix/Inventory/src/",
+            "Crommix\\Procurement\\": "packages/Crommix/Procurement/src/",
+            "Crommix\\POS\\": "packages/Crommix/POS/src/",
+            "Crommix\\Support\\": "packages/Crommix/Support/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
