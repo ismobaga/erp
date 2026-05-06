@@ -32,13 +32,13 @@ class Client extends Model
     use HasCompanyScope;
 
     /**
-     * Encrypt the portal token for secure token-based authentication.
+     * The portal_token is a random UUID stored and queried as plain text.
+     * Encrypting it at rest was removed because Eloquent's encrypted cast is
+     * non-deterministic and makes WHERE-clause lookups impossible.
      */
     protected function casts(): array
     {
-        return [
-            'portal_token' => 'encrypted',
-        ];
+        return [];
     }
 
     protected static function booted(): void
@@ -78,6 +78,26 @@ class Client extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function portalTickets(): HasMany
+    {
+        return $this->hasMany(PortalTicket::class);
+    }
+
+    public function whatsappConversations(): HasMany
+    {
+        return $this->hasMany(WhatsappConversation::class);
+    }
+
+    public function attachments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     public function totalBalance(): float
