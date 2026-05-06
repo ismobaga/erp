@@ -30,7 +30,9 @@
         body {
             margin: 0;
             padding: 0;
+            background: #f8f9ff;
             background: var(--surface);
+            color: #0b1c30;
             color: var(--text);
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
         }
@@ -39,6 +41,7 @@
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
+            background: #ffffff;
             background: var(--surface-card);
             border-radius: 18px;
             box-shadow: 0 20px 60px rgba(14, 31, 63, 0.12);
@@ -51,6 +54,7 @@
             position: absolute;
             inset: 0 auto 0 0;
             width: 8px;
+            background: #0f766e;
             background: var(--success);
         }
 
@@ -62,8 +66,9 @@
 
         .receipt-badge {
             display: inline-block;
-            background: var(--success);
-            color: white;
+            background: #dcfce7;
+            color: #14532d;
+            border: 1px solid #86efac;
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.2em;
@@ -74,16 +79,16 @@
         }
 
         .topbar {
+            display: table;
             width: 100%;
+            table-layout: fixed;
             margin-bottom: 40px;
-            font-size: 0;
         }
 
         .topbar>div {
-            display: inline-block;
-            width: 50%;
+            display: table-cell;
             vertical-align: top;
-            font-size: 14px;
+            width: 50%;
         }
 
         .brand-wrap>* {
@@ -101,6 +106,7 @@
             line-height: 52px;
             text-align: center;
             border-radius: 12px;
+            background: #1a365d;
             background: var(--primary-soft);
             color: white;
             display: inline-block;
@@ -123,6 +129,7 @@
             line-height: 1.1;
             letter-spacing: 0.04em;
             text-transform: uppercase;
+            color: #002045;
             color: var(--primary);
         }
 
@@ -131,11 +138,13 @@
             font-size: 11px;
             letter-spacing: 0.22em;
             text-transform: uppercase;
+            color: #57657a;
             color: var(--muted);
             font-weight: 700;
         }
 
         .muted {
+            color: #57657a;
             color: var(--muted);
         }
 
@@ -154,6 +163,7 @@
             font-weight: 800;
             letter-spacing: 0.18em;
             text-transform: uppercase;
+            color: #57657a;
             color: var(--muted);
         }
 
@@ -161,31 +171,33 @@
             margin-top: 8px;
             font-size: 26px;
             font-weight: 800;
+            color: #002045;
             color: var(--primary);
         }
 
         .amount-hero {
-            background: linear-gradient(135deg, var(--success), #065f46);
+            background: #e7f7f4;
+            border: 1px solid #b7e4dc;
             border-radius: 20px;
             padding: 32px 36px;
             margin: 32px 0;
-            color: white;
+            color: #0b1c30;
+            display: table;
             width: 100%;
-            font-size: 0;
+            table-layout: fixed;
         }
 
         .amount-hero>div {
-            display: inline-block;
-            width: 50%;
+            display: table-cell;
             vertical-align: middle;
-            font-size: 14px;
+            width: 50%;
         }
 
         .amount-label {
             font-size: 13px;
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            opacity: 0.85;
+            color: #0f766e;
             margin-bottom: 10px;
         }
 
@@ -198,22 +210,22 @@
         .amount-date {
             text-align: right;
             font-size: 13px;
-            opacity: 0.85;
+            color: #57657a;
         }
 
         .details-grid {
+            display: table;
             width: 100%;
+            table-layout: fixed;
             margin-top: 28px;
-            font-size: 0;
         }
 
         .details-grid>div {
-            display: inline-block;
-            width: 50%;
+            display: table-cell;
             vertical-align: top;
-            padding-right: 12px;
-            padding-left: 12px;
-            font-size: 14px;
+            width: 50%;
+            padding-right: 10px;
+            padding-left: 10px;
         }
 
         .details-grid>div:first-child {
@@ -225,6 +237,7 @@
         }
 
         .detail-card {
+            background: #eff4ff;
             background: var(--surface-low);
             border-radius: 14px;
             padding: 20px 22px;
@@ -236,7 +249,9 @@
         }
 
         .detail-row {
-            display: block;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
             padding: 8px 0;
             border-bottom: 1px solid rgba(87, 101, 122, 0.15);
             font-size: 14px;
@@ -247,35 +262,39 @@
         }
 
         .detail-row .label {
+            color: #57657a;
             color: var(--muted);
-            display: inline-block;
+            display: table-cell;
             width: 46%;
             vertical-align: top;
+            padding-right: 10px;
         }
 
         .detail-row .value {
             font-weight: 700;
+            color: #002045;
             color: var(--primary);
             text-align: right;
-            display: inline-block;
+            display: table-cell;
             width: 54%;
             vertical-align: top;
         }
 
         .invoice-ref-box {
+            background: #eff4ff;
             background: var(--surface-low);
             border-radius: 14px;
             padding: 20px 24px;
             margin-top: 24px;
+            display: table;
             width: 100%;
-            font-size: 0;
+            table-layout: fixed;
         }
 
         .invoice-ref-box>div {
-            display: inline-block;
-            width: 50%;
+            display: table-cell;
             vertical-align: middle;
-            font-size: 14px;
+            width: 50%;
         }
 
         .method-pill {
@@ -304,8 +323,10 @@
         .footer-note {
             margin-top: 36px;
             padding-top: 20px;
+            border-top: 1px solid #d3e4fe;
             border-top: 1px solid var(--line);
             font-size: 12px;
+            color: #57657a;
             color: var(--muted);
             line-height: 1.7;
             text-align: center;
@@ -337,12 +358,14 @@
         }
 
         .button-primary {
+            background: #002045;
             background: var(--primary);
             color: white;
         }
 
         .button-secondary {
             background: #dce9ff;
+            color: #002045;
             color: var(--primary);
         }
 
