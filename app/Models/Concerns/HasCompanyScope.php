@@ -5,6 +5,7 @@ namespace App\Models\Concerns;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\GlobalScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -60,8 +61,38 @@ trait HasCompanyScope
 
         // Automatically assign company_id on creation.
         static::creating(function (Model $model): void {
-            if (empty($model->company_id) && app()->bound('currentCompany')) {
-                $model->company_id = app('currentCompany')->id;
+            if (!empty($model->company_id)) {
+                return;
+            }
+
+            // Resolution fallback order:
+            // 1) currentCompany container binding (normal web flow)
+            // 2) session current_company_id
+            // 3) authenticated user's first attached company
+            $companyId = null;
+
+            if (app()->bound('currentCompany')) {
+                $companyId = app('currentCompany')->id;
+            }
+
+            if (blank($companyId) && app()->bound('session')) {
+                $companyId = session('current_company_id');
+            }
+
+            if (blank($companyId)) {
+                $user = Auth::user();
+
+                if ($user !== null) {
+                    $companyId = $user->companies()->value('companies.id');
+
+                    if (filled($companyId) && app()->bound('session')) {
+                        session(['current_company_id' => $companyId]);
+                    }
+                }
+            }
+
+            if (filled($companyId)) {
+                $model->company_id = (int) $companyId;
             }
         });
     }

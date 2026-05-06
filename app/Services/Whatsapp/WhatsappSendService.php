@@ -186,6 +186,7 @@ class WhatsappSendService
     public function sendTextToClient(Client $client, string $message): WhatsappMessageLog
     {
         $company = currentCompany();
+        $company = $client->company ?? $company; // Use client's company if available, otherwise fallback to current company    
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 

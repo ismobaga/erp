@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 
 #[Fillable([
+    'company_id', // scoped by HasCompanyScope but still needs to be fillable for proper mass assignment in factories and imports
     'type',
     'company_name',
     'contact_name',

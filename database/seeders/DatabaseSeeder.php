@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
             ['email' => $adminEmail],
             [
                 'name'              => env('ADMIN_NAME', 'Super Admin'),
-                'password'          => Hash::make($adminPassword ?? 'password'),
+                'password'          => Hash::make($adminPassword ?: 'password'),
                 'email_verified_at' => now(),
                 'status'            => 'active',
             ],

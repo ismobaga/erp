@@ -41,6 +41,7 @@ class SetCurrentCompany
             session(['current_company_id' => $company->id]);
         }
 
+
         return $next($request);
     }
 }
