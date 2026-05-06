@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Request;
 
 class AuditTrailService
 {
+    /** Maximum length for user-agent strings stored in activity_logs.user_agent (matches column size). */
+    private const USER_AGENT_MAX_LENGTH = 512;
+
     public function log(string $action, ?Model $subject = null, array $meta = [], ?int $userId = null): ?ActivityLog
     {
         try {
@@ -18,7 +21,7 @@ class AuditTrailService
             if (app()->bound('request') && !app()->runningInConsole()) {
                 $request = Request::instance();
                 $ipAddress = $request->ip();
-                $userAgent = substr((string) $request->userAgent(), 0, 512);
+                $userAgent = substr((string) $request->userAgent(), 0, self::USER_AGENT_MAX_LENGTH);
             }
 
             return ActivityLog::create([

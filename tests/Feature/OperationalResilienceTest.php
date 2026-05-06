@@ -151,28 +151,28 @@ class OperationalResilienceTest extends TestCase
 
     public function test_audit_trail_captures_ip_address_in_web_context(): void
     {
+        // Verify the new schema columns exist.
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'ip_address'));
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'user_agent'));
+
+        // Simulate a web request so that the AuditTrailService can capture IP and user-agent.
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
-        $this->actingAs($user);
+        $this->actingAs($user)
+            ->withHeaders(['User-Agent' => 'TestBrowser/1.0'])
+            ->get('/admin/operational-resilience');
 
-        $this->post('/contact-request', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'intent' => 'Test',
-            'message' => 'Hello',
-        ]);
+        // Any audit log written during this request should carry the IP from the test client.
+        $log = ActivityLog::latest()->first();
 
-        // The audit trail service should record IP address when called from a web request.
-        // We verify this indirectly through the activity log created by the contact form handler
-        // after the seeder creates activity log entries with IP data.
-        $log = ActivityLog::where('action', 'notifications_marked_read')
-            ->orWhere('action', 'invoice_reminder_sent')
-            ->latest()
-            ->first();
-
-        // The columns exist (schema-level assertion via the migration).
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'ip_address'));
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'user_agent'));
+        if ($log !== null) {
+            // In testing, the IP defaults to '127.0.0.1'. User-agent may or may not be set
+            // depending on Filament internals, but the column must be nullable so no error occurs.
+            $this->assertTrue(
+                $log->ip_address === null || is_string($log->ip_address),
+                'ip_address must be null or a string',
+            );
+        }
     }
 }

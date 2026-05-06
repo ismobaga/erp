@@ -192,9 +192,7 @@ class OperationalResilienceService
                     'job' => is_string($jobClass) ? class_basename($jobClass) : 'Unknown',
                     'queue' => (string) ($row->queue ?? 'default'),
                     'exception' => mb_substr((string) ($row->exception ?? ''), 0, 256),
-                    'failed_at' => isset($row->failed_at)
-                        ? now()->createFromTimestamp(is_numeric($row->failed_at) ? (int) $row->failed_at : strtotime((string) $row->failed_at))->diffForHumans()
-                        : 'unknown',
+                    'failed_at' => $this->formatFailedAt($row->failed_at ?? null),
                 ];
             })
             ->all();
@@ -221,7 +219,9 @@ class OperationalResilienceService
             $connection = (string) ($row->connection ?? 'database');
             $queue = (string) ($row->queue ?? 'default');
 
-            DB::connection($connection)->table($queue === 'default' ? 'jobs' : $queue)->insert([
+            // Laravel stores all queued jobs in the 'jobs' table regardless of queue name.
+            // The queue name is a column value, not a separate table.
+            DB::connection($connection)->table('jobs')->insert([
                 'queue' => $queue,
                 'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES),
                 'attempts' => 0,
@@ -406,6 +406,27 @@ class OperationalResilienceService
         }
 
         app(AuditTrailService::class)->log('system_alert_raised', null, array_merge(['type' => $type], $meta), $userId);
+    }
+
+    /**
+     * Format a `failed_at` value (raw timestamp integer or datetime string) into a
+     * human-readable relative string. Returns 'unknown' when the value is absent.
+     */
+    protected function formatFailedAt(mixed $failedAt): string
+    {
+        if ($failedAt === null) {
+            return 'unknown';
+        }
+
+        $timestamp = is_numeric($failedAt)
+            ? (int) $failedAt
+            : strtotime((string) $failedAt);
+
+        if ($timestamp === false) {
+            return 'unknown';
+        }
+
+        return now()->createFromTimestamp($timestamp)->diffForHumans();
     }
 
     protected function backupTables(): array
