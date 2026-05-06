@@ -54,6 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: base_path('packages/Crommix/Payroll/src/Filament/Resources'), for: 'Crommix\Payroll\Filament\Resources')
             ->discoverResources(in: base_path('packages/Crommix/Procurement/src/Filament/Resources'), for: 'Crommix\Procurement\Filament\Resources')
             ->discoverResources(in: base_path('packages/Crommix/POS/src/Filament/Resources'), for: 'Crommix\POS\Filament\Resources')
+            ->discoverResources(in: base_path('packages/Crommix/SaaS/src/Filament/Resources'), for: 'Crommix\SaaS\Filament\Resources')
             ->discoverResources(in: base_path('packages/Crommix/Support/src/Filament/Resources'), for: 'Crommix\Support\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
