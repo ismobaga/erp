@@ -24,20 +24,20 @@ class HRServiceProvider extends ServiceProvider implements ModuleContract
 
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/hr.php', 'hr');
+        $this->mergeConfigFrom(__DIR__.'/../config/hr.php', 'hr');
     }
 
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/hr.php' => config_path('hr.php'),
+            __DIR__.'/../config/hr.php' => config_path('hr.php'),
         ], 'hr-config');
 
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return;
         }
 
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }
 }

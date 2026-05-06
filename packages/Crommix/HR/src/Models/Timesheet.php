@@ -9,32 +9,39 @@ use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class LeaveRequest extends Model implements HasTenantScope
+class Timesheet extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
-    protected $table = 'hr_leave_requests';
+    protected $table = 'hr_timesheets';
 
     protected $fillable = [
         'company_id',
         'employee_id',
-        'type',
-        'starts_at',
-        'ends_at',
-        'reason',
+        'week_start',
+        'week_end',
+        'regular_hours',
+        'overtime_hours',
         'status',
         'approved_by',
         'approved_at',
-        'rejection_reason',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'starts_at' => 'date',
-            'ends_at' => 'date',
+            'week_start' => 'date',
+            'week_end' => 'date',
+            'regular_hours' => 'decimal:2',
+            'overtime_hours' => 'decimal:2',
             'approved_at' => 'datetime',
         ];
+    }
+
+    public function getTotalHoursAttribute(): float
+    {
+        return (float) $this->regular_hours + (float) $this->overtime_hours;
     }
 
     public function company(): BelongsTo

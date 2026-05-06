@@ -4,31 +4,33 @@ namespace Crommix\HR\Models;
 
 use App\Models\Company;
 use App\Models\Concerns\HasCompanyScope;
-use App\Models\User;
 use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Department extends Model implements HasTenantScope
+class AttendanceRecord extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
-    protected $table = 'hr_departments';
+    protected $table = 'hr_attendance_records';
 
     protected $fillable = [
         'company_id',
-        'name',
-        'code',
-        'description',
-        'manager_id',
-        'is_active',
+        'employee_id',
+        'shift_id',
+        'date',
+        'check_in',
+        'check_out',
+        'hours_worked',
+        'status',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'date' => 'date',
+            'hours_worked' => 'decimal:2',
         ];
     }
 
@@ -37,13 +39,13 @@ class Department extends Model implements HasTenantScope
         return $this->belongsTo(Company::class);
     }
 
-    public function manager(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(Employee::class);
     }
 
-    public function employees(): HasMany
+    public function shift(): BelongsTo
     {
-        return $this->hasMany(Employee::class);
+        return $this->belongsTo(Shift::class);
     }
 }
