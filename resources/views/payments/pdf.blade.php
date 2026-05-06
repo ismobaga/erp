@@ -74,24 +74,25 @@
         }
 
         .topbar {
-            display: table;
             width: 100%;
-            table-layout: fixed;
             margin-bottom: 40px;
+            font-size: 0;
         }
 
         .topbar>div {
-            display: table-cell;
+            display: inline-block;
+            width: 50%;
             vertical-align: top;
+            font-size: 14px;
         }
 
         .brand-wrap>* {
-            display: table-cell;
+            display: inline-block;
             vertical-align: top;
         }
 
         .brand-wrap>*+* {
-            padding-left: 16px;
+            margin-left: 16px;
         }
 
         .brand-icon {
@@ -169,14 +170,15 @@
             padding: 32px 36px;
             margin: 32px 0;
             color: white;
-            display: table;
             width: 100%;
-            table-layout: fixed;
+            font-size: 0;
         }
 
         .amount-hero>div {
-            display: table-cell;
+            display: inline-block;
+            width: 50%;
             vertical-align: middle;
+            font-size: 14px;
         }
 
         .amount-label {
@@ -200,17 +202,22 @@
         }
 
         .details-grid {
-            display: table;
             width: 100%;
-            table-layout: fixed;
             margin-top: 28px;
-            gap: 24px;
+            font-size: 0;
         }
 
         .details-grid>div {
-            display: table-cell;
+            display: inline-block;
+            width: 50%;
             vertical-align: top;
-            padding-right: 24px;
+            padding-right: 12px;
+            padding-left: 12px;
+            font-size: 14px;
+        }
+
+        .details-grid>div:first-child {
+            padding-left: 0;
         }
 
         .details-grid>div:last-child {
@@ -229,9 +236,7 @@
         }
 
         .detail-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
+            display: block;
             padding: 8px 0;
             border-bottom: 1px solid rgba(87, 101, 122, 0.15);
             font-size: 14px;
@@ -243,12 +248,18 @@
 
         .detail-row .label {
             color: var(--muted);
+            display: inline-block;
+            width: 46%;
+            vertical-align: top;
         }
 
         .detail-row .value {
             font-weight: 700;
             color: var(--primary);
             text-align: right;
+            display: inline-block;
+            width: 54%;
+            vertical-align: top;
         }
 
         .invoice-ref-box {
@@ -256,14 +267,15 @@
             border-radius: 14px;
             padding: 20px 24px;
             margin-top: 24px;
-            display: table;
             width: 100%;
-            table-layout: fixed;
+            font-size: 0;
         }
 
         .invoice-ref-box>div {
-            display: table-cell;
+            display: inline-block;
+            width: 50%;
             vertical-align: middle;
+            font-size: 14px;
         }
 
         .method-pill {
@@ -507,7 +519,7 @@
 
             @if($payment->notes)
                 <div style="margin-top: 24px; font-size: 13px; color: var(--muted); line-height: 1.7;">
-                    <strong>Notes :</strong> {{ $payment->notes }}
+                    <strong>Notes :</strong> {{ strip_tags((string) $payment->notes) }}
                 </div>
             @endif
 

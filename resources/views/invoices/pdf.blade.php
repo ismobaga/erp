@@ -474,8 +474,15 @@
             .topbar,
             .meta-grid,
             .footer-grid {
-                grid-template-columns: 1fr;
-                display: grid;
+                display: block;
+            }
+
+            .topbar>div,
+            .meta-grid>div,
+            .footer-grid>div {
+                display: block;
+                width: 100%;
+                padding-left: 0;
             }
 
             .invoice-word {

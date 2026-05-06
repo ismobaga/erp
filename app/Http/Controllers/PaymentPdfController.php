@@ -43,6 +43,7 @@ class PaymentPdfController extends Controller
                     'isRemoteEnabled' => true,
                     'dpi' => 120,
                     'defaultFont' => 'DejaVu Sans',
+
                 ])
                 ->setPaper('a4')
                 ->download($filename);

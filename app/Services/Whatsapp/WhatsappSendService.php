@@ -11,12 +11,13 @@ use App\Models\WhatsappMessageLog;
 use App\Support\PhoneFormatter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class WhatsappSendService
 {
     public function sendInvoice(Invoice $invoice): WhatsappMessageLog
     {
-        $company = currentCompany();
+        $company = $this->resolveCompanyForInvoice($invoice);
         $client = $invoice->client;
 
         if ($client === null) {
@@ -35,6 +36,7 @@ class WhatsappSendService
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
         $pdfPath = $this->generateInvoicePdf($invoice, $company);
+        $deviceId = $this->resolveDeviceId($company);
 
         $log = WhatsappMessageLog::create([
             'sendable_type' => Invoice::class,
@@ -53,7 +55,7 @@ class WhatsappSendService
                 phone: $phone,
                 filePath: Storage::path($pdfPath),
                 caption: $caption,
-                deviceId: $company?->whatsapp_device_id,
+                deviceId: $deviceId,
             );
 
             $log->update([
@@ -74,7 +76,7 @@ class WhatsappSendService
 
     public function sendQuote(Quote $quote): WhatsappMessageLog
     {
-        $company = currentCompany();
+        $company = $this->resolveCompanyForQuote($quote);
         $client = $quote->client;
 
         if ($client === null) {
@@ -93,6 +95,7 @@ class WhatsappSendService
 
         $quote->loadMissing(['client', 'items.service']);
         $pdfPath = $this->generateQuotePdf($quote, $company);
+        $deviceId = $this->resolveDeviceId($company);
 
         $log = WhatsappMessageLog::create([
             'sendable_type' => Quote::class,
@@ -111,7 +114,7 @@ class WhatsappSendService
                 phone: $phone,
                 filePath: Storage::path($pdfPath),
                 caption: $caption,
-                deviceId: $company?->whatsapp_device_id,
+                deviceId: $deviceId,
             );
 
             $log->update([
@@ -132,7 +135,7 @@ class WhatsappSendService
 
     public function sendPaymentReminder(Invoice $invoice): WhatsappMessageLog
     {
-        $company = currentCompany();
+        $company = $this->resolveCompanyForInvoice($invoice);
         $client = $invoice->client;
 
         if ($client === null) {
@@ -159,12 +162,13 @@ class WhatsappSendService
             'status' => 'pending',
             'sent_by' => auth()->id(),
         ]);
+        $deviceId = $this->resolveDeviceId($company);
 
         try {
             $response = app(GowaClient::class)->sendText(
                 phone: $phone,
                 message: $message,
-                deviceId: $company?->whatsapp_device_id,
+                deviceId: $deviceId,
             );
 
             $log->update([
@@ -185,8 +189,8 @@ class WhatsappSendService
 
     public function sendTextToClient(Client $client, string $message): WhatsappMessageLog
     {
-        $company = currentCompany();
-        $company = $client->company ?? $company; // Use client's company if available, otherwise fallback to current company    
+        $company = $this->resolveCompanyForClient($client);
+        $deviceId = $this->resolveDeviceId($company);
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
 
@@ -203,7 +207,7 @@ class WhatsappSendService
             $response = app(GowaClient::class)->sendText(
                 phone: $phone,
                 message: $message,
-                deviceId: $company?->whatsapp_device_id,
+                deviceId: $deviceId,
             );
 
             $log->update([
@@ -293,5 +297,65 @@ class WhatsappSendService
         Storage::put($filename, $pdf->output());
 
         return $filename;
+    }
+
+    private function resolveCompanyForInvoice(Invoice $invoice): ?Company
+    {
+        $company = currentCompany();
+
+        if ($company) {
+            return $company;
+        }
+
+        if (filled($invoice->company_id)) {
+            return Company::query()->find($invoice->company_id);
+        }
+
+        return null;
+    }
+
+    private function resolveCompanyForQuote(Quote $quote): ?Company
+    {
+        $company = currentCompany();
+
+        if ($company) {
+            return $company;
+        }
+
+        if (filled($quote->company_id)) {
+            return Company::query()->find($quote->company_id);
+        }
+
+        return null;
+    }
+
+    private function resolveCompanyForClient(Client $client): ?Company
+    {
+        $company = currentCompany();
+
+        if ($company) {
+            return $company;
+        }
+
+        if ($client->relationLoaded('company') && $client->company) {
+            return $client->company;
+        }
+
+        if (filled($client->company_id)) {
+            return Company::query()->find($client->company_id);
+        }
+
+        return null;
+    }
+
+    private function resolveDeviceId(?Company $company): string
+    {
+        $deviceId = (string) ($company?->whatsapp_device_id ?? '');
+
+        if (blank($deviceId)) {
+            throw new RuntimeException('Aucun appareil WhatsApp configuré pour cette société (whatsapp_device_id manquant).');
+        }
+
+        return $deviceId;
     }
 }
