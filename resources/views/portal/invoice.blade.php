@@ -59,40 +59,40 @@
     @include('portal.partials.nav', ['logoDataUri' => $logoDataUri ?? null])
 
     <div style="background:#fff;border-bottom:1px solid #e5eaf2;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;">
-        <a href="{{ route('portal.index', ['token' => $token]) }}" class="btn btn-outline btn-sm">← {{ app()->getLocale() === 'fr' ? 'Retour' : 'Back' }}</a>
-        <a href="{{ route('portal.invoice.pdf', ['token' => $token, 'invoice' => $invoice]) }}" class="btn btn-sm">⬇ {{ app()->getLocale() === 'fr' ? 'Télécharger PDF' : 'Download PDF' }}</a>
+        <a href="{{ route('portal.index', ['token' => $token]) }}" class="btn btn-outline btn-sm">← {{ __('erp.portal.ui.back') }}</a>
+        <a href="{{ route('portal.invoice.pdf', ['token' => $token, 'invoice' => $invoice]) }}" class="btn btn-sm">⬇ {{ __('erp.portal.ui.download_pdf') }}</a>
     </div>
 
     <div class="container">
 
         {{-- Identity --}}
         <div class="card">
-            <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Détails de la facture' : 'Invoice details' }}</div>
+            <div class="card-title">{{ __('erp.portal.invoices.details') }}</div>
             <div class="meta-grid">
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Numéro de facture' : 'Invoice number' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.invoices.number') }}</div>
                     <div class="meta-value">{{ $invoice->invoice_number }}</div>
                 </div>
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Statut' : 'Status' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.quotes.status') }}</div>
                     <div class="meta-value">
                         <span class="badge badge-{{ $invoice->status }}">{{ $statusLabel }}</span>
                     </div>
                 </div>
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Date d\'émission' : 'Issue date' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.invoices.issue_date') }}</div>
                     <div class="meta-value">{{ $invoice->issue_date?->format('d/m/Y') ?? '—' }}</div>
                 </div>
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Date d\'échéance' : 'Due date' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.invoices.due_date') }}</div>
                     <div class="meta-value">{{ $invoice->due_date?->format('d/m/Y') ?? '—' }}</div>
                 </div>
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Montant total' : 'Total amount' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.invoices.total_amount') }}</div>
                     <div class="meta-value" style="font-size:20px;">FCFA {{ number_format((float) $invoice->total, 0, '.', ' ') }}</div>
                 </div>
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Solde restant dû' : 'Balance due' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.invoices.balance_due') }}</div>
                     <div class="meta-value {{ (float) $invoice->balance_due > 0 ? 'balance-due' : 'balance-zero' }}" style="font-size:20px;">
                         FCFA {{ number_format((float) $invoice->balance_due, 0, '.', ' ') }}
                     </div>
@@ -103,14 +103,14 @@
         {{-- Line items --}}
         @if($invoice->items->isNotEmpty())
             <div class="card">
-                <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Détail des prestations' : 'Line items' }}</div>
+                <div class="card-title">{{ __('erp.portal.invoices.line_items') }}</div>
                 <table class="items">
                     <thead>
                         <tr>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Description' : 'Description' }}</th>
-                            <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Qté' : 'Qty' }}</th>
-                            <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Prix unitaire' : 'Unit price' }}</th>
-                            <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Total ligne' : 'Line total' }}</th>
+                            <th>{{ __('erp.common.description') }}</th>
+                            <th style="text-align:right;">{{ __('erp.portal.invoices.qty') }}</th>
+                            <th style="text-align:right;">{{ __('erp.portal.invoices.unit_price') }}</th>
+                            <th style="text-align:right;">{{ __('erp.portal.invoices.line_total') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -125,23 +125,23 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Sous-total' : 'Subtotal' }}</td>
+                            <td colspan="3" style="text-align:right;">{{ __('erp.portal.invoices.subtotal') }}</td>
                             <td style="text-align:right;">FCFA {{ number_format((float) $invoice->subtotal, 0, '.', ' ') }}</td>
                         </tr>
                         @if((float) $invoice->tax_total > 0)
                             <tr>
-                                <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Taxes' : 'Taxes' }}</td>
+                                <td colspan="3" style="text-align:right;">{{ __('erp.portal.invoices.taxes') }}</td>
                                 <td style="text-align:right;">FCFA {{ number_format((float) $invoice->tax_total, 0, '.', ' ') }}</td>
                             </tr>
                         @endif
                         @if((float) $invoice->discount_total > 0)
                             <tr>
-                                <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Remise' : 'Discount' }}</td>
+                                <td colspan="3" style="text-align:right;">{{ __('erp.portal.invoices.discount') }}</td>
                                 <td style="text-align:right;color:#166534;">− FCFA {{ number_format((float) $invoice->discount_total, 0, '.', ' ') }}</td>
                             </tr>
                         @endif
                         <tr class="total-row">
-                            <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Total à payer' : 'Total due' }}</td>
+                            <td colspan="3" style="text-align:right;">{{ __('erp.portal.invoices.total_due') }}</td>
                             <td style="text-align:right;">FCFA {{ number_format((float) $invoice->total, 0, '.', ' ') }}</td>
                         </tr>
                     </tfoot>
@@ -152,14 +152,14 @@
         {{-- Payments --}}
         @if($invoice->payments->isNotEmpty())
             <div class="card">
-                <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Historique des paiements' : 'Payment history' }}</div>
+                <div class="card-title">{{ __('erp.portal.invoices.payment_history') }}</div>
                 <ul class="payments-list">
                     @foreach($invoice->payments as $payment)
                         <li>
                             <span>
                                 {{ $payment->payment_date?->format('d/m/Y') ?? '—' }}
                                 · {{ __('erp.payment_methods.' . $payment->payment_method) ?: ucfirst($payment->payment_method) }}
-                                @if($payment->reference) · {{ app()->getLocale() === 'fr' ? 'Réf' : 'Ref' }} : {{ $payment->reference }} @endif
+                                @if($payment->reference) · {{ __('erp.portal.invoices.ref') }} : {{ $payment->reference }} @endif
                             </span>
                             <span style="font-weight:700;color:#166534;">FCFA {{ number_format((float) $payment->amount, 0, '.', ' ') }}</span>
                         </li>
@@ -171,12 +171,12 @@
         {{-- Bank details --}}
         @if($bankDetails['bank_name'] || $bankDetails['account_number'])
             <div class="card">
-                <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Informations de paiement' : 'Payment information' }}</div>
+                <div class="card-title">{{ __('erp.portal.invoices.payment_info') }}</div>
                 <div class="bank-box">
                     <p>
-                        @if($bankDetails['bank_name'])<strong>{{ app()->getLocale() === 'fr' ? 'Banque' : 'Bank' }} :</strong> {{ $bankDetails['bank_name'] }}<br>@endif
-                        @if($bankDetails['account_name'])<strong>{{ app()->getLocale() === 'fr' ? 'Intitulé' : 'Account name' }} :</strong> {{ $bankDetails['account_name'] }}<br>@endif
-                        @if($bankDetails['account_number'])<strong>{{ app()->getLocale() === 'fr' ? 'Numéro de compte' : 'Account number' }} :</strong> {{ $bankDetails['account_number'] }}<br>@endif
+                        @if($bankDetails['bank_name'])<strong>{{ __('erp.portal.invoices.bank') }} :</strong> {{ $bankDetails['bank_name'] }}<br>@endif
+                        @if($bankDetails['account_name'])<strong>{{ __('erp.portal.invoices.account_name') }} :</strong> {{ $bankDetails['account_name'] }}<br>@endif
+                        @if($bankDetails['account_number'])<strong>{{ __('erp.portal.invoices.account_number') }} :</strong> {{ $bankDetails['account_number'] }}<br>@endif
                         @if($bankDetails['swift_code'])<strong>SWIFT / BIC :</strong> {{ $bankDetails['swift_code'] }}@endif
                     </p>
                 </div>
@@ -186,7 +186,7 @@
         {{-- Notes --}}
         @if($invoice->notes)
             <div class="card">
-                <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Notes' : 'Notes' }}</div>
+                <div class="card-title">{{ __('erp.portal.invoices.notes') }}</div>
                 <p style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-line;">{{ $invoice->notes }}</p>
             </div>
         @endif

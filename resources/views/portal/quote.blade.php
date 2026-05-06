@@ -21,7 +21,7 @@
 @include('portal.partials.nav')
 
 <div style="background:#fff;border-bottom:1px solid #e5eaf2;padding:12px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-    <a href="{{ route('portal.quotes', ['token' => $token]) }}" class="btn btn-outline btn-sm">← {{ app()->getLocale() === 'fr' ? 'Retour aux devis' : 'Back to quotes' }}</a>
+    <a href="{{ route('portal.quotes', ['token' => $token]) }}" class="btn btn-outline btn-sm">← {{ __('erp.portal.quote_detail.back') }}</a>
 
     @if($quote->canBeAccepted())
         <form method="POST" action="{{ route('portal.quote.approve', ['token' => $token, 'quote' => $quote]) }}"
@@ -45,10 +45,10 @@
 
     {{-- Quote details --}}
     <div class="card">
-        <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Détails du devis' : 'Quote details' }}</div>
+        <div class="card-title">{{ __('erp.portal.quote_detail.details') }}</div>
         <div class="meta-grid">
             <div>
-                <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Numéro de devis' : 'Quote number' }}</div>
+                <div class="meta-label">{{ __('erp.portal.quote_detail.number') }}</div>
                 <div class="meta-value">{{ $quote->quote_number }}</div>
             </div>
             <div>
@@ -71,7 +71,7 @@
             </div>
             @if($quote->invoice)
                 <div>
-                    <div class="meta-label">{{ app()->getLocale() === 'fr' ? 'Facture liée' : 'Linked invoice' }}</div>
+                    <div class="meta-label">{{ __('erp.portal.quote_detail.linked_invoice') }}</div>
                     <div class="meta-value">
                         <a href="{{ route('portal.invoice', ['token' => $token, 'invoice' => $quote->invoice]) }}" style="color:#002045;">{{ $quote->invoice->invoice_number }}</a>
                     </div>
@@ -83,14 +83,14 @@
     {{-- Line items --}}
     @if($quote->items->isNotEmpty())
         <div class="card">
-            <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Détail des prestations' : 'Line items' }}</div>
+            <div class="card-title">{{ __('erp.portal.quote_detail.line_items') }}</div>
             <table class="items">
                 <thead>
                     <tr>
-                        <th>{{ app()->getLocale() === 'fr' ? 'Description' : 'Description' }}</th>
-                        <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Qté' : 'Qty' }}</th>
-                        <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Prix unitaire' : 'Unit price' }}</th>
-                        <th style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Total ligne' : 'Line total' }}</th>
+                        <th>{{ __('erp.common.description') }}</th>
+                        <th style="text-align:right;">{{ __('erp.portal.quote_detail.qty') }}</th>
+                        <th style="text-align:right;">{{ __('erp.portal.quote_detail.unit_price') }}</th>
+                        <th style="text-align:right;">{{ __('erp.portal.quote_detail.line_total') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,23 +105,23 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Sous-total' : 'Subtotal' }}</td>
+                        <td colspan="3" style="text-align:right;">{{ __('erp.portal.quote_detail.subtotal') }}</td>
                         <td style="text-align:right;">FCFA {{ number_format((float) $quote->subtotal, 0, '.', ' ') }}</td>
                     </tr>
                     @if((float) $quote->tax_total > 0)
                         <tr>
-                            <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Taxes' : 'Taxes' }}</td>
+                            <td colspan="3" style="text-align:right;">{{ __('erp.portal.quote_detail.taxes') }}</td>
                             <td style="text-align:right;">FCFA {{ number_format((float) $quote->tax_total, 0, '.', ' ') }}</td>
                         </tr>
                     @endif
                     @if((float) $quote->discount_total > 0)
                         <tr>
-                            <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Remise' : 'Discount' }}</td>
+                            <td colspan="3" style="text-align:right;">{{ __('erp.portal.quote_detail.discount') }}</td>
                             <td style="text-align:right;color:#166534;">− FCFA {{ number_format((float) $quote->discount_total, 0, '.', ' ') }}</td>
                         </tr>
                     @endif
                     <tr class="total-row">
-                        <td colspan="3" style="text-align:right;">{{ app()->getLocale() === 'fr' ? 'Total' : 'Total' }}</td>
+                        <td colspan="3" style="text-align:right;">{{ __('erp.portal.quote_detail.total') }}</td>
                         <td style="text-align:right;">FCFA {{ number_format((float) $quote->total, 0, '.', ' ') }}</td>
                     </tr>
                 </tfoot>
@@ -132,7 +132,7 @@
     {{-- Notes --}}
     @if($quote->notes)
         <div class="card">
-            <div class="card-title">{{ app()->getLocale() === 'fr' ? 'Notes' : 'Notes' }}</div>
+            <div class="card-title">{{ __('erp.portal.quote_detail.notes') }}</div>
             <p style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-line;">{{ $quote->notes }}</p>
         </div>
     @endif

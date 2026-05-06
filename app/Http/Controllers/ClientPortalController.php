@@ -23,7 +23,8 @@ class ClientPortalController extends Controller
 {
     use ResolvesLogoDataUri;
 
-    // ── Dashboard ──────────────────────────────────────────────────────────────
+    /** Supported locale codes for the portal language switcher. */
+    private const SUPPORTED_LOCALES = ['fr', 'en'];
 
     public function index(string $token): Response
     {
@@ -154,7 +155,7 @@ class ClientPortalController extends Controller
     {
         $client = $this->resolveClientByToken($token);
         abort_unless((int) $quote->client_id === (int) $client->id, 404);
-        abort_unless($quote->canBeAccepted(), 422);
+        abort_unless($quote->canBeAccepted(), 422, 'This quote cannot be approved in its current status.');
 
         $quote->convertToInvoice();
 
@@ -171,7 +172,7 @@ class ClientPortalController extends Controller
     {
         $client = $this->resolveClientByToken($token);
         abort_unless((int) $quote->client_id === (int) $client->id, 404);
-        abort_unless(in_array($quote->status, ['draft', 'sent', 'expired'], true), 422);
+        abort_unless(in_array($quote->status, ['draft', 'sent', 'expired'], true), 422, 'This quote cannot be rejected in its current status.');
 
         $quote->forceFill(['status' => 'rejected'])->save();
 
@@ -372,7 +373,7 @@ class ClientPortalController extends Controller
         $this->resolveClientByToken($token);
 
         $locale = $request->input('locale', 'fr');
-        if (!in_array($locale, ['fr', 'en'], true)) {
+        if (!in_array($locale, self::SUPPORTED_LOCALES, true)) {
             $locale = 'fr';
         }
 
@@ -415,6 +416,6 @@ class ClientPortalController extends Controller
     protected function applyPortalLocale(): void
     {
         $locale = session('portal_locale', 'fr');
-        app()->setLocale(in_array($locale, ['fr', 'en'], true) ? $locale : 'fr');
+        app()->setLocale(in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : 'fr');
     }
 }

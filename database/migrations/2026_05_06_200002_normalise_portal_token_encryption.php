@@ -23,9 +23,19 @@ return new class extends Migration {
                 return;
             }
 
-            // Detect Laravel-encrypted payloads (they are base64-encoded JSON
-            // with "iv", "value", and "mac" keys).
-            $isEncrypted = str_starts_with($client->portal_token, 'eyJ');
+            // Detect Laravel-encrypted payloads: they are base64-encoded JSON
+            // objects containing exactly the keys "iv", "value", and "mac" (and
+            // optionally "tag" for GCM mode).  A plain UUID would not decode to
+            // valid JSON with those keys, making this a reliable heuristic.
+            $isEncrypted = false;
+            if (str_starts_with($client->portal_token, 'eyJ')) {
+                $decoded = base64_decode($client->portal_token, strict: true);
+                if ($decoded !== false) {
+                    $payload = json_decode($decoded, associative: true);
+                    $isEncrypted = is_array($payload)
+                        && isset($payload['iv'], $payload['value'], $payload['mac']);
+                }
+            }
 
             if (!$isEncrypted) {
                 return; // Already plain-text; nothing to do.

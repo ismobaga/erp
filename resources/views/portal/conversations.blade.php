@@ -68,13 +68,13 @@
                                     @if($message->body)
                                         {{ $message->body }}
                                     @elseif($message->type === 'image')
-                                        🖼 {{ app()->getLocale() === 'fr' ? '[Image]' : '[Image]' }}
+                                        🖼 {{ __('erp.portal.conversations.media_image') }}
                                     @elseif($message->type === 'audio')
-                                        🎵 {{ app()->getLocale() === 'fr' ? '[Audio]' : '[Audio]' }}
+                                        🎵 {{ __('erp.portal.conversations.media_audio') }}
                                     @elseif($message->type === 'document')
-                                        📎 {{ app()->getLocale() === 'fr' ? '[Document]' : '[Document]' }}
+                                        📎 {{ __('erp.portal.conversations.media_document') }}
                                     @else
-                                        {{ app()->getLocale() === 'fr' ? '[Message]' : '[Message]' }}
+                                        {{ __('erp.portal.conversations.media_message') }}
                                     @endif
                                     <div class="bubble-meta">
                                         {{ $message->isInbound() ? __('erp.portal.conversations.you') : __('erp.portal.conversations.agent') }}

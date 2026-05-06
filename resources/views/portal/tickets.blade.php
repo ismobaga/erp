@@ -54,7 +54,7 @@
                 <label class="form-label" for="subject">{{ __('erp.portal.tickets.subject') }}</label>
                 <input id="subject" name="subject" type="text" class="form-control"
                        value="{{ old('subject') }}" required maxlength="255"
-                       placeholder="{{ app()->getLocale() === 'fr' ? 'Objet de votre demande' : 'Subject of your request' }}">
+                       placeholder="{{ __('erp.portal.tickets.subject_placeholder') }}">
                 @error('subject')
                     <p style="color:#dc2626;font-size:12px;margin-top:4px;">{{ $message }}</p>
                 @enderror
@@ -62,7 +62,7 @@
             <div class="form-group">
                 <label class="form-label" for="body">{{ __('erp.portal.tickets.body') }}</label>
                 <textarea id="body" name="body" class="form-control" rows="5" required maxlength="5000"
-                          placeholder="{{ app()->getLocale() === 'fr' ? 'Décrivez votre demande en détail…' : 'Describe your request in detail…' }}">{{ old('body') }}</textarea>
+                          placeholder="{{ __('erp.portal.tickets.body_placeholder') }}">{{ old('body') }}</textarea>
                 @error('body')
                     <p style="color:#dc2626;font-size:12px;margin-top:4px;">{{ $message }}</p>
                 @enderror

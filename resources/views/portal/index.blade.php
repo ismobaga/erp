@@ -28,7 +28,7 @@
             <div class="empty">
                 <div class="empty-icon">📄</div>
                 <p style="font-size:16px;font-weight:700;margin-bottom:8px;">{{ __('erp.portal.nav.invoices') }}</p>
-                <p>{{ app()->getLocale() === 'fr' ? 'Vos factures apparaîtront ici dès qu\'elles auront été émises.' : 'Your invoices will appear here once issued.' }}</p>
+                <p>{{ __('erp.portal.invoices.empty_hint') }}</p>
             </div>
         </div>
     @else
@@ -38,11 +38,11 @@
                 <table class="portal-table">
                     <thead>
                         <tr>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Facture' : 'Invoice' }}</th>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Date d\'émission' : 'Issue date' }}</th>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Échéance' : 'Due date' }}</th>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Montant' : 'Amount' }}</th>
-                            <th>{{ app()->getLocale() === 'fr' ? 'Solde dû' : 'Balance due' }}</th>
+                            <th>{{ __('erp.portal.invoices.number') }}</th>
+                            <th>{{ __('erp.portal.invoices.issue_date') }}</th>
+                            <th>{{ __('erp.portal.invoices.due_date') }}</th>
+                            <th>{{ __('erp.portal.invoices.total_amount') }}</th>
+                            <th>{{ __('erp.portal.invoices.balance_due') }}</th>
                             <th>{{ __('erp.portal.quotes.status') }}</th>
                             <th></th>
                         </tr>

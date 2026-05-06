@@ -28,15 +28,8 @@
             <ul class="timeline">
                 @foreach($activityLogs as $log)
                     @php
-                        $label = match($log->action) {
-                            'invoice_number_assigned'  => app()->getLocale() === 'fr' ? 'Facture créée' : 'Invoice created',
-                            'portal_quote_approved'    => app()->getLocale() === 'fr' ? 'Devis approuvé' : 'Quote approved',
-                            'portal_quote_rejected'    => app()->getLocale() === 'fr' ? 'Devis refusé' : 'Quote rejected',
-                            'quote_converted_to_invoice' => app()->getLocale() === 'fr' ? 'Devis converti en facture' : 'Quote converted to invoice',
-                            'payment_recorded'         => app()->getLocale() === 'fr' ? 'Paiement enregistré' : 'Payment recorded',
-                            'payment_flagged'          => app()->getLocale() === 'fr' ? 'Paiement signalé' : 'Payment flagged',
-                            default                    => str_replace('_', ' ', ucfirst($log->action)),
-                        };
+                        $label = __('erp.portal.activity.labels.' . $log->action)
+                            ?: str_replace('_', ' ', ucfirst($log->action));
                         $meta = $log->meta_json ?? [];
                     @endphp
                     <li>
