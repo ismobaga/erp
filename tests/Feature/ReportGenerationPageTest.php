@@ -9,6 +9,8 @@ use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\WhatsappConversation;
+use App\Models\WhatsappMessage;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -220,5 +222,79 @@ class ReportGenerationPageTest extends TestCase
         $this->artisan('reports:cleanup-exports')->assertExitCode(0);
 
         $this->assertFalse(Storage::disk('local')->exists($path));
+    }
+
+    public function test_excel_export_includes_whatsapp_and_client_engagement_analytics(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Engagement Studio',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-ENG-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(3)->toDateString(),
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'sent',
+            'total' => 180000,
+            'balance_due' => 180000,
+            'created_by' => $user->id,
+        ]);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => now()->subDay()->toDateString(),
+            'amount' => 90000,
+            'payment_method' => 'bank transfer',
+            'reference' => 'ENG-TRX-001',
+            'recorded_by' => $user->id,
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'client_id' => $client->id,
+            'chat_id' => '223700000001@s.whatsapp.net',
+            'contact_name' => 'Engagement Studio',
+            'status' => 'open',
+            'last_message_at' => now()->subHours(2),
+        ]);
+
+        WhatsappMessage::create([
+            'conversation_id' => $conversation->id,
+            'message_id' => 'wamid-analytics-1',
+            'direction' => 'inbound',
+            'type' => 'text',
+            'body' => 'Need monthly report',
+            'ack_status' => 'read',
+            'sent_at' => now()->subHours(1),
+            'read_at' => now()->subMinutes(30),
+        ]);
+
+        $component = Livewire::actingAs($user)
+            ->test(ReportGeneration::class)
+            ->set('startDate', now()->subDays(30)->toDateString())
+            ->set('endDate', now()->toDateString())
+            ->set('exportFormat', 'excel')
+            ->set('selectedModules.whatsapp', true)
+            ->set('selectedModules.engagement', true)
+            ->call('generateReport')
+            ->assertHasNoErrors()
+            ->assertSet('reportReady', true);
+
+        $generatedPath = $component->get('generatedReportPath');
+        $content = Storage::disk('local')->get($generatedPath);
+
+        $this->assertStringEndsWith('.xls', $generatedPath);
+        $this->assertStringContainsString('WhatsApp Analytics', $content);
+        $this->assertStringContainsString('Client Engagement Analytics', $content);
+        $this->assertStringContainsString('Flux de trésorerie', $content);
+        $this->assertStringContainsString('Taux d&#039;engagement client', $content);
     }
 }

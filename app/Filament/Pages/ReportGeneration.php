@@ -43,6 +43,8 @@ class ReportGeneration extends Page
         'payments' => true,
         'taxes' => false,
         'audit' => true,
+        'whatsapp' => false,
+        'engagement' => false,
     ];
 
     public bool $includeCharts = true;
@@ -120,17 +122,19 @@ class ReportGeneration extends Page
                 'required',
                 'date',
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (filled($this->startDate) && \Carbon\Carbon::parse((string) $value)->lt(\Carbon\Carbon::parse($this->startDate))) {
+                    if (filled($this->startDate) && Carbon::parse((string) $value)->lt(Carbon::parse($this->startDate))) {
                         $fail(__('erp.reports.end_date_after_start'));
                     }
-                }
+                },
             ],
-            'exportFormat' => ['required', 'in:pdf,csv'],
+            'exportFormat' => ['required', 'in:pdf,csv,excel'],
             'selectedModules.revenue' => ['boolean'],
             'selectedModules.expenses' => ['boolean'],
             'selectedModules.payments' => ['boolean'],
             'selectedModules.taxes' => ['boolean'],
             'selectedModules.audit' => ['boolean'],
+            'selectedModules.whatsapp' => ['boolean'],
+            'selectedModules.engagement' => ['boolean'],
             'includeCharts' => ['boolean'],
             'autoScheduleEnabled' => ['boolean'],
             'scheduleFrequency' => ['nullable', 'in:daily,weekly,monthly'],
@@ -187,7 +191,7 @@ class ReportGeneration extends Page
             ->title(__('erp.reports.report_generated'))
             ->body(
                 __('erp.reports.report_download_ready', ['format' => strtoupper($this->exportFormat)])
-                . ($this->autoScheduleEnabled ? __('erp.reports.schedule_enabled') : '')
+                .($this->autoScheduleEnabled ? __('erp.reports.schedule_enabled') : '')
             )
             ->success()
             ->send();
@@ -224,7 +228,7 @@ class ReportGeneration extends Page
 
     protected function formatMoney(float $amount): string
     {
-        return number_format($amount, 2, ',', ' ') . ' FCFA';
+        return number_format($amount, 2, ',', ' ').' FCFA';
     }
 
     private function normalizeScheduleFrequency(string $frequency): string

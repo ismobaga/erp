@@ -91,6 +91,22 @@
                             <input type="radio" wire:model="exportFormat" value="csv"
                                 class="h-4 w-4 text-[#002045] focus:ring-[#002045]" />
                         </label>
+
+                        <label
+                            class="group flex cursor-pointer items-center justify-between rounded-xl border border-transparent bg-white p-4 transition-all hover:border-[#c4c6cf]/20 hover:shadow-md dark:bg-slate-800">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                                    XLS</div>
+                                <div>
+                                    <p class="text-sm font-bold text-[#002045] dark:text-white">Excel</p>
+                                    <p class="text-[10px] text-[#57657a] dark:text-[#74777f]">Classeur analytique
+                                        (.xls)</p>
+                                </div>
+                            </div>
+                            <input type="radio" wire:model="exportFormat" value="excel"
+                                class="h-4 w-4 text-[#002045] focus:ring-[#002045]" />
+                        </label>
                     </div>
                 </div>
 
@@ -141,6 +157,22 @@
                                 class="flex items-center gap-2 rounded-full bg-[#f8faff] px-6 py-3 text-sm font-semibold text-[#002045] transition-all peer-checked:bg-[#002045] peer-checked:text-white dark:bg-slate-800 dark:text-slate-200">
                                 <span>🛡</span>
                                 Audit & conformité
+                            </div>
+                        </label>
+                        <label class="relative flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model="selectedModules.whatsapp" class="peer sr-only" />
+                            <div
+                                class="flex items-center gap-2 rounded-full bg-[#f8faff] px-6 py-3 text-sm font-semibold text-[#002045] transition-all peer-checked:bg-[#002045] peer-checked:text-white dark:bg-slate-800 dark:text-slate-200">
+                                <span>💬</span>
+                                Analytics WhatsApp
+                            </div>
+                        </label>
+                        <label class="relative flex cursor-pointer items-center">
+                            <input type="checkbox" wire:model="selectedModules.engagement" class="peer sr-only" />
+                            <div
+                                class="flex items-center gap-2 rounded-full bg-[#f8faff] px-6 py-3 text-sm font-semibold text-[#002045] transition-all peer-checked:bg-[#002045] peer-checked:text-white dark:bg-slate-800 dark:text-slate-200">
+                                <span>👥</span>
+                                Engagement client
                             </div>
                         </label>
                     </div>
