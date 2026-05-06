@@ -21,8 +21,8 @@ class ClientPortalController extends Controller
 
         $company = $this->resolveCompany($client);
 
-        $invoices = $client->invoices()
-            ->withoutCompanyScope()
+        $invoices = Invoice::withoutCompanyScope()
+            ->where('client_id', $client->id)
             ->with(['items'])
             ->orderByDesc('issue_date')
             ->get();

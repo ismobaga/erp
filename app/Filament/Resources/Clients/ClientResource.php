@@ -83,7 +83,7 @@ class ClientResource extends Resource
                                     ->required(),
                                 TextInput::make('company_name')
                                     ->label(fn(Get $get): string => $get('type') === 'individual' ? 'Nom du client' : 'Nom de l’entreprise')
-                                    ->placeholder('Acme Architecture Ltd.')
+                                    ->placeholder('Entreprise Exemple SARL')
                                     ->required()
                                     ->columnSpanFull(),
                                 TextInput::make('contact_name')
@@ -93,7 +93,7 @@ class ClientResource extends Resource
                                 TextInput::make('email')
                                     ->label('Adresse e-mail')
                                     ->email()
-                                    ->placeholder('contact@company.com'),
+                                    ->placeholder('contact@entreprise.com'),
                                 TextInput::make('phone')
                                     ->tel()
                                     ->placeholder('+223 00 00 00 00')
@@ -106,7 +106,7 @@ class ClientResource extends Resource
                             ->schema([
                                 Textarea::make('notes')
                                     ->rows(8)
-                                    ->placeholder('Document specific requirements, historical context, or preferred communication channels...'),
+                                    ->placeholder('Documentez les besoins specifiques, le contexte historique ou les canaux de communication preferes...'),
                                 Placeholder::make('registry_state')
                                     ->label('État du dossier')
                                     ->content('Brouillon · Prêt pour vérification'),
@@ -134,17 +134,17 @@ class ClientResource extends Resource
                                     ->label('Profil fiscal appliqué')
                                     ->content(function (Get $get): string {
                                         $country = (string) ($get('country') ?? '');
-                                        $city    = (string) ($get('city') ?? '');
+                                        $city = (string) ($get('city') ?? '');
 
                                         if (blank($country) && blank($city)) {
                                             return 'Aucun profil fiscal spécifique sélectionné.';
                                         }
 
                                         $fakeClient = new Client(['country' => $country, 'city' => $city]);
-                                        $profile    = app(TaxProfileResolver::class)->resolveForClient($fakeClient);
+                                        $profile = app(TaxProfileResolver::class)->resolveForClient($fakeClient);
 
                                         $label = $profile['label'] ?? 'Profil standard';
-                                        $rate  = number_format((float) ($profile['rate'] ?? 0), 2, ',', ' ');
+                                        $rate = number_format((float) ($profile['rate'] ?? 0), 2, ',', ' ');
 
                                         return $label . ' · ' . $rate . ' %';
                                     })
@@ -259,35 +259,170 @@ class ClientResource extends Resource
         $primaryOptions = array_combine($taxProfileCountries, $taxProfileCountries);
 
         $allCountries = [
-            'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia',
-            'Australia', 'Austria', 'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belarus', 'Belgium',
-            'Benin', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Bulgaria',
-            'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde',
-            'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
-            'Congo', 'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark',
-            'Djibouti', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea',
-            'Eritrea', 'Estonia', 'Ethiopia', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia',
-            'Germany', 'Ghana', 'Greece', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Haiti',
-            'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
-            'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
-            'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya',
-            'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali',
-            'Malta', 'Mauritania', 'Mauritius', 'Mexico', 'Moldova', 'Mongolia', 'Montenegro',
-            'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal', 'Netherlands', 'New Zealand',
-            'Nicaragua', 'Niger', 'Nigeria', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
-            'Panama', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania',
-            'Russia', 'Rwanda', 'Saudi Arabia', 'Senegal', 'Serbia', 'Sierra Leone', 'Singapore',
-            'Slovakia', 'Slovenia', 'Somalia', 'South Africa', 'South Sudan', 'Spain', 'Sri Lanka',
-            'Sudan', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania',
-            'Thailand', 'Togo', 'Tunisia', 'Turkey', 'Turkmenistan', 'Uganda', 'Ukraine',
-            'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
-            'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+            'Afghanistan',
+            'Albania',
+            'Algeria',
+            'Andorra',
+            'Angola',
+            'Argentina',
+            'Armenia',
+            'Australia',
+            'Austria',
+            'Azerbaijan',
+            'Bahrain',
+            'Bangladesh',
+            'Belarus',
+            'Belgium',
+            'Benin',
+            'Bolivia',
+            'Bosnia and Herzegovina',
+            'Botswana',
+            'Brazil',
+            'Bulgaria',
+            'Burkina Faso',
+            'Burundi',
+            'Cambodia',
+            'Cameroon',
+            'Canada',
+            'Cape Verde',
+            'Central African Republic',
+            'Chad',
+            'Chile',
+            'China',
+            'Colombia',
+            'Comoros',
+            'Congo',
+            'Costa Rica',
+            'Croatia',
+            'Cuba',
+            'Cyprus',
+            'Czech Republic',
+            'Denmark',
+            'Djibouti',
+            'Dominican Republic',
+            'Ecuador',
+            'Egypt',
+            'El Salvador',
+            'Equatorial Guinea',
+            'Eritrea',
+            'Estonia',
+            'Ethiopia',
+            'Finland',
+            'France',
+            'Gabon',
+            'Gambia',
+            'Georgia',
+            'Germany',
+            'Ghana',
+            'Greece',
+            'Guatemala',
+            'Guinea',
+            'Guinea-Bissau',
+            'Haiti',
+            'Honduras',
+            'Hungary',
+            'Iceland',
+            'India',
+            'Indonesia',
+            'Iran',
+            'Iraq',
+            'Ireland',
+            'Israel',
+            'Italy',
+            'Ivory Coast',
+            'Jamaica',
+            'Japan',
+            'Jordan',
+            'Kazakhstan',
+            'Kenya',
+            'Kuwait',
+            'Kyrgyzstan',
+            'Laos',
+            'Latvia',
+            'Lebanon',
+            'Lesotho',
+            'Liberia',
+            'Libya',
+            'Lithuania',
+            'Luxembourg',
+            'Madagascar',
+            'Malawi',
+            'Malaysia',
+            'Maldives',
+            'Mali',
+            'Malta',
+            'Mauritania',
+            'Mauritius',
+            'Mexico',
+            'Moldova',
+            'Mongolia',
+            'Montenegro',
+            'Morocco',
+            'Mozambique',
+            'Myanmar',
+            'Namibia',
+            'Nepal',
+            'Netherlands',
+            'New Zealand',
+            'Nicaragua',
+            'Niger',
+            'Nigeria',
+            'North Macedonia',
+            'Norway',
+            'Oman',
+            'Pakistan',
+            'Panama',
+            'Paraguay',
+            'Peru',
+            'Philippines',
+            'Poland',
+            'Portugal',
+            'Qatar',
+            'Romania',
+            'Russia',
+            'Rwanda',
+            'Saudi Arabia',
+            'Senegal',
+            'Serbia',
+            'Sierra Leone',
+            'Singapore',
+            'Slovakia',
+            'Slovenia',
+            'Somalia',
+            'South Africa',
+            'South Sudan',
+            'Spain',
+            'Sri Lanka',
+            'Sudan',
+            'Sweden',
+            'Switzerland',
+            'Syria',
+            'Taiwan',
+            'Tajikistan',
+            'Tanzania',
+            'Thailand',
+            'Togo',
+            'Tunisia',
+            'Turkey',
+            'Turkmenistan',
+            'Uganda',
+            'Ukraine',
+            'United Arab Emirates',
+            'United Kingdom',
+            'United States',
+            'Uruguay',
+            'Uzbekistan',
+            'Venezuela',
+            'Vietnam',
+            'Yemen',
+            'Zambia',
+            'Zimbabwe',
         ];
 
         $secondaryOptions = collect($allCountries)
-            ->reject(fn (string $c): bool => in_array($c, $taxProfileCountries, true))
+            ->reject(fn(string $c): bool => in_array($c, $taxProfileCountries, true))
             ->sort()
-            ->mapWithKeys(fn (string $c): array => [$c => $c])
+            ->mapWithKeys(fn(string $c): array => [$c => $c])
             ->all();
 
         return array_merge($primaryOptions, $secondaryOptions);

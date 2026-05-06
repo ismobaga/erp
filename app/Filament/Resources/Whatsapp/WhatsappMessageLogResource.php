@@ -29,7 +29,7 @@ class WhatsappMessageLogResource extends Resource
 
     protected static ?int $navigationSort = 11;
 
-    protected static ?string $navigationLabel = 'Logs WhatsApp';
+    protected static ?string $navigationLabel = 'Journal WhatsApp';
 
     public static function canCreate(): bool
     {

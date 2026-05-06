@@ -67,15 +67,15 @@ class ServiceResource extends Resource
                                     ->maxLength(255),
                                 TextInput::make('name')
                                     ->label('Nom du service')
-                                    ->placeholder('Structural analysis')
+                                    ->placeholder('Analyse structurelle')
                                     ->required()
                                     ->maxLength(255),
                                 TextInput::make('category')
-                                    ->placeholder('Consulting, Logistics, Audit...')
+                                    ->placeholder('Conseil, Logistique, Audit...')
                                     ->columnSpanFull(),
                                 Textarea::make('description')
                                     ->rows(5)
-                                    ->placeholder('Provide a detailed breakdown of the service scope, deliverables, and resource allocation requirements...')
+                                    ->placeholder('Decrivez en detail le perimetre du service, les livrables et les besoins en ressources...')
                                     ->columnSpanFull(),
                                 TextInput::make('default_price')
                                     ->label('Prix de base')

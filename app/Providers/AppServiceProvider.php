@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use App\Models\CreditNote;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -37,5 +43,46 @@ class AppServiceProvider extends ServiceProvider
         Payment::observe(PaymentObserver::class);
         Expense::observe(ExpenseObserver::class);
         CreditNote::observe(CreditNoteObserver::class);
+
+        // Enforce consistent action semantics across the whole admin panel.
+        CreateAction::configureUsing(fn(CreateAction $action) => $action->defaultColor('primary'));
+        EditAction::configureUsing(fn(EditAction $action) => $action->defaultColor('gray'));
+        ViewAction::configureUsing(fn(ViewAction $action) => $action->defaultColor('gray'));
+        DeleteAction::configureUsing(fn(DeleteAction $action) => $action->defaultColor('danger'));
+        DeleteBulkAction::configureUsing(fn(DeleteBulkAction $action) => $action->defaultColor('danger'));
+
+        Action::configureUsing(function (Action $action): void {
+            if ($action->getColor() !== null) {
+                return;
+            }
+
+            $name = strtolower((string) $action->getName());
+
+            if ($name === '') {
+                return;
+            }
+
+            if (str_contains($name, 'delete') || str_contains($name, 'remove') || str_contains($name, 'logout') || str_contains($name, 'void')) {
+                $action->defaultColor('danger');
+
+                return;
+            }
+
+            if (str_contains($name, 'approve') || str_contains($name, 'complete') || str_contains($name, 'send') || str_contains($name, 'invite') || str_contains($name, 'reconcile') || str_contains($name, 'save') || str_contains($name, 'create') || str_contains($name, 'add')) {
+                $action->defaultColor('success');
+
+                return;
+            }
+
+            if (str_contains($name, 'reopen') || str_contains($name, 'reconnect') || str_contains($name, 'review') || str_contains($name, 'check') || str_contains($name, 'run')) {
+                $action->defaultColor('warning');
+
+                return;
+            }
+
+            if (str_contains($name, 'export') || str_contains($name, 'download') || str_contains($name, 'details') || str_contains($name, 'back') || str_contains($name, 'status') || str_contains($name, 'list')) {
+                $action->defaultColor('gray');
+            }
+        });
     }
 }
