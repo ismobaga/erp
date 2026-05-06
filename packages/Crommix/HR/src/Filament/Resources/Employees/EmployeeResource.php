@@ -60,14 +60,14 @@ class EmployeeResource extends Resource
                 ->maxLength(255),
             Select::make('department_id')
                 ->label('Department')
-                ->options(fn(): array => Department::query()->pluck('name', 'id')->all())
+                ->options(fn (): array => Department::query()->pluck('name', 'id')->all())
                 ->searchable()
                 ->preload(),
             Select::make('employment_type')
                 ->label('Employment Type')
                 ->options([
-                    'full_time'  => 'Full Time',
-                    'part_time'  => 'Part Time',
+                    'full_time' => 'Full Time',
+                    'part_time' => 'Part Time',
                     'contractor' => 'Contractor',
                 ])
                 ->native(false)
@@ -76,8 +76,8 @@ class EmployeeResource extends Resource
             Select::make('status')
                 ->label('Status')
                 ->options([
-                    'active'     => 'Active',
-                    'inactive'   => 'Inactive',
+                    'active' => 'Active',
+                    'inactive' => 'Inactive',
                     'terminated' => 'Terminated',
                 ])
                 ->native(false)
@@ -103,34 +103,34 @@ class EmployeeResource extends Resource
                 TextColumn::make('position')->label('Position')->searchable()->toggleable(),
                 TextColumn::make('employment_type')->label('Type')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'full_time'  => 'success',
-                        'part_time'  => 'warning',
+                    ->color(fn (string $state): string => match ($state) {
+                        'full_time' => 'success',
+                        'part_time' => 'warning',
                         'contractor' => 'info',
-                        default      => 'gray',
+                        default => 'gray',
                     }),
                 TextColumn::make('status')->label('Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'active'     => 'success',
-                        'inactive'   => 'warning',
+                    ->color(fn (string $state): string => match ($state) {
+                        'active' => 'success',
+                        'inactive' => 'warning',
                         'terminated' => 'danger',
-                        default      => 'gray',
+                        default => 'gray',
                     }),
                 TextColumn::make('hired_at')->label('Hired')->date('d/m/Y')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'active'     => 'Active',
-                        'inactive'   => 'Inactive',
+                        'active' => 'Active',
+                        'inactive' => 'Inactive',
                         'terminated' => 'Terminated',
                     ]),
                 SelectFilter::make('employment_type')
                     ->label('Employment Type')
                     ->options([
-                        'full_time'  => 'Full Time',
-                        'part_time'  => 'Part Time',
+                        'full_time' => 'Full Time',
+                        'part_time' => 'Part Time',
                         'contractor' => 'Contractor',
                     ]),
             ])
@@ -148,9 +148,9 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListEmployees::route('/'),
+            'index' => ListEmployees::route('/'),
             'create' => CreateEmployee::route('/create'),
-            'edit'   => EditEmployee::route('/{record}/edit'),
+            'edit' => EditEmployee::route('/{record}/edit'),
         ];
     }
 }

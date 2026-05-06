@@ -11,7 +11,7 @@ class EmployeeService
     /**
      * Create a new employee record.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function create(array $data): Employee
     {
@@ -21,7 +21,7 @@ class EmployeeService
     /**
      * Update an existing employee record.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function update(Employee $employee, array $data): Employee
     {
@@ -36,7 +36,7 @@ class EmployeeService
     public function terminate(Employee $employee, \DateTimeInterface $terminatedAt): Employee
     {
         $employee->update([
-            'status'        => 'terminated',
+            'status' => 'terminated',
             'terminated_at' => $terminatedAt,
         ]);
 
@@ -49,7 +49,7 @@ class EmployeeService
     public function approveLeave(LeaveRequest $request, int $approverId): LeaveRequest
     {
         $request->update([
-            'status'      => 'approved',
+            'status' => 'approved',
             'approved_by' => $approverId,
             'approved_at' => now(),
         ]);
@@ -63,9 +63,9 @@ class EmployeeService
     public function rejectLeave(LeaveRequest $request, int $approverId, string $reason): LeaveRequest
     {
         $request->update([
-            'status'           => 'rejected',
-            'approved_by'      => $approverId,
-            'approved_at'      => now(),
+            'status' => 'rejected',
+            'approved_by' => $approverId,
+            'approved_at' => now(),
             'rejection_reason' => $reason,
         ]);
 

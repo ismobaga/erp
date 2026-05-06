@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('hr.enabled', true)) {
+if (! config('hr.enabled', true)) {
     return;
 }
 

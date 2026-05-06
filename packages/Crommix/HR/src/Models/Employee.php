@@ -38,9 +38,9 @@ class Employee extends Model implements HasTenantScope
     protected function casts(): array
     {
         return [
-            'hired_at'        => 'date',
-            'terminated_at'   => 'date',
-            'base_salary'     => 'decimal:2',
+            'hired_at' => 'date',
+            'terminated_at' => 'date',
+            'base_salary' => 'decimal:2',
         ];
     }
 
@@ -67,6 +67,36 @@ class Employee extends Model implements HasTenantScope
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function leaveBalances(): HasMany
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(EmploymentContract::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
+    public function emergencyContacts(): HasMany
+    {
+        return $this->hasMany(EmergencyContact::class);
+    }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
+    public function timesheets(): HasMany
+    {
+        return $this->hasMany(Timesheet::class);
     }
 
     public function scopeActive(Builder $query): Builder
