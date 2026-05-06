@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -140,8 +141,11 @@ class DocumentAttachments extends Page
     protected function getViewData(): array
     {
         $documents = $this->filteredDocuments();
-        $allDocuments = Attachment::query()->latest()->get();
-        $totalBytes = (int) $allDocuments->sum(fn(Attachment $attachment) => (int) ($attachment->size_bytes ?? 0));
+        $statsDocuments = Attachment::query()
+            ->select(['file_name', 'category', 'size_bytes'])
+            ->latest()
+            ->get();
+        $totalBytes = (int) Attachment::query()->sum('size_bytes');
         $quotaMb = max(1, (int) config('erp.documents.quota_mb', 200));
         $quotaBytes = $quotaMb * 1024 * 1024;
 
@@ -152,32 +156,21 @@ class DocumentAttachments extends Page
                 'quota' => $quotaMb . ' MB',
                 'percent' => min(100, $quotaBytes > 0 ? (int) round(($totalBytes / $quotaBytes) * 100) : 0),
             ],
-            'categories' => $this->categoryBreakdown($allDocuments),
-            'exploration' => $this->typeExploration($allDocuments),
+            'categories' => $this->categoryBreakdown($statsDocuments),
+            'exploration' => $this->typeExploration($statsDocuments),
         ];
     }
 
     protected function filteredDocuments(): Collection
     {
-        return Attachment::query()
-            ->latest()
+        $query = Attachment::query()
+            ->select(['id', 'file_name', 'category', 'size_bytes', 'created_at', 'uploaded_by'])
+            ->latest();
+
+        $this->applyDocumentFilters($query);
+
+        return $query
             ->get()
-            ->filter(function (Attachment $attachment): bool {
-                $matchesSearch = blank($this->search)
-                    || str_contains(Str::lower($attachment->file_name), Str::lower($this->search))
-                    || str_contains(Str::lower($attachment->resolvedCategory()), Str::lower($this->search));
-
-                if (!$matchesSearch) {
-                    return false;
-                }
-
-                return match ($this->filterType) {
-                    'pdf' => $attachment->extensionLabel() === 'PDF',
-                    'excel' => in_array($attachment->extensionLabel(), ['XLS', 'XLSX', 'CSV'], true),
-                    'docs' => in_array($attachment->extensionLabel(), ['DOC', 'DOCX', 'TXT'], true),
-                    default => true,
-                };
-            })
             ->values()
             ->map(function (Attachment $attachment): array {
                 return [
@@ -198,6 +191,33 @@ class DocumentAttachments extends Page
                     'tint' => $this->tintFor($attachment),
                 ];
             });
+    }
+
+    protected function applyDocumentFilters(Builder $query): void
+    {
+        if (filled($this->search)) {
+            $needle = trim($this->search);
+
+            $query->where(function (Builder $inner) use ($needle): void {
+                $inner->where('file_name', 'like', '%' . $needle . '%')
+                    ->orWhere('category', 'like', '%' . $needle . '%');
+            });
+        }
+
+        match ($this->filterType) {
+            'pdf' => $query->whereRaw('LOWER(file_name) like ?', ['%.pdf']),
+            'excel' => $query->where(function (Builder $inner): void {
+                    $inner->whereRaw('LOWER(file_name) like ?', ['%.xls'])
+                    ->orWhereRaw('LOWER(file_name) like ?', ['%.xlsx'])
+                    ->orWhereRaw('LOWER(file_name) like ?', ['%.csv']);
+                }),
+            'docs' => $query->where(function (Builder $inner): void {
+                    $inner->whereRaw('LOWER(file_name) like ?', ['%.doc'])
+                    ->orWhereRaw('LOWER(file_name) like ?', ['%.docx'])
+                    ->orWhereRaw('LOWER(file_name) like ?', ['%.txt']);
+                }),
+            default => null,
+        };
     }
 
     protected function categoryBreakdown(Collection $documents): array

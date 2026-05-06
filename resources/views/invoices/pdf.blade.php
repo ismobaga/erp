@@ -237,9 +237,9 @@
         }
 
         .meta-line {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
             padding: 12px 0;
             border-bottom: 1px solid rgba(87, 101, 122, 0.18);
             font-size: 14px;
@@ -247,6 +247,23 @@
 
         .meta-line:last-child {
             border-bottom: none;
+        }
+
+        .meta-line span,
+        .meta-line strong {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .meta-line span {
+            width: 58%;
+            padding-right: 12px;
+        }
+
+        .meta-line strong {
+            width: 42%;
+            text-align: right;
+            word-break: break-word;
         }
 
         .danger {
@@ -337,10 +354,25 @@
             color: white;
             border-radius: 16px;
             padding: 18px 20px;
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: center;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .grand-total span,
+        .grand-total strong {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .grand-total span {
+            width: 48%;
+            padding-right: 12px;
+        }
+
+        .grand-total strong {
+            width: 52%;
+            text-align: right;
         }
 
         .grand-total strong {

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -91,7 +92,9 @@ class CompanyPagesController extends Controller
      */
     protected function company(): ?Company
     {
-        return Company::query()->where('is_active', true)->first();
+        return Cache::remember('public.active_company', now()->addMinutes(5), static function (): ?Company {
+            return Company::query()->where('is_active', true)->first();
+        });
     }
 
     /**

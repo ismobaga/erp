@@ -5,12 +5,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            $table->uuid('portal_token')->nullable()->unique()->after('status');
+            $table->text('portal_token')->nullable()->unique()->after('status');
         });
 
         // Backfill existing clients with a portal token.

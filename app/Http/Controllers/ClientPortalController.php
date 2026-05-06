@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Support\ResolvesLogoDataUri;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClientPortalController extends Controller
@@ -15,9 +16,7 @@ class ClientPortalController extends Controller
 
     public function index(string $token): Response
     {
-        // withoutCompanyScope() is correct here: the portal is public, there
-        // is no authenticated session, and portal tokens are globally unique.
-        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
+        $client = $this->resolveClientByToken($token);
 
         $company = $this->resolveCompany($client);
 
@@ -37,7 +36,7 @@ class ClientPortalController extends Controller
 
     public function showInvoice(string $token, Invoice $invoice): Response
     {
-        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
+        $client = $this->resolveClientByToken($token);
 
         // Ensure this invoice belongs to the authenticated client.
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
@@ -66,7 +65,7 @@ class ClientPortalController extends Controller
 
     public function downloadPdf(string $token, Invoice $invoice): Response
     {
-        $client = Client::withoutCompanyScope()->where('portal_token', $token)->firstOrFail();
+        $client = $this->resolveClientByToken($token);
         abort_unless((int) $invoice->client_id === (int) $client->id, 404);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
@@ -108,7 +107,18 @@ class ClientPortalController extends Controller
             return Company::find($client->company_id);
         }
 
-        return Company::query()->where('is_active', true)->first();
+        return Cache::remember('portal.active_company', now()->addMinutes(5), static function (): ?Company {
+            return Company::query()->where('is_active', true)->first();
+        });
+    }
+
+    protected function resolveClientByToken(string $token): Client
+    {
+        // withoutCompanyScope() is correct here: the portal is public, there
+        // is no authenticated session, and portal tokens are globally unique.
+        return Client::withoutCompanyScope()
+            ->where('portal_token', encrypt($token))
+            ->firstOrFail();
     }
 
 }

@@ -16,6 +16,9 @@ use App\Observers\CreditNoteObserver;
 use App\Observers\ExpenseObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\PaymentObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 
@@ -38,6 +41,22 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        RateLimiter::for('contact', function (Request $request): Limit {
+            $email = strtolower((string) $request->input('email', 'guest'));
+
+            return Limit::perHour(3)->by($request->ip() . '|' . $email);
+        });
+
+        RateLimiter::for('pdf', function (Request $request): Limit {
+            return Limit::perMinute(10)->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
+        RateLimiter::for('portal', function (Request $request): Limit {
+            $token = (string) $request->route('token', 'portal');
+
+            return Limit::perHour(60)->by($request->ip() . '|' . $token);
+        });
 
         Invoice::observe(InvoiceObserver::class);
         Payment::observe(PaymentObserver::class);

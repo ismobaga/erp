@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -108,18 +109,28 @@ class FinancialInsights extends Page
     {
         $context = $this->resolvePeriodContext();
 
+        $cacheKey = sprintf(
+            'financial_insights:%s:%s:%s:%s',
+            currentCompany()?->id ?? 'global',
+            $this->period,
+            $context['start']->toDateString(),
+            $context['end']->toDateString(),
+        );
+
         try {
-            return [
-                'period' => $this->period,
-                'periodOptions' => $this->periodOptions(),
-                'periodLabel' => $context['label'],
-                'kpis' => $this->buildKpis($context),
-                'monthly' => $this->buildMonthlySeries($context),
-                'breakdown' => $this->buildRevenueBreakdown($context),
-                'aging' => $this->buildAgingBuckets($context),
-                'transactions' => $this->buildTransactions($context),
-                'insight' => $this->buildInsight($context),
-            ];
+            return Cache::remember($cacheKey, now()->addMinutes(2), function () use ($context): array {
+                return [
+                    'period' => $this->period,
+                    'periodOptions' => $this->periodOptions(),
+                    'periodLabel' => $context['label'],
+                    'kpis' => $this->buildKpis($context),
+                    'monthly' => $this->buildMonthlySeries($context),
+                    'breakdown' => $this->buildRevenueBreakdown($context),
+                    'aging' => $this->buildAgingBuckets($context),
+                    'transactions' => $this->buildTransactions($context),
+                    'insight' => $this->buildInsight($context),
+                ];
+            });
         } catch (Throwable) {
             return [
                 'period' => $this->period,
@@ -244,9 +255,14 @@ class FinancialInsights extends Page
             return $this->placeholderData($context['label'])['monthly'];
         }
 
-        $rows = $this->makeTimeBuckets($context)->map(function (array $bucket) {
-            $revenue = $this->sumInvoiceRevenue($bucket['start'], $bucket['end']);
-            $expenses = $this->sumExpenses($bucket['start'], $bucket['end']);
+        $bucketRanges = $this->makeTimeBuckets($context);
+        $invoiceTotals = $this->sumInvoiceRevenueByBuckets($bucketRanges);
+        $expenseTotals = $this->sumExpensesByBuckets($bucketRanges);
+
+        $rows = $bucketRanges->map(function (array $bucket) use ($invoiceTotals, $expenseTotals) {
+            $bucketKey = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $revenue = (float) ($invoiceTotals[$bucketKey] ?? 0.0);
+            $expenses = (float) ($expenseTotals[$bucketKey] ?? 0.0);
 
             return [
                 'label' => $bucket['label'],
@@ -520,6 +536,30 @@ class FinancialInsights extends Page
         return (float) Expense::query()
             ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
             ->sum('amount');
+    }
+
+    protected function sumInvoiceRevenueByBuckets(Collection $buckets): array
+    {
+        $totals = [];
+
+        foreach ($buckets as $bucket) {
+            $key = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $totals[$key] = $this->sumInvoiceRevenue($bucket['start'], $bucket['end']);
+        }
+
+        return $totals;
+    }
+
+    protected function sumExpensesByBuckets(Collection $buckets): array
+    {
+        $totals = [];
+
+        foreach ($buckets as $bucket) {
+            $key = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $totals[$key] = $this->sumExpenses($bucket['start'], $bucket['end']);
+        }
+
+        return $totals;
     }
 
     protected function money(float $amount): string

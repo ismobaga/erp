@@ -252,6 +252,7 @@ class ReportExportService
         if ($includeRevenue) {
             Invoice::query()
                 ->with('client')
+                ->select(['id', 'client_id', 'invoice_number', 'issue_date', 'status', 'total', 'tax_total', 'balance_due'])
                 ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
                 ->orderBy('id')
                 ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
@@ -286,6 +287,7 @@ class ReportExportService
         if ($includePayments) {
             Payment::query()
                 ->with(['client', 'invoice'])
+                ->select(['id', 'client_id', 'invoice_id', 'payment_date', 'reference', 'amount', 'reconciled_at'])
                 ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
                 ->orderBy('id')
                 ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
@@ -319,6 +321,7 @@ class ReportExportService
 
         if ($includeExpenses) {
             Expense::query()
+                ->select(['id', 'expense_date', 'reference', 'vendor', 'title', 'amount', 'category', 'approval_status'])
                 ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
                 ->orderBy('id')
                 ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$ledgerRows): void {
@@ -352,6 +355,7 @@ class ReportExportService
 
         if ($includeAudit) {
             ActivityLog::query()
+                ->select(['id', 'created_at', 'user_id', 'action', 'subject_type', 'subject_id', 'meta_json'])
                 ->whereBetween('created_at', [$start, $end])
                 ->orderBy('id')
                 ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use (&$rows, &$auditRows): void {
@@ -479,6 +483,7 @@ class ReportExportService
             if (!empty($selectedModules['revenue'])) {
                 Invoice::query()
                     ->with('client')
+                    ->select(['id', 'client_id', 'invoice_number', 'issue_date', 'status', 'total', 'tax_total', 'balance_due'])
                     ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
                     ->orderBy('id')
                     ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
@@ -503,6 +508,7 @@ class ReportExportService
             if (!empty($selectedModules['payments'])) {
                 Payment::query()
                     ->with(['client', 'invoice'])
+                    ->select(['id', 'client_id', 'invoice_id', 'payment_date', 'reference', 'amount', 'reconciled_at'])
                     ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
                     ->orderBy('id')
                     ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
@@ -526,6 +532,7 @@ class ReportExportService
 
             if (!empty($selectedModules['expenses'])) {
                 Expense::query()
+                    ->select(['id', 'expense_date', 'reference', 'vendor', 'title', 'amount', 'category', 'approval_status'])
                     ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
                     ->orderBy('id')
                     ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
@@ -553,6 +560,7 @@ class ReportExportService
                 fwrite($handle, "Horodatage;Utilisateur;Action;Sujet;Identifiant;Contexte\n");
 
                 ActivityLog::query()
+                    ->select(['id', 'created_at', 'user_id', 'action', 'subject_type', 'subject_id', 'meta_json'])
                     ->whereBetween('created_at', [$start, $end])
                     ->orderBy('id')
                     ->chunk(self::QUERY_CHUNK_SIZE, function ($chunk) use ($handle): void {
@@ -590,7 +598,12 @@ class ReportExportService
         $rows = [];
 
         if (!empty($selectedModules['revenue'])) {
-            foreach (Invoice::query()->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])->latest('issue_date')->take($limit)->get() as $invoice) {
+            foreach (Invoice::query()
+                ->select(['id', 'invoice_number', 'issue_date', 'status', 'total'])
+                ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
+                ->latest('issue_date')
+                ->take($limit)
+                ->get() as $invoice) {
                 /** @var Invoice $invoice */
                 $rows[] = [
                     'sort_date' => optional($invoice->issue_date)?->format('Y-m-d') ?? '',
@@ -604,7 +617,13 @@ class ReportExportService
         }
 
         if (!empty($selectedModules['payments'])) {
-            foreach (Payment::query()->with('invoice')->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])->latest('payment_date')->take($limit)->get() as $payment) {
+            foreach (Payment::query()
+                ->with(['invoice:id,invoice_number'])
+                ->select(['id', 'invoice_id', 'payment_date', 'reference', 'amount'])
+                ->whereBetween('payment_date', [$start->toDateString(), $end->toDateString()])
+                ->latest('payment_date')
+                ->take($limit)
+                ->get() as $payment) {
                 /** @var Payment $payment */
                 $rows[] = [
                     'sort_date' => optional($payment->payment_date)?->format('Y-m-d') ?? '',
@@ -618,7 +637,12 @@ class ReportExportService
         }
 
         if (!empty($selectedModules['expenses'])) {
-            foreach (Expense::query()->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->latest('expense_date')->take($limit)->get() as $expense) {
+            foreach (Expense::query()
+                ->select(['id', 'expense_date', 'title', 'category', 'amount'])
+                ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+                ->latest('expense_date')
+                ->take($limit)
+                ->get() as $expense) {
                 /** @var Expense $expense */
                 $rows[] = [
                     'sort_date' => optional($expense->expense_date)?->format('Y-m-d') ?? '',
@@ -632,7 +656,12 @@ class ReportExportService
         }
 
         if (!empty($selectedModules['audit'])) {
-            foreach (ActivityLog::query()->whereBetween('created_at', [$start, $end])->latest('created_at')->take($limit)->get() as $log) {
+            foreach (ActivityLog::query()
+                ->select(['id', 'created_at', 'action', 'subject_type'])
+                ->whereBetween('created_at', [$start, $end])
+                ->latest('created_at')
+                ->take($limit)
+                ->get() as $log) {
                 /** @var ActivityLog $log */
                 $rows[] = [
                     'sort_date' => optional($log->created_at)?->format('Y-m-d H:i:s') ?? '',
