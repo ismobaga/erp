@@ -170,6 +170,99 @@ class OperationalResilienceService
         ];
     }
 
+    /**
+     * Return details of failed jobs for monitoring.
+     */
+    public function failedJobFeed(int $limit = 10): array
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return [];
+        }
+
+        return DB::table('failed_jobs')
+            ->orderByDesc('failed_at')
+            ->take($limit)
+            ->get()
+            ->map(function (object $row): array {
+                $payload = json_decode((string) ($row->payload ?? '{}'), true);
+                $jobClass = data_get($payload, 'displayName', data_get($payload, 'job', 'Unknown'));
+
+                return [
+                    'uuid' => (string) ($row->uuid ?? ''),
+                    'job' => is_string($jobClass) ? class_basename($jobClass) : 'Unknown',
+                    'queue' => (string) ($row->queue ?? 'default'),
+                    'exception' => mb_substr((string) ($row->exception ?? ''), 0, 256),
+                    'failed_at' => $this->formatFailedAt($row->failed_at ?? null),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * Retry a specific failed job by UUID and log the action.
+     * Returns true when the job was found and re-queued, false otherwise.
+     */
+    public function retryFailedJob(string $uuid, ?int $userId = null): bool
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return false;
+        }
+
+        $row = DB::table('failed_jobs')->where('uuid', $uuid)->first();
+
+        if ($row === null) {
+            return false;
+        }
+
+        try {
+            $payload = json_decode((string) ($row->payload ?? '{}'), true, 512, JSON_THROW_ON_ERROR);
+            $connection = (string) ($row->connection ?? 'database');
+            $queue = (string) ($row->queue ?? 'default');
+
+            // Laravel stores all queued jobs in the 'jobs' table regardless of queue name.
+            // The queue name is a column value, not a separate table.
+            DB::connection($connection)->table('jobs')->insert([
+                'queue' => $queue,
+                'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES),
+                'attempts' => 0,
+                'reserved_at' => null,
+                'available_at' => now()->getTimestamp(),
+                'created_at' => now()->getTimestamp(),
+            ]);
+
+            DB::table('failed_jobs')->where('uuid', $uuid)->delete();
+
+            app(AuditTrailService::class)->log('failed_job_retried', null, [
+                'uuid' => $uuid,
+                'job' => data_get($payload, 'displayName', 'unknown'),
+                'queue' => $queue,
+            ], $userId);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Purge all failed jobs and log the action.
+     */
+    public function purgeFailedJobs(?int $userId = null): int
+    {
+        if (!Schema::hasTable('failed_jobs')) {
+            return 0;
+        }
+
+        $count = (int) DB::table('failed_jobs')->count();
+        DB::table('failed_jobs')->delete();
+
+        app(AuditTrailService::class)->log('failed_jobs_purged', null, [
+            'count' => $count,
+        ], $userId);
+
+        return $count;
+    }
+
     public function dashboardSummary(): array
     {
         $summary = $this->evaluateHealth();
@@ -313,6 +406,27 @@ class OperationalResilienceService
         }
 
         app(AuditTrailService::class)->log('system_alert_raised', null, array_merge(['type' => $type], $meta), $userId);
+    }
+
+    /**
+     * Format a `failed_at` value (raw timestamp integer or datetime string) into a
+     * human-readable relative string. Returns 'unknown' when the value is absent.
+     */
+    protected function formatFailedAt(mixed $failedAt): string
+    {
+        if ($failedAt === null) {
+            return 'unknown';
+        }
+
+        $timestamp = is_numeric($failedAt)
+            ? (int) $failedAt
+            : strtotime((string) $failedAt);
+
+        if ($timestamp === false) {
+            return 'unknown';
+        }
+
+        return now()->createFromTimestamp($timestamp)->diffForHumans();
     }
 
     protected function backupTables(): array

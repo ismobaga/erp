@@ -76,10 +76,46 @@
                             <p class="text-[10px] uppercase tracking-widest text-emerald-500">{{ $item['time'] }}</p>
                         </div>
                     @empty
-                        <p class="text-sm text-[#57657a]">Aucune trace d’audit récente.</p>
+                        <p class="text-sm text-[#57657a]">Aucune trace d'audit récente.</p>
                     @endforelse
                 </div>
             </div>
         </section>
+
+        @if (!empty($failedJobs))
+            <section class="rounded-[1.25rem] border border-rose-200 bg-white p-6 shadow-sm">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-lg font-black text-[#002045]">Surveillance de la file — Jobs échoués</h3>
+                    <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">
+                        {{ count($failedJobs) }} job(s)
+                    </span>
+                </div>
+                <div class="space-y-3">
+                    @foreach ($failedJobs as $job)
+                        <div class="rounded-xl border border-rose-100 bg-rose-50 p-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-bold text-rose-800">{{ $job['job'] }}</p>
+                                    <p class="text-xs text-rose-600">File: {{ $job['queue'] }}</p>
+                                    <p class="mt-1 truncate text-xs text-[#57657a]" title="{{ $job['exception'] }}">
+                                        {{ $job['exception'] }}
+                                    </p>
+                                    <p class="mt-1 text-[10px] uppercase tracking-widest text-rose-400">{{ $job['failed_at'] }}</p>
+                                </div>
+                                @if (auth()->user()?->can('reports.delete'))
+                                    <button
+                                        wire:click="retryJob('{{ $job['uuid'] }}')"
+                                        class="shrink-0 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                        title="Remettre en file d'attente"
+                                    >
+                                        Relancer
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
     </div>
 </x-filament-panels::page>

@@ -21,6 +21,10 @@ class GenerateScheduledReportJob implements ShouldQueue
 
     public int $backoff = 60;
 
+    public int $timeout = 300;
+
+    public int $maxExceptions = 2;
+
     public function __construct(
         public readonly int $scheduleId,
         public readonly int $companyId = 0,
@@ -96,6 +100,9 @@ class GenerateScheduledReportJob implements ShouldQueue
             app(AuditTrailService::class)->log('scheduled_report_failed', null, [
                 'schedule_id' => $schedule->id,
                 'error' => $exception->getMessage(),
+                'exception_class' => get_class($exception),
+                'attempts' => $this->attempts(),
+                'company_id' => $this->companyId,
             ], $schedule->owner_id);
         }
     }

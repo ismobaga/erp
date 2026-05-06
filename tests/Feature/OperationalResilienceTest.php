@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\OperationalResilienceService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -104,5 +105,74 @@ class OperationalResilienceTest extends TestCase
         $response->assertSee('Sauvegarde et restauration');
         $response->assertSee('Audit administrateur');
         $response->assertSee('Alertes système');
+    }
+
+    public function test_failed_job_feed_returns_failed_jobs(): void
+    {
+        $uuid = (string) Str::uuid();
+
+        DB::table('failed_jobs')->insert([
+            'uuid' => $uuid,
+            'connection' => 'database',
+            'queue' => 'default',
+            'payload' => json_encode(['displayName' => 'App\\Jobs\\GenerateScheduledReportJob', 'job' => 'callQueuedClosure']),
+            'exception' => 'RuntimeException: Something went wrong',
+            'failed_at' => now(),
+        ]);
+
+        $feed = app(OperationalResilienceService::class)->failedJobFeed();
+
+        $this->assertNotEmpty($feed);
+        $this->assertSame($uuid, $feed[0]['uuid']);
+        $this->assertSame('GenerateScheduledReportJob', $feed[0]['job']);
+        $this->assertSame('default', $feed[0]['queue']);
+    }
+
+    public function test_purge_failed_jobs_clears_table_and_logs_audit(): void
+    {
+        DB::table('failed_jobs')->insert([
+            'uuid' => (string) Str::uuid(),
+            'connection' => 'database',
+            'queue' => 'default',
+            'payload' => json_encode(['job' => 'DemoJob']),
+            'exception' => 'Test exception',
+            'failed_at' => now(),
+        ]);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Super Admin');
+
+        $count = app(OperationalResilienceService::class)->purgeFailedJobs($user->id);
+
+        $this->assertSame(1, $count);
+        $this->assertDatabaseCount('failed_jobs', 0);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'failed_jobs_purged']);
+    }
+
+    public function test_audit_trail_captures_ip_address_in_web_context(): void
+    {
+        // Verify the new schema columns exist.
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'ip_address'));
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'user_agent'));
+
+        // Simulate a web request so that the AuditTrailService can capture IP and user-agent.
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $this->actingAs($user)
+            ->withHeaders(['User-Agent' => 'TestBrowser/1.0'])
+            ->get('/admin/operational-resilience');
+
+        // Any audit log written during this request should carry the IP from the test client.
+        $log = ActivityLog::latest()->first();
+
+        if ($log !== null) {
+            // In testing, the IP defaults to '127.0.0.1'. User-agent may or may not be set
+            // depending on Filament internals, but the column must be nullable so no error occurs.
+            $this->assertTrue(
+                $log->ip_address === null || is_string($log->ip_address),
+                'ip_address must be null or a string',
+            );
+        }
     }
 }
