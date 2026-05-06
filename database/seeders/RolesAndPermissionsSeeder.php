@@ -68,6 +68,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'approvals.manage',
             'contact_requests.view',
             'contact_requests.manage',
+            'saas.plans.view',
+            'saas.plans.manage',
+            'saas.subscriptions.view',
+            'saas.subscriptions.manage',
+            'saas.billing.view',
+            'saas.onboarding.manage',
         ];
 
         foreach ($permissions as $permission) {

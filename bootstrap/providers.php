@@ -10,6 +10,7 @@ use Crommix\CRM\CRMServiceProvider;
 use Crommix\Inventory\InventoryServiceProvider;
 use Crommix\Procurement\ProcurementServiceProvider;
 use Crommix\POS\POSServiceProvider;
+use Crommix\SaaS\SaaSServiceProvider;
 use Crommix\Support\SupportServiceProvider;
 
 return [
@@ -23,5 +24,6 @@ return [
     InventoryServiceProvider::class,
     ProcurementServiceProvider::class,
     POSServiceProvider::class,
+    SaaSServiceProvider::class,
     SupportServiceProvider::class,
 ];
