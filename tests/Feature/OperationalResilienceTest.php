@@ -52,7 +52,7 @@ class OperationalResilienceTest extends TestCase
         $invoice->delete();
         $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
 
-        Artisan::call('erp:restore-backup');
+        Artisan::call('erp:restore-backup', ['--force' => true]);
 
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'system_backup_created']);

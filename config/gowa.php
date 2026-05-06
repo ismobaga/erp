@@ -5,4 +5,6 @@ return [
     'username' => env('GOWA_USERNAME'),
     'password' => env('GOWA_PASSWORD'),
     'timeout' => env('GOWA_TIMEOUT', 30),
+    'retry_times' => env('GOWA_RETRY_TIMES', 2),
+    'retry_sleep_ms' => env('GOWA_RETRY_SLEEP_MS', 300),
 ];

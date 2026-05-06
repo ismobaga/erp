@@ -11,6 +11,7 @@ use App\Models\LedgerAccount;
 use App\Models\Payment;
 use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
@@ -99,7 +100,7 @@ class LedgerPostingService
         }
 
         return $this->createAndPost(
-            date: $invoice->issue_date?->toDateString() ?? now()->toDateString(),
+            date: $this->normalizeDateToString($invoice->issue_date),
             description: 'Invoice ' . $invoice->invoice_number,
             sourceType: 'invoice',
             sourceId: $invoice->id,
@@ -139,7 +140,7 @@ class LedgerPostingService
         $reference = $payment->reference ?: ('PAY-' . $payment->id);
 
         return $this->createAndPost(
-            date: $payment->payment_date?->toDateString() ?? now()->toDateString(),
+            date: $this->normalizeDateToString($payment->payment_date),
             description: 'Payment ' . $reference,
             sourceType: 'payment',
             sourceId: $payment->id,
@@ -192,7 +193,7 @@ class LedgerPostingService
         $reference = $expense->reference ?: ('EXP-' . $expense->id);
 
         return $this->createAndPost(
-            date: $expense->expense_date?->toDateString() ?? now()->toDateString(),
+            date: $this->normalizeDateToString($expense->expense_date),
             description: 'Expense ' . $reference . ': ' . $expense->title,
             sourceType: 'expense',
             sourceId: $expense->id,
@@ -243,7 +244,7 @@ class LedgerPostingService
         }
 
         return $this->createAndPost(
-            date: $creditNote->issue_date?->toDateString() ?? now()->toDateString(),
+            date: $this->normalizeDateToString($creditNote->issue_date),
             description: 'Credit note ' . $creditNote->credit_number,
             sourceType: 'credit_note',
             sourceId: $creditNote->id,
@@ -279,34 +280,59 @@ class LedgerPostingService
      */
     public function reverse(JournalEntry $entry, ?int $userId = null, ?string $reason = null): JournalEntry
     {
-        if ($entry->status !== 'posted') {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'status' => __('erp.ledger.reverse_only_posted'),
-            ]);
-        }
-
         return DB::transaction(function () use ($entry, $userId, $reason): JournalEntry {
+            /** @var JournalEntry|null $freshEntry */
+            $freshEntry = JournalEntry::query()
+                ->whereKey($entry->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($freshEntry === null) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'entry' => __('erp.common.not_found'),
+                ]);
+            }
+
+            if ($freshEntry->status !== 'posted') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' => __('erp.ledger.reverse_only_posted'),
+                ]);
+            }
+
+            $existingReversal = JournalEntry::query()
+                ->where('reversal_of', $freshEntry->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingReversal !== null) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'reversal' => __('erp.ledger.already_reversed'),
+                ]);
+            }
+
             // Load lines inside the transaction for data consistency.
-            $entry->loadMissing('lines');
-            $description = __('erp.ledger.reversal_of') . ': ' . $entry->entry_number;
+            $freshEntry->loadMissing('lines');
+            $description = __('erp.ledger.reversal_of') . ': ' . $freshEntry->entry_number;
+
+            $companyId = $this->resolveCompanyId($freshEntry->company_id ?? null);
 
             if ($reason) {
                 $description .= ' — ' . $reason;
             }
 
             $reversal = JournalEntry::create([
-                'entry_number' => $this->generateEntryNumber(now()->toDateString()),
+                'entry_number' => $this->generateEntryNumber(now()->toDateString(), $companyId),
                 'entry_date' => now()->toDateString(),
                 'description' => $description,
                 'status' => 'draft',
                 'source_type' => null,
                 'source_id' => null,
-                'reversal_of' => $entry->id,
+                'reversal_of' => $freshEntry->id,
                 'financial_period_id' => $this->resolvePeriodId(now()),
                 'created_by' => $userId,
             ]);
 
-            foreach ($entry->lines as $line) {
+            foreach ($freshEntry->lines as $line) {
                 $reversal->lines()->create([
                     'account_id' => $line->account_id,
                     'debit' => $line->credit,
@@ -318,7 +344,7 @@ class LedgerPostingService
             $reversal->load('lines');
             $reversal->post($userId);
 
-            app(AuditTrailService::class)->log('journal_entry_reversed', $entry, [
+            app(AuditTrailService::class)->log('journal_entry_reversed', $freshEntry, [
                 'reversal_entry_number' => $reversal->entry_number,
                 'reason' => $reason,
             ], $userId);
@@ -438,6 +464,19 @@ class LedgerPostingService
         return FinancialPeriod::query()
             ->current($date)
             ->value('id');
+    }
+
+    private function normalizeDateToString(mixed $date): string
+    {
+        if ($date instanceof CarbonInterface) {
+            return $date->toDateString();
+        }
+
+        if (is_string($date) && $date !== '') {
+            return substr($date, 0, 10);
+        }
+
+        return now()->toDateString();
     }
 
     private function expenseAccountKey(string $category): string

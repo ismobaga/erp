@@ -49,7 +49,7 @@ class ReportGeneration extends Page
 
     public bool $autoScheduleEnabled = false;
 
-    public string $scheduleFrequency = 'Hebdomadaire';
+    public string $scheduleFrequency = 'weekly';
 
     public string $nextExecutionAt = '';
 
@@ -112,6 +112,8 @@ class ReportGeneration extends Page
 
     public function generateReport(): void
     {
+        $this->scheduleFrequency = $this->normalizeScheduleFrequency($this->scheduleFrequency);
+
         $validated = $this->validate([
             'startDate' => ['required', 'date'],
             'endDate' => [
@@ -223,5 +225,15 @@ class ReportGeneration extends Page
     protected function formatMoney(float $amount): string
     {
         return number_format($amount, 2, ',', ' ') . ' FCFA';
+    }
+
+    private function normalizeScheduleFrequency(string $frequency): string
+    {
+        return match (mb_strtolower(trim($frequency))) {
+            'quotidienne' => 'daily',
+            'hebdomadaire' => 'weekly',
+            'mensuelle' => 'monthly',
+            default => $frequency,
+        };
     }
 }

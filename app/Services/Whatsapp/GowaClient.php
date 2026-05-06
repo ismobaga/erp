@@ -2,8 +2,12 @@
 
 namespace App\Services\Whatsapp;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class GowaClient
 {
@@ -11,6 +15,8 @@ class GowaClient
     private ?string $username;
     private ?string $password;
     private int $timeout;
+    private int $retryTimes;
+    private int $retrySleepMs;
 
     public function __construct()
     {
@@ -18,6 +24,8 @@ class GowaClient
         $this->username = config('gowa.username');
         $this->password = config('gowa.password');
         $this->timeout = (int) config('gowa.timeout', 30);
+        $this->retryTimes = max(0, (int) config('gowa.retry_times', 2));
+        $this->retrySleepMs = max(0, (int) config('gowa.retry_sleep_ms', 300));
     }
 
     public function sendText(string $phone, string $message, ?string $deviceId = null): array
@@ -35,6 +43,10 @@ class GowaClient
 
     public function sendFile(string $phone, string $filePath, ?string $caption = null, ?string $deviceId = null): array
     {
+        if (!is_file($filePath) || !is_readable($filePath)) {
+            throw new RuntimeException('WhatsApp file attachment is missing or unreadable: ' . $filePath);
+        }
+
         $stream = fopen($filePath, 'r');
 
         try {
@@ -50,7 +62,7 @@ class GowaClient
             }
         }
 
-        $response->throw();
+        $this->throwWithContext($response);
 
         return $response->json() ?? [];
     }
@@ -182,14 +194,18 @@ class GowaClient
             default => throw new \InvalidArgumentException('Unsupported HTTP method: ' . $method),
         };
 
-        $response->throw();
+        $this->throwWithContext($response);
 
         return $response->json() ?? [];
     }
 
     private function client(?string $deviceId = null): PendingRequest
     {
-        $client = Http::timeout($this->timeout);
+        $client = Http::timeout($this->timeout)
+            ->retry($this->retryTimes, $this->retrySleepMs, function ($exception): bool {
+                return $exception instanceof ConnectionException
+                    || ($exception instanceof RequestException && $exception->response?->status() >= 500);
+            });
 
         if (filled($this->username) || filled($this->password)) {
             $client = $client->withBasicAuth((string) $this->username, (string) $this->password);
@@ -200,5 +216,27 @@ class GowaClient
         }
 
         return $client;
+    }
+
+    private function throwWithContext(\Illuminate\Http\Client\Response $response): void
+    {
+        if ($response->successful()) {
+            return;
+        }
+
+        $payload = $response->json();
+        $code = Arr::get($payload, 'code');
+        $message = Arr::get($payload, 'message');
+
+        if (filled($code) || filled($message)) {
+            throw new RuntimeException(sprintf(
+                'GOWA request failed (%d%s%s)',
+                $response->status(),
+                filled($code) ? ', code: ' . $code : '',
+                filled($message) ? ', message: ' . $message : ''
+            ));
+        }
+
+        $response->throw();
     }
 }

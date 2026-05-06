@@ -368,6 +368,41 @@ class LedgerPostingTest extends TestCase
         app(LedgerPostingService::class)->reverse($entry, $user->id);
     }
 
+    public function test_reversal_is_blocked_when_entry_is_already_reversed(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create(['type' => 'company', 'company_name' => 'Test Co', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-TEST-REV-003',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'draft',
+            'subtotal' => 500.00,
+            'tax_total' => 0.00,
+            'total' => 500.00,
+            'balance_due' => 500.00,
+            'created_by' => $user->id,
+        ]);
+
+        $invoice->forceFill(['status' => 'sent', 'updated_by' => $user->id])->save();
+
+        $entry = JournalEntry::query()
+            ->where('source_type', 'invoice')
+            ->where('source_id', $invoice->id)
+            ->first();
+
+        $this->assertNotNull($entry);
+
+        $service = app(LedgerPostingService::class);
+        $service->reverse($entry, $user->id, 'First reversal');
+
+        $this->expectException(ValidationException::class);
+
+        $service->reverse($entry->fresh(), $user->id, 'Second reversal should fail');
+    }
+
     public function test_journal_entry_line_cannot_have_both_debit_and_credit(): void
     {
         $user = User::factory()->create(['status' => 'active']);
