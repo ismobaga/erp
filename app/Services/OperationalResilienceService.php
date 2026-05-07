@@ -13,6 +13,14 @@ use RuntimeException;
 
 class OperationalResilienceService
 {
+    private const JSON_DECODE_DEPTH = 512;
+
+    private const MIN_THRESHOLD_PERCENT = 1;
+
+    private const MAX_THRESHOLD_PERCENT = 100;
+
+    private const EVENT_DEDUPLICATION_MINUTES = 30;
+
     public function createBackup(?int $userId = null): array
     {
         $disk = (string) config('erp.resilience.backups.disk', 'local');
@@ -81,7 +89,7 @@ class OperationalResilienceService
             throw new RuntimeException('No backup archive is available to restore.');
         }
 
-        $payload = json_decode(Crypt::decryptString(Storage::disk($disk)->get($path)), true, 512, JSON_THROW_ON_ERROR);
+        $payload = json_decode(Crypt::decryptString(Storage::disk($disk)->get($path)), true, self::JSON_DECODE_DEPTH, JSON_THROW_ON_ERROR);
         $data = (array) ($payload['data'] ?? []);
         $knownTables = $this->backupTables();
 
@@ -215,7 +223,7 @@ class OperationalResilienceService
         }
 
         try {
-            $payload = json_decode((string) ($row->payload ?? '{}'), true, 512, JSON_THROW_ON_ERROR);
+            $payload = json_decode((string) ($row->payload ?? '{}'), true, self::JSON_DECODE_DEPTH, JSON_THROW_ON_ERROR);
             $connection = (string) ($row->connection ?? 'database');
             $queue = (string) ($row->queue ?? 'default');
 
@@ -299,7 +307,7 @@ class OperationalResilienceService
 
         try {
             $raw = Storage::disk($disk)->get($path);
-            $decoded = json_decode(Crypt::decryptString($raw), true, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode(Crypt::decryptString($raw), true, self::JSON_DECODE_DEPTH, JSON_THROW_ON_ERROR);
             $hasMetadata = is_array($decoded) && is_array(data_get($decoded, 'metadata'));
             $hasData = is_array($decoded) && is_array(data_get($decoded, 'data'));
 
@@ -339,7 +347,10 @@ class OperationalResilienceService
     {
         $disk = (string) config('erp.resilience.backups.disk', 'local');
         $directory = trim((string) config('erp.resilience.backups.directory', 'backups'), '/');
-        $usageThreshold = max(1, min(100, (int) config('erp.resilience.monitoring.storage_usage_alert_threshold', 90)));
+        $usageThreshold = max(
+            self::MIN_THRESHOLD_PERCENT,
+            min(self::MAX_THRESHOLD_PERCENT, (int) config('erp.resilience.monitoring.storage_usage_alert_threshold', 90))
+        );
 
         $usedBytes = collect(Storage::disk($disk)->allFiles($directory))
             ->sum(fn (string $path): int => (int) Storage::disk($disk)->size($path));
@@ -545,11 +556,13 @@ class OperationalResilienceService
 
     protected function logAlertOnce(string $type, array $meta, ?int $userId = null): void
     {
+        $windowStart = now()->subMinutes(self::EVENT_DEDUPLICATION_MINUTES);
+
         $exists = ActivityLog::query()
             ->where('action', 'system_alert_raised')
-            ->where('created_at', '>=', now()->subMinutes(30))
-            ->get()
-            ->contains(fn (ActivityLog $log): bool => data_get($log->meta_json, 'type') === $type);
+            ->where('created_at', '>=', $windowStart)
+            ->where('meta_json->type', $type)
+            ->exists();
 
         if ($exists) {
             return;
@@ -560,11 +573,13 @@ class OperationalResilienceService
 
     protected function logSecurityEventOnce(string $type, array $meta, ?int $userId = null): void
     {
+        $windowStart = now()->subMinutes(self::EVENT_DEDUPLICATION_MINUTES);
+
         $exists = ActivityLog::query()
             ->where('action', 'security_event_logged')
-            ->where('created_at', '>=', now()->subMinutes(30))
-            ->get()
-            ->contains(fn (ActivityLog $log): bool => data_get($log->meta_json, 'type') === $type);
+            ->where('created_at', '>=', $windowStart)
+            ->where('meta_json->type', $type)
+            ->exists();
 
         if ($exists) {
             return;

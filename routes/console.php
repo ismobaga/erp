@@ -70,15 +70,15 @@ Artisan::command('erp:restore-backup {path?} {--force : Confirm destructive rest
 })->purpose('Restore the latest or specified resilience backup archive');
 
 Artisan::command('erp:monitor-health', function (OperationalResilienceService $service) {
-    $summary = $service->healthCheckStatus();
-    $backup = data_get($summary, 'checks.backup_verification');
+    $healthStatus = $service->healthCheckStatus();
+    $backup = data_get($healthStatus, 'checks.backup_verification');
 
     $this->info(
         'Health check complete. '
-        .'Status: '.$summary['status']
-        .'; Failed jobs: '.data_get($summary, 'checks.queue.failed_jobs', 0)
+        .'Status: '.$healthStatus['status']
+        .'; Failed jobs: '.data_get($healthStatus, 'checks.queue.failed_jobs', 0)
         .'; Backup verified: '.((bool) data_get($backup, 'verified', false) ? 'yes' : 'no')
-        .'; Open alerts: '.data_get($summary, 'checks.alerts.open_alerts', 0)
+        .'; Open alerts: '.data_get($healthStatus, 'checks.alerts.open_alerts', 0)
         .'.'
     );
 })->purpose('Evaluate operational resilience thresholds and raise alerts');
