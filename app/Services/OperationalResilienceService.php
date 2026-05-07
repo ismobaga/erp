@@ -17,7 +17,7 @@ class OperationalResilienceService
     {
         $disk = (string) config('erp.resilience.backups.disk', 'local');
         $directory = trim((string) config('erp.resilience.backups.directory', 'backups'), '/');
-        $path = $directory . '/erp-backup-' . now()->format('Ymd-His') . '.json';
+        $path = $directory.'/erp-backup-'.now()->format('Ymd-His').'.json';
 
         app(AuditTrailService::class)->log('system_backup_created', null, [
             'disk' => $disk,
@@ -39,7 +39,7 @@ class OperationalResilienceService
         $tableData = [];
 
         foreach ($this->backupTables() as $table) {
-            if (!Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 continue;
             }
 
@@ -70,14 +70,14 @@ class OperationalResilienceService
 
     public function restoreBackup(?string $path = null, ?int $userId = null, bool $force = false): array
     {
-        if (!$force) {
+        if (! $force) {
             throw new RuntimeException('Backup restore is destructive. Re-run with force enabled.');
         }
 
         $disk = (string) config('erp.resilience.backups.disk', 'local');
         $path ??= $this->latestBackupPath();
 
-        if (blank($path) || !Storage::disk($disk)->exists($path)) {
+        if (blank($path) || ! Storage::disk($disk)->exists($path)) {
             throw new RuntimeException('No backup archive is available to restore.');
         }
 
@@ -90,7 +90,7 @@ class OperationalResilienceService
             && is_array($data)
             && count(array_intersect(array_keys($data), $knownTables)) > 0;
 
-        if (!$hasValidPayload) {
+        if (! $hasValidPayload) {
             throw new RuntimeException('Backup archive is invalid or incomplete.');
         }
 
@@ -105,13 +105,13 @@ class OperationalResilienceService
                 }
 
                 foreach ($knownTables as $table) {
-                    if (!Schema::hasTable($table)) {
+                    if (! Schema::hasTable($table)) {
                         continue;
                     }
 
                     $rows = $data[$table] ?? [];
 
-                    if (!empty($rows)) {
+                    if (! empty($rows)) {
                         // Chunk inserts to stay within MySQL's max_allowed_packet.
                         collect($rows)->chunk(500)->each(
                             fn ($chunk) => DB::table($table)->insert($chunk->all())
@@ -175,7 +175,7 @@ class OperationalResilienceService
      */
     public function failedJobFeed(int $limit = 10): array
     {
-        if (!Schema::hasTable('failed_jobs')) {
+        if (! Schema::hasTable('failed_jobs')) {
             return [];
         }
 
@@ -204,7 +204,7 @@ class OperationalResilienceService
      */
     public function retryFailedJob(string $uuid, ?int $userId = null): bool
     {
-        if (!Schema::hasTable('failed_jobs')) {
+        if (! Schema::hasTable('failed_jobs')) {
             return false;
         }
 
@@ -249,7 +249,7 @@ class OperationalResilienceService
      */
     public function purgeFailedJobs(?int $userId = null): int
     {
-        if (!Schema::hasTable('failed_jobs')) {
+        if (! Schema::hasTable('failed_jobs')) {
             return 0;
         }
 
@@ -275,6 +275,156 @@ class OperationalResilienceService
             'queued_jobs' => (int) $summary['queued_jobs'],
             'open_alerts' => (int) $summary['open_alerts'],
             'audit_events_24h' => (int) $summary['audit_events_24h'],
+        ];
+    }
+
+    public function verifyLatestBackup(?int $userId = null): array
+    {
+        $disk = (string) config('erp.resilience.backups.disk', 'local');
+        $path = $this->latestBackupPath();
+
+        if (blank($path)) {
+            $this->logSecurityEventOnce('backup_verification_failed', [
+                'reason' => 'missing_backup_archive',
+                'disk' => $disk,
+            ], $userId);
+
+            return [
+                'status' => 'warning',
+                'verified' => false,
+                'reason' => 'missing_backup_archive',
+                'path' => null,
+            ];
+        }
+
+        try {
+            $raw = Storage::disk($disk)->get($path);
+            $decoded = json_decode(Crypt::decryptString($raw), true, 512, JSON_THROW_ON_ERROR);
+            $hasMetadata = is_array($decoded) && is_array(data_get($decoded, 'metadata'));
+            $hasData = is_array($decoded) && is_array(data_get($decoded, 'data'));
+
+            if (! $hasMetadata || ! $hasData) {
+                throw new RuntimeException('Invalid backup structure.');
+            }
+
+            app(AuditTrailService::class)->log('system_backup_verified', null, [
+                'disk' => $disk,
+                'path' => $path,
+                'verified' => true,
+            ], $userId);
+
+            return [
+                'status' => 'ok',
+                'verified' => true,
+                'reason' => null,
+                'path' => $path,
+            ];
+        } catch (\Throwable) {
+            $this->logSecurityEventOnce('backup_verification_failed', [
+                'reason' => 'backup_archive_corrupted',
+                'disk' => $disk,
+                'path' => $path,
+            ], $userId);
+
+            return [
+                'status' => 'degraded',
+                'verified' => false,
+                'reason' => 'backup_archive_corrupted',
+                'path' => $path,
+            ];
+        }
+    }
+
+    public function storageHealth(?int $userId = null): array
+    {
+        $disk = (string) config('erp.resilience.backups.disk', 'local');
+        $directory = trim((string) config('erp.resilience.backups.directory', 'backups'), '/');
+        $usageThreshold = max(1, min(100, (int) config('erp.resilience.monitoring.storage_usage_alert_threshold', 90)));
+
+        $usedBytes = collect(Storage::disk($disk)->allFiles($directory))
+            ->sum(fn (string $path): int => (int) Storage::disk($disk)->size($path));
+
+        $totalBytes = null;
+        $freeBytes = null;
+        $usagePercent = null;
+
+        try {
+            $absolutePath = Storage::disk($disk)->path($directory);
+
+            if (is_string($absolutePath) && $absolutePath !== '' && file_exists($absolutePath)) {
+                $totalBytes = @disk_total_space($absolutePath) ?: null;
+                $freeBytes = @disk_free_space($absolutePath) ?: null;
+
+                if ($totalBytes !== null) {
+                    $usagePercent = round((($totalBytes - ($freeBytes ?? 0)) / $totalBytes) * 100, 2);
+                }
+            }
+        } catch (\Throwable) {
+            // Some adapters (S3, scoped disks) do not expose local paths.
+        }
+
+        if ($usagePercent !== null && $usagePercent >= $usageThreshold) {
+            $this->logSecurityEventOnce('storage_capacity_risk', [
+                'disk' => $disk,
+                'usage_percent' => $usagePercent,
+                'threshold_percent' => $usageThreshold,
+            ], $userId);
+        }
+
+        return [
+            'status' => $usagePercent !== null && $usagePercent >= $usageThreshold ? 'warning' : 'ok',
+            'disk' => $disk,
+            'directory' => $directory,
+            'backup_used_bytes' => $usedBytes,
+            'total_bytes' => $totalBytes,
+            'free_bytes' => $freeBytes,
+            'usage_percent' => $usagePercent,
+            'usage_alert_threshold' => $usageThreshold,
+        ];
+    }
+
+    public function systemDiagnostics(): array
+    {
+        return [
+            'app' => config('app.name'),
+            'environment' => app()->environment(),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'timezone' => (string) config('app.timezone', 'UTC'),
+            'database_connection' => (string) config('database.default', 'unknown'),
+            'queue_connection' => (string) config('queue.default', 'sync'),
+            'cache_store' => (string) config('cache.default', 'file'),
+        ];
+    }
+
+    public function healthCheckStatus(?int $userId = null): array
+    {
+        $summary = $this->evaluateHealth($userId);
+        $backupVerification = $this->verifyLatestBackup($userId);
+        $storage = $this->storageHealth($userId);
+        $hasQueuePressure = (int) $summary['failed_jobs'] > 0;
+        $isBackupHealthy = (bool) ($backupVerification['verified'] ?? false);
+
+        return [
+            'status' => ! $hasQueuePressure && $isBackupHealthy ? 'ok' : 'degraded',
+            'timestamp' => now()->toIso8601String(),
+            'checks' => [
+                'queue' => [
+                    'status' => $hasQueuePressure ? 'degraded' : 'ok',
+                    'failed_jobs' => (int) $summary['failed_jobs'],
+                    'queued_jobs' => (int) $summary['queued_jobs'],
+                ],
+                'backup_verification' => $backupVerification,
+                'storage' => $storage,
+                'alerts' => [
+                    'open_alerts' => (int) $summary['open_alerts'],
+                ],
+                'disaster_recovery' => [
+                    'backup_command' => 'erp:backup-run',
+                    'restore_command' => 'erp:restore-backup --force',
+                    'monitor_command' => 'erp:monitor-health',
+                ],
+            ],
         ];
     }
 
@@ -318,7 +468,7 @@ class OperationalResilienceService
             ->latest()
             ->take(6)
             ->get()
-            ->map(fn(ActivityLog $log): array => [
+            ->map(fn (ActivityLog $log): array => [
                 'label' => ucfirst((string) str_replace('_', ' ', data_get($log->meta_json, 'type', 'system_alert'))),
                 'details' => json_encode($log->meta_json, JSON_UNESCAPED_SLASHES),
                 'time' => $log->created_at?->diffForHumans() ?? 'recently',
@@ -332,7 +482,7 @@ class OperationalResilienceService
             ->latest()
             ->take(10)
             ->get()
-            ->map(fn(ActivityLog $log): array => [
+            ->map(fn (ActivityLog $log): array => [
                 'label' => ucfirst(str_replace('_', ' ', $log->action ?: 'audit event')),
                 'subject' => class_basename((string) $log->subject_type) ?: 'System',
                 'time' => $log->created_at?->diffForHumans() ?? 'recently',
@@ -351,7 +501,7 @@ class OperationalResilienceService
         $directory = trim((string) config('erp.resilience.backups.directory', 'backups'), '/');
 
         $candidates = collect(Storage::disk($disk)->allFiles($directory))
-            ->filter(fn(string $path): bool => str_ends_with($path, '.json'))
+            ->filter(fn (string $path): bool => str_ends_with($path, '.json'))
             ->sortDesc()
             ->values();
 
@@ -399,13 +549,28 @@ class OperationalResilienceService
             ->where('action', 'system_alert_raised')
             ->where('created_at', '>=', now()->subMinutes(30))
             ->get()
-            ->contains(fn(ActivityLog $log): bool => data_get($log->meta_json, 'type') === $type);
+            ->contains(fn (ActivityLog $log): bool => data_get($log->meta_json, 'type') === $type);
 
         if ($exists) {
             return;
         }
 
         app(AuditTrailService::class)->log('system_alert_raised', null, array_merge(['type' => $type], $meta), $userId);
+    }
+
+    protected function logSecurityEventOnce(string $type, array $meta, ?int $userId = null): void
+    {
+        $exists = ActivityLog::query()
+            ->where('action', 'security_event_logged')
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->get()
+            ->contains(fn (ActivityLog $log): bool => data_get($log->meta_json, 'type') === $type);
+
+        if ($exists) {
+            return;
+        }
+
+        app(AuditTrailService::class)->log('security_event_logged', null, array_merge(['type' => $type], $meta), $userId);
     }
 
     /**
