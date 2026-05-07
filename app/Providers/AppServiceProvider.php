@@ -2,12 +2,6 @@
 
 namespace App\Providers;
 
-use Filament\Actions\Action;
-use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use App\Models\CreditNote;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -16,12 +10,17 @@ use App\Observers\CreditNoteObserver;
 use App\Observers\ExpenseObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\PaymentObserver;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
-
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('contact', function (Request $request): Limit {
             $email = strtolower((string) $request->input('email', 'guest'));
 
-            return Limit::perHour(3)->by($request->ip() . '|' . $email);
+            return Limit::perHour(3)->by($request->ip().'|'.$email);
         });
 
         RateLimiter::for('pdf', function (Request $request): Limit {
@@ -55,7 +54,36 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('portal', function (Request $request): Limit {
             $token = (string) $request->route('token', 'portal');
 
-            return Limit::perHour(60)->by($request->ip() . '|' . $token);
+            return Limit::perHour(60)->by($request->ip().'|'.$token);
+        });
+
+        RateLimiter::for('api-public', function (Request $request): Limit {
+            $identifier = (string) (
+                optional($request->attributes->get('apiToken'))->id
+                ?? $request->user()?->getAuthIdentifier()
+                ?? $request->ip()
+            );
+
+            return Limit::perMinute(120)->by('api-public|'.$identifier);
+        });
+
+        RateLimiter::for('api-private', function (Request $request): Limit {
+            $identifier = (string) (
+                optional($request->attributes->get('apiToken'))->id
+                ?? $request->user()?->getAuthIdentifier()
+                ?? $request->ip()
+            );
+
+            return Limit::perMinute(60)->by('api-private|'.$identifier);
+        });
+
+        RateLimiter::for('api-webhooks', function (Request $request): Limit {
+            $identifier = (string) (
+                optional($request->attributes->get('apiToken'))->id
+                ?? $request->ip()
+            );
+
+            return Limit::perMinute(90)->by('api-webhooks|'.$identifier);
         });
 
         Invoice::observe(InvoiceObserver::class);
@@ -64,11 +92,11 @@ class AppServiceProvider extends ServiceProvider
         CreditNote::observe(CreditNoteObserver::class);
 
         // Enforce consistent action semantics across the whole admin panel.
-        CreateAction::configureUsing(fn(CreateAction $action) => $action->defaultColor('primary'));
-        EditAction::configureUsing(fn(EditAction $action) => $action->defaultColor('gray'));
-        ViewAction::configureUsing(fn(ViewAction $action) => $action->defaultColor('gray'));
-        DeleteAction::configureUsing(fn(DeleteAction $action) => $action->defaultColor('danger'));
-        DeleteBulkAction::configureUsing(fn(DeleteBulkAction $action) => $action->defaultColor('danger'));
+        CreateAction::configureUsing(fn (CreateAction $action) => $action->defaultColor('primary'));
+        EditAction::configureUsing(fn (EditAction $action) => $action->defaultColor('gray'));
+        ViewAction::configureUsing(fn (ViewAction $action) => $action->defaultColor('gray'));
+        DeleteAction::configureUsing(fn (DeleteAction $action) => $action->defaultColor('danger'));
+        DeleteBulkAction::configureUsing(fn (DeleteBulkAction $action) => $action->defaultColor('danger'));
 
         Action::configureUsing(function (Action $action): void {
             if ($action->getColor() !== null) {

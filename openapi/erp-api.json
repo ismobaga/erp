@@ -1,0 +1,129 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ERP Integration API",
+    "version": "1.0.0",
+    "description": "REST API for ERP integrations (mobile, e-commerce, accounting, banking, and tax systems)."
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "API Token"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/docs/openapi.json": {
+      "get": {
+        "summary": "OpenAPI document",
+        "responses": {
+          "200": {
+            "description": "OpenAPI JSON"
+          }
+        }
+      }
+    },
+    "/v1/public/company": {
+      "get": {
+        "summary": "Company profile (public scope)",
+        "responses": {
+          "200": {
+            "description": "Company profile"
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          },
+          "403": {
+            "description": "Token scope not allowed"
+          }
+        }
+      }
+    },
+    "/v1/public/webhooks/{source}": {
+      "post": {
+        "summary": "Webhook ingestion endpoint for external systems",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "properties": {
+                  "event": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Webhook accepted"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/v1/private/clients": {
+      "get": {
+        "summary": "List clients (private scope)",
+        "responses": {
+          "200": {
+            "description": "Paginated clients"
+          }
+        }
+      }
+    },
+    "/v1/private/invoices": {
+      "get": {
+        "summary": "List invoices (private scope)",
+        "responses": {
+          "200": {
+            "description": "Paginated invoices"
+          }
+        }
+      }
+    },
+    "/v1/private/audit-logs": {
+      "get": {
+        "summary": "List API audit logs (private scope)",
+        "responses": {
+          "200": {
+            "description": "Paginated audit logs"
+          }
+        }
+      }
+    }
+  }
+}

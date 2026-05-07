@@ -80,6 +80,15 @@ Key ERP rules are now centralized in [config/erp.php](config/erp.php) and can be
 - `ERP_APPROVAL_BULK_LIMIT`
 - `ERP_PROJECT_AUTO_APPROVE_STATUSES`
 
+## API layer and integrations
+
+- OpenAPI JSON: `GET /api/docs/openapi.json`
+- Public-scope endpoints (token auth): `/api/v1/public/*`
+- Private-scope endpoints (token auth): `/api/v1/private/*`
+- Webhook ingestion endpoint: `POST /api/v1/public/webhooks/{source}`
+- All authenticated API requests are written to `activity_logs` as `api_request`.
+- API webhook events are stored in `api_webhook_events`.
+
 ## Tests
 
 ```bash
