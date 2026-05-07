@@ -11,6 +11,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -152,8 +153,8 @@ class OperationalResilienceTest extends TestCase
     public function test_audit_trail_captures_ip_address_in_web_context(): void
     {
         // Verify the new schema columns exist.
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'ip_address'));
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('activity_logs', 'user_agent'));
+        $this->assertTrue(Schema::hasColumn('activity_logs', 'ip_address'));
+        $this->assertTrue(Schema::hasColumn('activity_logs', 'user_agent'));
 
         // Simulate a web request so that the AuditTrailService can capture IP and user-agent.
         $user = User::factory()->create(['status' => 'active']);
@@ -174,5 +175,51 @@ class OperationalResilienceTest extends TestCase
                 'ip_address must be null or a string',
             );
         }
+    }
+
+    public function test_health_endpoints_expose_operational_checks_and_diagnostics(): void
+    {
+        Storage::fake('local');
+        app(OperationalResilienceService::class)->createBackup();
+
+        $healthResponse = $this->get('/health');
+        $healthResponse->assertOk();
+        $healthResponse->assertJsonPath('status', 'ok');
+        $healthResponse->assertJsonPath('checks.backup_verification.verified', true);
+        $healthResponse->assertJsonPath('checks.disaster_recovery.restore_command', 'erp:restore-backup --force');
+
+        $diagnosticsResponse = $this->get('/health/diagnostics');
+        $diagnosticsResponse->assertOk();
+        $diagnosticsResponse->assertJsonStructure([
+            'status',
+            'timestamp',
+            'diagnostics' => [
+                'app',
+                'environment',
+                'php_version',
+                'laravel_version',
+                'timezone',
+                'database_connection',
+                'queue_connection',
+                'cache_store',
+            ],
+            'checks',
+        ]);
+    }
+
+    public function test_corrupted_backup_verification_logs_security_event(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('backups/erp-backup-99999999-235959.json', 'not-a-valid-encrypted-backup');
+
+        $result = app(OperationalResilienceService::class)->verifyLatestBackup();
+
+        $this->assertFalse($result['verified']);
+        $this->assertSame('degraded', $result['status']);
+
+        $log = ActivityLog::latest()->first();
+        $this->assertNotNull($log);
+        $this->assertSame('security_event_logged', $log->action);
+        $this->assertSame('backup_verification_failed', data_get($log->meta_json, 'type'));
     }
 }

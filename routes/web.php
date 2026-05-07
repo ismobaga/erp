@@ -6,16 +6,18 @@ use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\CompanyPagesController;
 use App\Http\Controllers\CreditNotePdfController;
 use App\Http\Controllers\ExpensePdfController;
+use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\PaymentPdfController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
 use App\Http\Controllers\WhatsappWebhookController;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
 // ── Public company / marketing pages ─────────────────────────────────────────
 Route::get('/', [CompanyPagesController::class, 'presentation'])->name('company.presentation');
-Route::get('/presentation', fn() => redirect()->route('company.presentation'));
+Route::get('/presentation', fn () => redirect()->route('company.presentation'));
 
 Route::get('/confidentialite', [CompanyPagesController::class, 'confidentialite'])->name('company.confidentialite');
 Route::get('/conditions', [CompanyPagesController::class, 'conditions'])->name('company.conditions');
@@ -26,6 +28,14 @@ Route::get('/dms-presentation', [CompanyPagesController::class, 'dmsPresentation
 Route::post('/contact-request', [CompanyPagesController::class, 'contactRequest'])
     ->middleware('throttle:contact')
     ->name('company.presentation.contact');
+
+Route::get('/health', [HealthCheckController::class, 'status'])
+    ->middleware('throttle:60,1')
+    ->name('health.status');
+
+Route::get('/health/diagnostics', [HealthCheckController::class, 'diagnostics'])
+    ->middleware('throttle:30,1')
+    ->name('health.diagnostics');
 
 // ── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth')->group(function (): void {
@@ -97,4 +107,4 @@ Route::prefix('portal/{token}')->middleware('throttle:portal')->group(function (
 Route::post('/webhooks/gowa', WhatsappWebhookController::class)
     ->middleware('throttle:60,1')
     ->name('webhooks.gowa')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
+    ->withoutMiddleware([PreventRequestForgery::class]);
