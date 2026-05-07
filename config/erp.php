@@ -9,7 +9,7 @@ return [
             ],
             'simple' => [
                 'enabled_modules' => array_values(array_filter(array_map(
-                    static fn(string $module): string => trim(strtolower($module)),
+                    static fn (string $module): string => trim(strtolower($module)),
                     explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,quotes,invoices,payments,expenses'))
                 ))),
             ],
@@ -36,7 +36,7 @@ return [
         'overdue_grace_days' => max(0, (int) env('ERP_INVOICE_OVERDUE_GRACE_DAYS', 0)),
         'credit_note_auto_issue_limit' => max(0, (float) env('ERP_CREDIT_NOTE_AUTO_ISSUE_LIMIT', 100000)),
         'payment_reference_required_methods' => array_values(array_filter(array_map(
-            static fn(string $method): string => trim(strtolower($method)),
+            static fn (string $method): string => trim(strtolower($method)),
             explode(',', (string) env('ERP_PAYMENT_REFERENCE_REQUIRED_METHODS', ''))
         ))),
         'invoice_numbering' => [
@@ -105,7 +105,7 @@ return [
         'expense_auto_approve_limit' => max(0, (float) env('ERP_EXPENSE_AUTO_APPROVE_LIMIT', 250000)),
         'bulk_approval_limit' => max(1, (int) env('ERP_APPROVAL_BULK_LIMIT', 10)),
         'project_auto_approve_statuses' => array_values(array_filter(array_map(
-            static fn(string $status): string => trim($status),
+            static fn (string $status): string => trim($status),
             explode(',', (string) env('ERP_PROJECT_AUTO_APPROVE_STATUSES', 'planned,on_hold'))
         ))),
     ],
@@ -117,7 +117,7 @@ return [
         'quota_mb' => max(1, (int) env('ERP_DOCUMENTS_QUOTA_MB', 200)),
         'download_url_ttl_minutes' => max(1, (int) env('ERP_DOCUMENTS_DOWNLOAD_URL_TTL', 30)),
         'allowed_extensions' => array_values(array_filter(array_map(
-            static fn(string $extension): string => trim(strtolower($extension)),
+            static fn (string $extension): string => trim(strtolower($extension)),
             explode(',', (string) env('ERP_DOCUMENTS_ALLOWED_EXTENSIONS', 'pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,zip,txt'))
         ))),
     ],
@@ -145,5 +145,9 @@ return [
         'require_company_context_in_console' => (bool) env('ERP_REQUIRE_COMPANY_CONTEXT_IN_CONSOLE', false),
         // Keep warning logs enabled by default to surface unsafe command/job flows.
         'log_missing_console_context' => (bool) env('ERP_LOG_MISSING_COMPANY_CONTEXT', true),
+    ],
+
+    'api' => [
+        'token_ttl_days' => max(1, (int) env('ERP_API_TOKEN_TTL_DAYS', 365)),
     ],
 ];
