@@ -8,6 +8,21 @@ Internal-only ERP foundation for **CROMMIX MALI S.A.** built with:
 - `spatie/laravel-permission`
 - Local file storage + database queue
 
+## Long-term vision
+
+CROMMIX ERP is being shaped as a **modular business operating system** for African enterprises, delivered through a **multi-tenant SaaS architecture**.
+
+The platform roadmap converges key operating domains in one tenant-aware foundation:
+
+- **Finance**: billing, accounting controls, reporting, and cash operations.
+- **Communication**: client conversations, notifications, and channel integrations (including WhatsApp).
+- **HR**: employee lifecycle, payroll-adjacent workflows, and compliance records.
+- **Projects**: planning, delivery tracking, and cross-team execution visibility.
+- **Customer management**: CRM, client portal interactions, and service continuity.
+- **Operational workflows**: approvals, automation, monitoring, and auditability across modules.
+
+This direction prioritizes composable modules, strict tenant isolation, and SaaS-readiness for reliable distribution at scale.
+
 ## Implemented in this repository
 
 - Laravel application bootstrap
