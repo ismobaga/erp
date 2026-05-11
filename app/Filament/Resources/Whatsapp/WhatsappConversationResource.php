@@ -13,7 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -54,9 +54,9 @@ class WhatsappConversationResource extends Resource
                     ->searchable(query: function ($query, string $search): void {
                         $query->where(function ($q) use ($search): void {
                             $q->where('chat_id', 'like', "%{$search}%")
-                              ->orWhere('contact_name', 'like', "%{$search}%")
-                              ->orWhereHas('client', fn($cq) => $cq->where('company_name', 'like', "%{$search}%")
-                                  ->orWhere('contact_name', 'like', "%{$search}%"));
+                                ->orWhere('contact_name', 'like', "%{$search}%")
+                                ->orWhereHas('client', fn($cq) => $cq->where('company_name', 'like', "%{$search}%")
+                                    ->orWhere('contact_name', 'like', "%{$search}%"));
                         });
                     }),
                 TextColumn::make('chat_id')
@@ -70,9 +70,9 @@ class WhatsappConversationResource extends Resource
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
-                        'open'   => 'success',
+                        'open' => 'success',
                         'closed' => 'gray',
-                        default  => 'warning',
+                        default => 'warning',
                     })
                     ->label('Statut'),
                 TextColumn::make('assignedUser.name')
@@ -86,7 +86,7 @@ class WhatsappConversationResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'open'   => 'Ouverte',
+                        'open' => 'Ouverte',
                         'closed' => 'Fermée',
                     ])
                     ->label('Statut'),
@@ -126,7 +126,7 @@ class WhatsappConversationResource extends Resource
     {
         return [
             'index' => ListWhatsappConversations::route('/'),
-            'view'  => ViewWhatsappConversation::route('/{record}'),
+            'view' => ViewWhatsappConversation::route('/{record}'),
         ];
     }
 }
