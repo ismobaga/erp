@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,9 +16,10 @@ use Illuminate\Validation\ValidationException;
     'debit',
     'credit',
 ])]
-class JournalEntryLine extends Model
+class JournalEntryLine extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [
@@ -29,26 +31,26 @@ class JournalEntryLine extends Model
     protected static function booted(): void
     {
         static::saving(function (JournalEntryLine $line): void {
-            $debit  = (float) $line->debit;
+            $debit = (float) $line->debit;
             $credit = (float) $line->credit;
 
             if ($debit < 0 || $credit < 0) {
                 throw ValidationException::withMessages([
-                    'debit'  => 'Debit amount must be non-negative.',
+                    'debit' => 'Debit amount must be non-negative.',
                     'credit' => 'Credit amount must be non-negative.',
                 ]);
             }
 
             if ($debit > 0 && $credit > 0) {
                 throw ValidationException::withMessages([
-                    'debit'  => 'A journal entry line cannot have both a debit and a credit amount.',
+                    'debit' => 'A journal entry line cannot have both a debit and a credit amount.',
                     'credit' => 'A journal entry line cannot have both a debit and a credit amount.',
                 ]);
             }
 
             if ($debit === 0.0 && $credit === 0.0) {
                 throw ValidationException::withMessages([
-                    'debit'  => 'A journal entry line must have either a debit or a credit amount.',
+                    'debit' => 'A journal entry line must have either a debit or a credit amount.',
                     'credit' => 'A journal entry line must have either a debit or a credit amount.',
                 ]);
             }

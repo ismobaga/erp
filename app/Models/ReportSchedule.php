@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use Carbon\Carbon;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,9 +25,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'last_path',
     'status',
 ])]
-class ReportSchedule extends Model
+class ReportSchedule extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [

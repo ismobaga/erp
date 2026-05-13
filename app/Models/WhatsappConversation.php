@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'status',
     'last_message_at',
 ])]
-class WhatsappConversation extends Model
+class WhatsappConversation extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 

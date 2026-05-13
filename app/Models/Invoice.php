@@ -8,6 +8,7 @@ use App\Services\InvoiceNumberService;
 use App\Services\TaxProfileResolver;
 use App\States\InvoiceStateMachine;
 use App\ValueObjects\Money;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,9 +34,10 @@ use Illuminate\Validation\ValidationException;
     'created_by',
     'updated_by',
 ])]
-class Invoice extends Model
+class Invoice extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');

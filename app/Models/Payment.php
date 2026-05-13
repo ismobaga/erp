@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use Carbon\Carbon;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,9 +30,10 @@ use Illuminate\Validation\ValidationException;
     'flagged_reason',
     'flagged_by',
 ])]
-class Payment extends Model
+class Payment extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -55,7 +57,7 @@ class Payment extends Model
      */
     public function save(array $options = []): bool
     {
-        return DB::transaction(fn(): bool => parent::save($options));
+        return DB::transaction(fn (): bool => parent::save($options));
     }
 
     public function flag(string $reason, int $userId): void
@@ -99,7 +101,7 @@ class Payment extends Model
             }
 
             $referenceRequiredMethods = array_map(
-                static fn(string $method): string => static::normalizePaymentMethod($method),
+                static fn (string $method): string => static::normalizePaymentMethod($method),
                 config('erp.billing.payment_reference_required_methods', [])
             );
 
@@ -154,7 +156,7 @@ class Payment extends Model
             }
 
             $otherPayments = (float) $invoice->payments()
-                ->when($payment->exists, fn($query) => $query->whereKeyNot($payment->getKey()))
+                ->when($payment->exists, fn ($query) => $query->whereKeyNot($payment->getKey()))
                 ->sum('amount');
 
             if ($otherPayments + (float) $payment->amount > (float) $invoice->total) {
@@ -208,13 +210,13 @@ class Payment extends Model
             ->where('client_id', $this->client_id)
             ->whereNotIn('status', ['paid', 'cancelled'])
             ->where('balance_due', '>', 0)
-            ->when(!$this->allow_overpayment, fn($query) => $query->where('balance_due', '>=', (float) $this->amount))
+            ->when(! $this->allow_overpayment, fn ($query) => $query->where('balance_due', '>=', (float) $this->amount))
             ->orderByRaw('case when due_date is null then 1 else 0 end')
             ->orderBy('due_date')
             ->orderBy('issue_date')
             ->first();
 
-        if (!$candidate) {
+        if (! $candidate) {
             return false;
         }
 

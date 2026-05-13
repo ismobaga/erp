@@ -53,12 +53,12 @@ class Company extends Model implements HasSubscription
     protected function casts(): array
     {
         return [
-            'is_active'           => 'boolean',
-            'whatsapp_enabled'    => 'boolean',
+            'is_active' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
             'bank_account_number' => 'encrypted',
-            'bank_swift_code'     => 'encrypted',
-            'onboarded_at'        => 'datetime',
-            'trial_ends_at'       => 'datetime',
+            'bank_swift_code' => 'encrypted',
+            'onboarded_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
         ];
     }
 

@@ -16,8 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
  *   2. The first company the authenticated user belongs to.
  *
  * When no company can be resolved (e.g. the user has no company yet), nothing
- * is bound so the HasCompanyScope global scope simply returns all records —
- * graceful degradation rather than a hard failure.
+ * is bound.  HasCompanyScope will then apply a "0 = 1" predicate so that all
+ * tenant-scoped queries return an empty result set — safe isolation rather
+ * than leaking cross-tenant data.
  */
 class SetCurrentCompany
 {
@@ -40,7 +41,6 @@ class SetCurrentCompany
             // Keep session in sync with the resolved company.
             session(['current_company_id' => $company->id]);
         }
-
 
         return $next($request);
     }

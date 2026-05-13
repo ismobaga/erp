@@ -3,7 +3,6 @@
 namespace App\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\GlobalScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -23,14 +22,19 @@ trait HasCompanyScope
         static::addGlobalScope('company', function (Builder $query): void {
             if (app()->bound('currentCompany')) {
                 $query->where(
-                    $query->getModel()->getTable() . '.company_id',
+                    $query->getModel()->getTable().'.company_id',
                     app('currentCompany')->id,
                 );
 
                 return;
             }
 
-            if (!app()->runningInConsole()) {
+            if (! app()->runningInConsole()) {
+                // No company context is available in this HTTP/web request.
+                // Apply an impossible predicate so zero records are returned
+                // rather than leaking data across tenants.
+                $query->whereRaw('0 = 1');
+
                 return;
             }
 
@@ -48,7 +52,7 @@ trait HasCompanyScope
             if ($logMissing) {
                 static $warnedModels = [];
 
-                if (!isset($warnedModels[$modelClass])) {
+                if (! isset($warnedModels[$modelClass])) {
                     Log::warning('Tenant query executed without company context in console mode.', [
                         'model' => $modelClass,
                         'table' => $query->getModel()->getTable(),
@@ -61,7 +65,7 @@ trait HasCompanyScope
 
         // Automatically assign company_id on creation.
         static::creating(function (Model $model): void {
-            if (!empty($model->company_id)) {
+            if (! empty($model->company_id)) {
                 return;
             }
 

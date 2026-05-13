@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -20,9 +21,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'is_active',
     'parent_id',
 ])]
-class LedgerAccount extends Model
+class LedgerAccount extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -67,7 +69,7 @@ class LedgerAccount extends Model
         }
 
         return (float) $this->journalLines()
-            ->whereHas('entry', fn(Builder $q) => $q->where('status', 'posted'))
+            ->whereHas('entry', fn (Builder $q) => $q->where('status', 'posted'))
             ->sum('debit');
     }
 
@@ -78,7 +80,7 @@ class LedgerAccount extends Model
         }
 
         return (float) $this->journalLines()
-            ->whereHas('entry', fn(Builder $q) => $q->where('status', 'posted'))
+            ->whereHas('entry', fn (Builder $q) => $q->where('status', 'posted'))
             ->sum('credit');
     }
 
@@ -94,7 +96,7 @@ class LedgerAccount extends Model
 
     public function typeLabel(): string
     {
-        return (string) __('erp.ledger.account_types.' . $this->type, [], null) ?: ucfirst((string) $this->type);
+        return (string) __('erp.ledger.account_types.'.$this->type, [], null) ?: ucfirst((string) $this->type);
     }
 
     public static function findByCode(string $code, int $companyId): ?self

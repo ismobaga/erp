@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
     'variables',
     'is_active',
 ])]
-class WhatsappTemplate extends Model
+class WhatsappTemplate extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
@@ -35,7 +36,7 @@ class WhatsappTemplate extends Model
         $body = $this->body;
 
         foreach ($data as $key => $value) {
-            $body = str_replace('{' . $key . '}', (string) $value, $body);
+            $body = str_replace('{'.$key.'}', (string) $value, $body);
         }
 
         return $body;

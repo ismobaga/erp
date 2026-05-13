@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,9 +20,10 @@ use Illuminate\Support\Facades\Storage;
     'size_bytes',
     'uploaded_by',
 ])]
-class Attachment extends Model
+class Attachment extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected static function booted(): void
     {
         static::deleting(function (self $attachment): void {
@@ -82,17 +84,17 @@ class Attachment extends Model
         }
 
         if ($size >= 1073741824) {
-            return number_format($size / 1073741824, 1) . ' GB';
+            return number_format($size / 1073741824, 1).' GB';
         }
 
         if ($size >= 1048576) {
-            return number_format($size / 1048576, 1) . ' MB';
+            return number_format($size / 1048576, 1).' MB';
         }
 
         if ($size >= 1024) {
-            return number_format($size / 1024, 0) . ' KB';
+            return number_format($size / 1024, 0).' KB';
         }
 
-        return $size . ' B';
+        return $size.' B';
     }
 }
