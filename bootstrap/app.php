@@ -4,6 +4,7 @@ use App\Http\Middleware\AuthenticateApiToken;
 use App\Http\Middleware\EnsureApiScope;
 use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\SetSecurityHeaders;
+use App\Http\Middleware\TrackApiQuota;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,9 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', VerifyCsrfToken::class);
         $middleware->appendToGroup('web', SetSecurityHeaders::class);
         $middleware->alias([
-            'auth.api' => AuthenticateApiToken::class,
+            'auth.api'  => AuthenticateApiToken::class,
             'api.scope' => EnsureApiScope::class,
             'api.audit' => LogApiRequest::class,
+            'api.quota' => TrackApiQuota::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
