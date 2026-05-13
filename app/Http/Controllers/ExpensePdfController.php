@@ -40,7 +40,7 @@ class ExpensePdfController extends Controller
             return Pdf::loadView('expenses.pdf', $viewData)
                 ->setOption([
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
+                    'isRemoteEnabled' => false,
                     'dpi' => 120,
                     'defaultFont' => 'DejaVu Sans',
                 ])

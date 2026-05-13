@@ -37,7 +37,7 @@ class CreditNotePdfController extends Controller
             return Pdf::loadView('credit-notes.pdf', $viewData)
                 ->setOption([
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
+                    'isRemoteEnabled' => false,
                     'dpi' => 120,
                     'defaultFont' => 'DejaVu Sans',
                 ])

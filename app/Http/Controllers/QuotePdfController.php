@@ -38,7 +38,7 @@ class QuotePdfController extends Controller
             return Pdf::loadView('quotes.pdf', $viewData)
                 ->setOption([
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
+                    'isRemoteEnabled' => false,
                     'dpi' => 120,
                     'defaultFont' => 'DejaVu Sans',
                 ])
