@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use Carbon\CarbonInterface;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -25,9 +26,10 @@ use Illuminate\Validation\ValidationException;
     'reopened_by',
     'notes',
 ])]
-class FinancialPeriod extends Model
+class FinancialPeriod extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -169,7 +171,7 @@ class FinancialPeriod extends Model
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 

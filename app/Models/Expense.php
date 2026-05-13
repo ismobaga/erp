@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,9 +28,10 @@ use Illuminate\Validation\ValidationException;
     'approved_at',
     'recorded_by',
 ])]
-class Expense extends Model
+class Expense extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -56,9 +58,9 @@ class Expense extends Model
             $expense->category = static::normalizeCategory($expense->category);
 
             $allowedCategories = ['travel', 'supplies', 'operations', 'payroll', 'compliance', 'other'];
-            if (!in_array((string) $expense->category, $allowedCategories, true)) {
+            if (! in_array((string) $expense->category, $allowedCategories, true)) {
                 throw ValidationException::withMessages([
-                    'category' => 'Invalid expense category. Allowed: ' . implode(', ', $allowedCategories) . '.',
+                    'category' => 'Invalid expense category. Allowed: '.implode(', ', $allowedCategories).'.',
                 ]);
             }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,9 +16,10 @@ use Illuminate\Database\Eloquent\Model;
     'ip_address',
     'user_agent',
 ])]
-class ActivityLog extends Model
+class ActivityLog extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [

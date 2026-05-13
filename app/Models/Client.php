@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\TaxProfileResolver;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,7 +28,7 @@ use Illuminate\Support\Str;
     'created_by',
     'updated_by',
 ])]
-class Client extends Model
+class Client extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
@@ -95,7 +96,7 @@ class Client extends Model
         return $this->hasMany(WhatsappConversation::class);
     }
 
-    public function attachments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }

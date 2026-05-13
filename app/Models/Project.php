@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'client_id',
@@ -26,9 +26,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'created_by',
     'updated_by',
 ])]
-class Project extends Model
+class Project extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [
@@ -112,12 +113,12 @@ class Project extends Model
 
     public function addInternalNote(User $user, string $note): void
     {
-        $entryHeader = now()->format('d/m/Y H:i') . ' — ' . $user->name;
-        $entry = $entryHeader . PHP_EOL . trim($note);
+        $entryHeader = now()->format('d/m/Y H:i').' — '.$user->name;
+        $entry = $entryHeader.PHP_EOL.trim($note);
         $existingNotes = trim((string) $this->notes);
 
         $this->forceFill([
-            'notes' => blank($existingNotes) ? $entry : $entry . PHP_EOL . PHP_EOL . $existingNotes,
+            'notes' => blank($existingNotes) ? $entry : $entry.PHP_EOL.PHP_EOL.$existingNotes,
             'updated_by' => $user->getKey(),
         ])->save();
 

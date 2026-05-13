@@ -18,7 +18,7 @@ class AuthenticateApiToken
             return response()->json(['message' => 'API token is required.'], 401);
         }
 
-        $token = ApiToken::query()
+        $token = ApiToken::withoutCompanyScope()
             ->with(['company', 'user'])
             ->where('token_hash', hash('sha256', $plainToken))
             ->whereNull('revoked_at')

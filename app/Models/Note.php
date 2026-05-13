@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,9 +17,10 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'noted_at',
     'body',
 ])]
-class Note extends Model
+class Note extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [

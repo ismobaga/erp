@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,9 +21,10 @@ use Illuminate\Validation\ValidationException;
     'created_by',
     'updated_by',
 ])]
-class CreditNote extends Model
+class CreditNote extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -49,7 +51,7 @@ class CreditNote extends Model
 
             $duplicate = static::query()
                 ->where('credit_number', $creditNote->credit_number)
-                ->when($creditNote->exists, fn($q) => $q->whereKeyNot($creditNote->getKey()))
+                ->when($creditNote->exists, fn ($q) => $q->whereKeyNot($creditNote->getKey()))
                 ->exists();
 
             if ($duplicate) {
@@ -74,7 +76,7 @@ class CreditNote extends Model
 
             $invoice = $creditNote->invoice;
 
-            if (!$invoice) {
+            if (! $invoice) {
                 return;
             }
 
@@ -96,12 +98,12 @@ class CreditNote extends Model
 
             $autoIssueLimit = max(0, (float) config('erp.billing.credit_note_auto_issue_limit', 0));
 
-            if ($autoIssueLimit > 0 && (float) $creditNote->amount > $autoIssueLimit && !in_array($creditNote->status, ['approved', 'void'], true)) {
+            if ($autoIssueLimit > 0 && (float) $creditNote->amount > $autoIssueLimit && ! in_array($creditNote->status, ['approved', 'void'], true)) {
                 $creditNote->status = 'pending_approval';
             }
 
             $otherCredits = (float) $invoice->creditNotes()
-                ->when($creditNote->exists, fn($query) => $query->whereKeyNot($creditNote->getKey()))
+                ->when($creditNote->exists, fn ($query) => $query->whereKeyNot($creditNote->getKey()))
                 ->sum('amount');
 
             $invoiceCap = max(

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -17,9 +18,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'notes',
     'sent_by',
 ])]
-class DunningLog extends Model
+class DunningLog extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [
@@ -49,11 +51,11 @@ class DunningLog extends Model
 
     public function stageLabel(): string
     {
-        return (string) __('erp.dunning.stages.' . $this->stage, [], null) ?: ('Stage ' . $this->stage);
+        return (string) __('erp.dunning.stages.'.$this->stage, [], null) ?: ('Stage '.$this->stage);
     }
 
     public function channelLabel(): string
     {
-        return (string) __('erp.dunning.channels.' . $this->channel, [], null) ?: ucfirst((string) $this->channel);
+        return (string) __('erp.dunning.channels.'.$this->channel, [], null) ?: ucfirst((string) $this->channel);
     }
 }

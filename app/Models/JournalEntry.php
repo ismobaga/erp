@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -28,9 +29,10 @@ use Illuminate\Validation\ValidationException;
     'void_reason',
     'reversal_of',
 ])]
-class JournalEntry extends Model
+class JournalEntry extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     protected function casts(): array
     {
         return [
@@ -132,7 +134,7 @@ class JournalEntry extends Model
 
         $this->loadMissing('lines');
 
-        if (!$this->isBalanced()) {
+        if (! $this->isBalanced()) {
             throw ValidationException::withMessages([
                 'lines' => __('erp.ledger.unbalanced_error'),
             ]);
@@ -176,6 +178,6 @@ class JournalEntry extends Model
 
     public function statusLabel(): string
     {
-        return (string) __('erp.ledger.statuses.' . $this->status, [], null) ?: ucfirst((string) $this->status);
+        return (string) __('erp.ledger.statuses.'.$this->status, [], null) ?: ucfirst((string) $this->status);
     }
 }

@@ -26,10 +26,10 @@ class WhatsappMessage extends Model
     protected function casts(): array
     {
         return [
-            'raw_payload'  => 'array',
-            'sent_at'      => 'datetime',
+            'raw_payload' => 'array',
+            'sent_at' => 'datetime',
             'delivered_at' => 'datetime',
-            'read_at'      => 'datetime',
+            'read_at' => 'datetime',
         ];
     }
 

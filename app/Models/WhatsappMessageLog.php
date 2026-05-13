@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,17 +28,17 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'sent_by',
     'sent_at',
 ])]
-class WhatsappMessageLog extends Model
+class WhatsappMessageLog extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
     protected function casts(): array
     {
         return [
-            'response'     => 'array',
-            'sent_at'      => 'datetime',
+            'response' => 'array',
+            'sent_at' => 'datetime',
             'delivered_at' => 'datetime',
-            'read_at'      => 'datetime',
+            'read_at' => 'datetime',
         ];
     }
 

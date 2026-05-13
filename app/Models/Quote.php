@@ -6,6 +6,7 @@ use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
+use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,9 +29,10 @@ use Illuminate\Support\Facades\DB;
     'created_by',
     'updated_by',
 ])]
-class Quote extends Model
+class Quote extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -77,35 +79,35 @@ class Quote extends Model
             }
 
             $invoice = Invoice::create([
-                'client_id'      => $fresh->client_id,
-                'quote_id'       => $fresh->getKey(),
-                'issue_date'     => now()->toDateString(),
-                'due_date'       => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
-                'status'         => 'draft',
+                'client_id' => $fresh->client_id,
+                'quote_id' => $fresh->getKey(),
+                'issue_date' => now()->toDateString(),
+                'due_date' => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
+                'status' => 'draft',
                 'discount_total' => $fresh->discount_total,
-                'tax_total'      => $fresh->tax_total,
-                'notes'          => $fresh->notes,
-                'created_by'     => $createdBy ?? auth()->id(),
-                'updated_by'     => $createdBy ?? auth()->id(),
+                'tax_total' => $fresh->tax_total,
+                'notes' => $fresh->notes,
+                'created_by' => $createdBy ?? auth()->id(),
+                'updated_by' => $createdBy ?? auth()->id(),
             ]);
 
             foreach ($fresh->items as $item) {
                 $invoice->items()->create([
-                    'service_id'  => $item->service_id,
+                    'service_id' => $item->service_id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'unit_price'  => $item->unit_price,
-                    'line_total'  => $item->line_total,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'line_total' => $item->line_total,
                 ]);
             }
 
             $fresh->forceFill(['status' => 'accepted'])->saveQuietly();
 
             app(AuditTrailService::class)->log('quote_converted_to_invoice', $invoice, [
-                'quote_id'       => $fresh->getKey(),
-                'quote_number'   => $fresh->quote_number,
+                'quote_id' => $fresh->getKey(),
+                'quote_number' => $fresh->quote_number,
                 'invoice_number' => $invoice->invoice_number,
-                'converted_by'   => $createdBy ?? auth()->id(),
+                'converted_by' => $createdBy ?? auth()->id(),
             ]);
 
             return $invoice;
@@ -117,12 +119,12 @@ class Quote extends Model
         // Use BCMath to avoid float precision accumulation on quote totals.
         $subtotal = Money::of((string) $this->items()->sum('line_total'));
         $discount = Money::of((string) $this->discount_total);
-        $tax      = Money::of((string) $this->tax_total);
-        $total    = Money::zero()->max($subtotal->subtract($discount)->add($tax));
+        $tax = Money::of((string) $this->tax_total);
+        $total = Money::zero()->max($subtotal->subtract($discount)->add($tax));
 
         $this->forceFill([
             'subtotal' => $subtotal->toString(),
-            'total'    => $total->toString(),
+            'total' => $total->toString(),
         ])->saveQuietly();
     }
 
@@ -130,7 +132,7 @@ class Quote extends Model
     {
         // Only draft/sent quotes can be accepted; rejected, cancelled, and
         // already-accepted quotes must not pass through this gate.
-        if (!in_array($this->status, ['draft', 'sent', 'expired'], true)) {
+        if (! in_array($this->status, ['draft', 'sent', 'expired'], true)) {
             return false;
         }
 
