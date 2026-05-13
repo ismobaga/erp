@@ -133,4 +133,12 @@ class DocumentAttachmentsPageTest extends TestCase
             ->call('uploadDocument')
             ->assertHasErrors(['upload']);
     }
+
+
+    public function test_file_with_wrong_magic_bytes_is_rejected(): void {
+        // An EXE disguised as a PDF — magic bytes are MZ not %PDF
+        $file = UploadedFile::fake()->createWithContent('malware.pdf', "\x4D\x5A\x90\x00");
+        $this->expectException(ValidationException::class);
+        app(SecureFileUploadService::class)->storeFile($file, 'invoice', 1, 1, 1);
+    }
 }

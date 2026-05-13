@@ -135,11 +135,11 @@ class SecureFileUploadService
         fclose($handle);
 
         $signatures = [
-            'pdf' => '\x25\x50\x44\x46',  // %PDF
-            'jpg' => '\xFF\xD8\xFF',      // JPG magic bytes
-            'jpeg' => '\xFF\xD8\xFF',      // JPEG magic bytes
-            'png' => '\x89\x50\x4E\x47',  // PNG magic bytes
-            'zip' => '\x50\x4B\x03\x04',  // ZIP magic bytes
+            'pdf' => "\x25\x50\x44\x46",  // %PDF
+            'jpg' => "\xFF\xD8\xFF",      // JPG magic bytes
+            'jpeg' => "\xFF\xD8\xFF",      // JPEG magic bytes
+            'png' => "\x89\x50\x4E\x47",  // PNG magic bytes
+            'zip' => "\x50\x4B\x03\x04",  // ZIP magic bytes
         ];
 
         if (isset($signatures[$extension])) {
