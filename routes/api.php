@@ -3,7 +3,12 @@
 use App\Http\Controllers\Api\ApiDocumentationController;
 use App\Http\Controllers\Api\V1\Private\AuditLogController;
 use App\Http\Controllers\Api\V1\Private\ClientController;
+use App\Http\Controllers\Api\V1\Private\ExpenseController;
 use App\Http\Controllers\Api\V1\Private\InvoiceController;
+use App\Http\Controllers\Api\V1\Private\KpiController;
+use App\Http\Controllers\Api\V1\Private\PaymentController;
+use App\Http\Controllers\Api\V1\Private\ProjectController;
+use App\Http\Controllers\Api\V1\Private\QuoteController;
 use App\Http\Controllers\Api\V1\Public\CompanyProfileController;
 use App\Http\Controllers\Api\V1\Public\WebhookIngestionController;
 use Illuminate\Support\Facades\Route;
@@ -23,13 +28,27 @@ Route::prefix('v1')->group(function (): void {
         });
 
     Route::prefix('private')
-        ->middleware(['auth.api', 'api.scope:private', 'api.audit', 'throttle:api-private'])
+        ->middleware(['auth.api', 'api.scope:private', 'api.audit', 'api.quota', 'throttle:api-private'])
         ->group(function (): void {
             Route::get('/clients', [ClientController::class, 'index'])->name('api.v1.private.clients.index');
             Route::get('/clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('api.v1.private.clients.show');
 
             Route::get('/invoices', [InvoiceController::class, 'index'])->name('api.v1.private.invoices.index');
             Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice')->name('api.v1.private.invoices.show');
+
+            Route::get('/payments', [PaymentController::class, 'index'])->name('api.v1.private.payments.index');
+            Route::get('/payments/{payment}', [PaymentController::class, 'show'])->whereNumber('payment')->name('api.v1.private.payments.show');
+
+            Route::get('/expenses', [ExpenseController::class, 'index'])->name('api.v1.private.expenses.index');
+            Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->whereNumber('expense')->name('api.v1.private.expenses.show');
+
+            Route::get('/quotes', [QuoteController::class, 'index'])->name('api.v1.private.quotes.index');
+            Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->whereNumber('quote')->name('api.v1.private.quotes.show');
+
+            Route::get('/projects', [ProjectController::class, 'index'])->name('api.v1.private.projects.index');
+            Route::get('/projects/{project}', [ProjectController::class, 'show'])->whereNumber('project')->name('api.v1.private.projects.show');
+
+            Route::get('/kpis', KpiController::class)->name('api.v1.private.kpis');
 
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('api.v1.private.audit-logs.index');
         });

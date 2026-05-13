@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "ERP Integration API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "REST API for ERP integrations (mobile, e-commerce, accounting, banking, and tax systems)."
   },
   "servers": [
@@ -16,6 +16,19 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "API Token"
+      }
+    },
+    "parameters": {
+      "perPage": {
+        "name": "per_page",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 25
+        }
       }
     }
   },
@@ -98,6 +111,9 @@
     "/v1/private/clients": {
       "get": {
         "summary": "List clients (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
         "responses": {
           "200": {
             "description": "Paginated clients"
@@ -105,9 +121,29 @@
         }
       }
     },
+    "/v1/private/clients/{id}": {
+      "get": {
+        "summary": "Get a single client",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Client detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
     "/v1/private/invoices": {
       "get": {
         "summary": "List invoices (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
         "responses": {
           "200": {
             "description": "Paginated invoices"
@@ -115,9 +151,202 @@
         }
       }
     },
+    "/v1/private/invoices/{id}": {
+      "get": {
+        "summary": "Get a single invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Invoice detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/v1/private/payments": {
+      "get": {
+        "summary": "List payments (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated payments"
+          }
+        }
+      }
+    },
+    "/v1/private/payments/{id}": {
+      "get": {
+        "summary": "Get a single payment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Payment detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/v1/private/expenses": {
+      "get": {
+        "summary": "List expenses (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated expenses"
+          }
+        }
+      }
+    },
+    "/v1/private/expenses/{id}": {
+      "get": {
+        "summary": "Get a single expense",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Expense detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/v1/private/quotes": {
+      "get": {
+        "summary": "List quotes (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated quotes"
+          }
+        }
+      }
+    },
+    "/v1/private/quotes/{id}": {
+      "get": {
+        "summary": "Get a single quote with line items",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Quote detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/v1/private/projects": {
+      "get": {
+        "summary": "List projects (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated projects"
+          }
+        }
+      }
+    },
+    "/v1/private/projects/{id}": {
+      "get": {
+        "summary": "Get a single project",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Project detail" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/v1/private/kpis": {
+      "get": {
+        "summary": "Cross-module KPI analytics (private scope)",
+        "description": "Returns aggregated KPIs for finance, clients, projects, CRM, and HR for the requested period.",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" },
+            "description": "Start of the period (ISO 8601 date). Defaults to start of the current month."
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date" },
+            "description": "End of the period (ISO 8601 date). Defaults to today."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KPI aggregation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "object",
+                      "properties": {
+                        "start": { "type": "string", "format": "date" },
+                        "end":   { "type": "string", "format": "date" }
+                      }
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "finance":  { "type": "object" },
+                        "clients":  { "type": "object" },
+                        "projects": { "type": "object" },
+                        "crm":      { "type": "object" },
+                        "hr":       { "type": "object" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/private/audit-logs": {
       "get": {
         "summary": "List API audit logs (private scope)",
+        "parameters": [
+          { "$ref": "#/components/parameters/perPage" }
+        ],
         "responses": {
           "200": {
             "description": "Paginated audit logs"
@@ -127,3 +356,4 @@
     }
   }
 }
+
