@@ -14,8 +14,8 @@ class KpiController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
-        $end = Carbon::parse($request->string('end_date', now()->toDateString()));
         $start = Carbon::parse($request->string('start_date', now()->startOfMonth()->toDateString()));
+        $end = Carbon::parse($request->string('end_date', now()->toDateString()));
 
         // Clamp so start is never after end.
         if ($start->isAfter($end)) {
