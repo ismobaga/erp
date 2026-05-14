@@ -321,6 +321,26 @@ class ClientPortalExpansionTest extends TestCase
         $this->assertEquals('en', session('portal_locale'));
     }
 
+    public function test_language_switcher_does_not_redirect_to_external_referer(): void
+    {
+        $response = $this->withHeaders(['Referer' => 'https://evil.com/phishing'])
+            ->post(route('portal.language', ['token' => $this->token]), ['locale' => 'en']);
+
+        // Must redirect to the portal index, not to the external URL.
+        $response->assertRedirect(route('portal.index', ['token' => $this->token]));
+        $this->assertStringNotContainsString('evil.com', $response->headers->get('Location', ''));
+    }
+
+    public function test_language_switcher_follows_same_origin_referer(): void
+    {
+        $portalUrl = route('portal.quotes', ['token' => $this->token]);
+
+        $response = $this->withHeaders(['Referer' => $portalUrl])
+            ->post(route('portal.language', ['token' => $this->token]), ['locale' => 'fr']);
+
+        $response->assertRedirect($portalUrl);
+    }
+
     public function test_portal_renders_in_english_when_locale_is_en(): void
     {
         $this->withSession(['portal_locale' => 'en']);

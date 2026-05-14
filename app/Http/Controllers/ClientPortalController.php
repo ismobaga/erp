@@ -380,10 +380,13 @@ class ClientPortalController extends Controller
         session(['portal_locale' => $locale]);
 
         // Redirect back to the referring page, or fall back to the portal index.
+        // Only follow the Referer if it points to this application to prevent
+        // open-redirect attacks (CWE-601).
         $referer = $request->headers->get('referer');
+        $safe    = $referer && str_starts_with($referer, url('/')) ? $referer : null;
 
-        return $referer
-            ? redirect($referer)
+        return $safe
+            ? redirect($safe)
             : redirect()->route('portal.index', ['token' => $token]);
     }
 
