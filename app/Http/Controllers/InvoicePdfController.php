@@ -16,11 +16,22 @@ class InvoicePdfController extends Controller
     {
         abort_unless(auth()->user()?->canAny(['invoices.view', 'reports.view']), 403);
 
+        $currentCompanyId = app()->bound('currentCompany')
+            ? app('currentCompany')->id
+            : null;
+
+        abort_unless(
+            $currentCompanyId !== null
+            && (int) $invoice->company_id === (int) $currentCompanyId,
+            404,
+        );
+
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
         app(AuditTrailService::class)->log('invoice_pdf_accessed', $invoice, [
             'invoice_number' => $invoice->invoice_number,
             'download' => $request->boolean('download'),
+            'company_id' => $currentCompanyId,
         ], auth()->id());
 
         $company = CompanySetting::query()->first();
@@ -43,12 +54,12 @@ class InvoicePdfController extends Controller
             return Pdf::loadView('invoices.pdf', $viewData)
                 ->setOption([
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => true,
+                    'isRemoteEnabled' => false,
                     'dpi' => 120,
                     'defaultFont' => 'DejaVu Sans',
                 ])
                 ->setPaper('a4')
-                ->stream($invoice->invoice_number . '.pdf'); // Use stream() for inline display, download() for forced download
+                ->stream($invoice->invoice_number . '.pdf');
         }
 
         return response()->view('invoices.pdf', $viewData);
