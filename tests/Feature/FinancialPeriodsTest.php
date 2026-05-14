@@ -14,7 +14,9 @@ use App\Models\Payment;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class FinancialPeriodsTest extends TestCase
@@ -330,5 +332,56 @@ class FinancialPeriodsTest extends TestCase
             'subject_type' => FinancialPeriod::class,
             'subject_id' => $period->id,
         ]);
+    }
+
+    public function test_invoice_resource_uses_cached_closed_period_ranges_for_lock_checks(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Cache Corp', 'status' => 'active']);
+
+        $closedInvoice = Invoice::create([
+            'invoice_number' => 'INV-CACHE-LOCKED',
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-10',
+            'due_date' => '2026-04-20',
+            'status' => 'sent',
+            'total' => 120,
+            'balance_due' => 120,
+            'created_by' => $user->id,
+        ]);
+
+        $openInvoice = Invoice::create([
+            'invoice_number' => 'INV-CACHE-OPEN',
+            'client_id' => $client->id,
+            'issue_date' => '2026-05-10',
+            'due_date' => '2026-05-20',
+            'status' => 'sent',
+            'total' => 140,
+            'balance_due' => 140,
+            'created_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-CACHE',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        $isRecordLocked = new ReflectionMethod(InvoiceResource::class, 'isRecordLocked');
+        $isRecordLocked->setAccessible(true);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->assertTrue($isRecordLocked->invoke(null, $closedInvoice));
+        $this->assertFalse($isRecordLocked->invoke(null, $openInvoice));
+
+        $periodQueries = collect(DB::getQueryLog())
+            ->filter(fn(array $query): bool => (bool) preg_match('/from\s+[`"]?financial_periods[`"]?/i', $query['query']))
+            ->count();
+
+        $this->assertSame(1, $periodQueries);
     }
 }
