@@ -430,7 +430,9 @@ class ClientPortalController extends Controller
             })
             ->firstOrFail();
 
-        $client->forceFill(['portal_token_last_used_at' => now()])->saveQuietly();
+        if ($client->portal_token_last_used_at === null || $client->portal_token_last_used_at->lt(now()->subMinutes(5))) {
+            $client->forceFill(['portal_token_last_used_at' => now()])->saveQuietly();
+        }
 
         return $client;
     }
