@@ -39,7 +39,8 @@ trait HasCompanyScope
             }
 
             $modelClass = $query->getModel()::class;
-            $strict = (bool) config('erp.tenancy.require_company_context_in_console', false);
+            $strict = app()->environment('production')
+                || (bool) config('erp.tenancy.require_company_context_in_console', false);
             $logMissing = (bool) config('erp.tenancy.log_missing_console_context', true);
 
             if ($strict) {

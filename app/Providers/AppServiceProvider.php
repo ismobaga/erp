@@ -6,10 +6,16 @@ use App\Models\CreditNote;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Quote;
 use App\Observers\CreditNoteObserver;
 use App\Observers\ExpenseObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\PaymentObserver;
+use App\Policies\CreditNotePolicy;
+use App\Policies\ExpensePolicy;
+use App\Policies\InvoicePolicy;
+use App\Policies\PaymentPolicy;
+use App\Policies\QuotePolicy;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -18,6 +24,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -90,6 +97,12 @@ class AppServiceProvider extends ServiceProvider
         Payment::observe(PaymentObserver::class);
         Expense::observe(ExpenseObserver::class);
         CreditNote::observe(CreditNoteObserver::class);
+
+        Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(Quote::class, QuotePolicy::class);
+        Gate::policy(Payment::class, PaymentPolicy::class);
+        Gate::policy(Expense::class, ExpensePolicy::class);
+        Gate::policy(CreditNote::class, CreditNotePolicy::class);
 
         // Enforce consistent action semantics across the whole admin panel.
         CreateAction::configureUsing(fn (CreateAction $action) => $action->defaultColor('primary'));

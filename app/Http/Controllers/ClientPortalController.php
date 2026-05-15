@@ -34,28 +34,28 @@ class ClientPortalController extends Controller
         $company = $this->resolveCompany($client);
 
         $invoices = Invoice::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->with(['items'])
             ->orderByDesc('issue_date')
             ->get();
 
         return response()->view('portal.index', [
-            'client'  => $client,
+            'client' => $client,
             'company' => $company,
             'invoices' => $invoices,
-            'token'   => $token,
+            'token' => $token,
         ]);
     }
 
     // ── Invoices ───────────────────────────────────────────────────────────────
 
-    public function showInvoice(string $token, Invoice $invoice): Response
+    public function showInvoice(string $token, int $invoice): Response
     {
         $this->applyPortalLocale();
         $client = $this->resolveClientByToken($token);
 
-        // Ensure this invoice belongs to the authenticated client.
-        abort_unless((int) $invoice->client_id === (int) $client->id, 404);
+        $invoice = $this->resolvePortalInvoice($client, $invoice);
 
         $invoice->loadMissing(['client', 'items.service', 'payments']);
 
@@ -64,14 +64,14 @@ class ClientPortalController extends Controller
 
         $viewData = [
             'invoice' => $invoice,
-            'client'  => $client,
+            'client' => $client,
             'company' => $company,
-            'token'   => $token,
+            'token' => $token,
             'bankDetails' => [
-                'bank_name'      => $company?->bank_name ?: null,
-                'account_name'   => $company?->bank_account_name ?: ($company?->legal_name ?: $companyName),
+                'bank_name' => $company?->bank_name ?: null,
+                'account_name' => $company?->bank_account_name ?: ($company?->legal_name ?: $companyName),
                 'account_number' => $company?->bank_account_number ?: null,
-                'swift_code'     => $company?->bank_swift_code ?: null,
+                'swift_code' => $company?->bank_swift_code ?: null,
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
         ];
@@ -79,10 +79,10 @@ class ClientPortalController extends Controller
         return response()->view('portal.invoice', $viewData);
     }
 
-    public function downloadPdf(string $token, Invoice $invoice): Response
+    public function downloadPdf(string $token, int $invoice): Response
     {
         $client = $this->resolveClientByToken($token);
-        abort_unless((int) $invoice->client_id === (int) $client->id, 404);
+        $invoice = $this->resolvePortalInvoice($client, $invoice);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
@@ -93,24 +93,24 @@ class ClientPortalController extends Controller
             'invoice' => $invoice,
             'company' => $company,
             'bankDetails' => [
-                'bank_name'      => $company?->bank_name ?: null,
-                'account_name'   => $company?->bank_account_name ?: ($company?->legal_name ?: $companyName),
+                'bank_name' => $company?->bank_name ?: null,
+                'account_name' => $company?->bank_account_name ?: ($company?->legal_name ?: $companyName),
                 'account_number' => $company?->bank_account_number ?: null,
-                'swift_code'     => $company?->bank_swift_code ?: null,
+                'swift_code' => $company?->bank_swift_code ?: null,
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
-            'isDownload'  => true,
+            'isDownload' => true,
         ];
 
         return Pdf::loadView('invoices.pdf', $viewData)
             ->setOption([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled'      => false,
-                'dpi'                  => 120,
-                'defaultFont'          => 'DejaVu Sans',
+                'isRemoteEnabled' => false,
+                'dpi' => 120,
+                'defaultFont' => 'DejaVu Sans',
             ])
             ->setPaper('a4')
-            ->download($invoice->invoice_number . '.pdf');
+            ->download($invoice->invoice_number.'.pdf');
     }
 
     // ── Quotes ─────────────────────────────────────────────────────────────────
@@ -118,68 +118,69 @@ class ClientPortalController extends Controller
     public function quotes(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         $quotes = Quote::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->orderByDesc('issue_date')
             ->get();
 
         return response()->view('portal.quotes', [
-            'client'  => $client,
+            'client' => $client,
             'company' => $company,
-            'quotes'  => $quotes,
-            'token'   => $token,
+            'quotes' => $quotes,
+            'token' => $token,
         ]);
     }
 
-    public function showQuote(string $token, Quote $quote): Response
+    public function showQuote(string $token, int $quote): Response
     {
         $this->applyPortalLocale();
         $client = $this->resolveClientByToken($token);
-        abort_unless((int) $quote->client_id === (int) $client->id, 404);
+        $quote = $this->resolvePortalQuote($client, $quote);
 
         $quote->loadMissing(['client', 'items.service', 'invoice']);
         $company = $this->resolveCompany($client);
 
         return response()->view('portal.quote', [
-            'client'  => $client,
+            'client' => $client,
             'company' => $company,
-            'quote'   => $quote,
-            'token'   => $token,
+            'quote' => $quote,
+            'token' => $token,
         ]);
     }
 
-    public function approveQuote(string $token, Quote $quote): RedirectResponse
+    public function approveQuote(string $token, int $quote): RedirectResponse
     {
         $client = $this->resolveClientByToken($token);
-        abort_unless((int) $quote->client_id === (int) $client->id, 404);
+        $quote = $this->resolvePortalQuote($client, $quote);
         abort_unless($quote->canBeAccepted(), 422, 'This quote cannot be approved in its current status.');
 
         $quote->convertToInvoice();
 
         app(AuditTrailService::class)->log('portal_quote_approved', $quote, [
             'quote_number' => $quote->quote_number,
-            'client_id'    => $client->id,
+            'client_id' => $client->id,
         ]);
 
         return redirect()->route('portal.quotes', ['token' => $token])
             ->with('portal_success', __('erp.portal.quote_approved'));
     }
 
-    public function rejectQuote(string $token, Quote $quote, Request $request): RedirectResponse
+    public function rejectQuote(string $token, int $quote, Request $request): RedirectResponse
     {
         $client = $this->resolveClientByToken($token);
-        abort_unless((int) $quote->client_id === (int) $client->id, 404);
+        $quote = $this->resolvePortalQuote($client, $quote);
         abort_unless(in_array($quote->status, ['draft', 'sent', 'expired'], true), 422, 'This quote cannot be rejected in its current status.');
 
         $quote->forceFill(['status' => 'rejected'])->save();
 
         app(AuditTrailService::class)->log('portal_quote_rejected', $quote, [
             'quote_number' => $quote->quote_number,
-            'client_id'    => $client->id,
-            'reason'       => $request->input('reason'),
+            'client_id' => $client->id,
+            'reason' => $request->input('reason'),
         ]);
 
         return redirect()->route('portal.quotes', ['token' => $token])
@@ -191,11 +192,12 @@ class ClientPortalController extends Controller
     public function documents(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         // Collect documents attached directly to the client.
         $clientDocs = Attachment::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('attachable_type', Client::class)
             ->where('attachable_id', $client->id)
             ->orderByDesc('created_at')
@@ -203,10 +205,12 @@ class ClientPortalController extends Controller
 
         // Documents on projects belonging to this client.
         $projectIds = Project::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->pluck('id');
 
         $projectDocs = Attachment::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('attachable_type', Project::class)
             ->whereIn('attachable_id', $projectIds)
             ->orderByDesc('created_at')
@@ -214,22 +218,24 @@ class ClientPortalController extends Controller
 
         // Documents on invoices belonging to this client.
         $invoiceIds = Invoice::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->pluck('id');
 
         $invoiceDocs = Attachment::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('attachable_type', Invoice::class)
             ->whereIn('attachable_id', $invoiceIds)
             ->orderByDesc('created_at')
             ->get();
 
         return response()->view('portal.documents', [
-            'client'      => $client,
-            'company'     => $company,
-            'clientDocs'  => $clientDocs,
+            'client' => $client,
+            'company' => $company,
+            'clientDocs' => $clientDocs,
             'projectDocs' => $projectDocs,
             'invoiceDocs' => $invoiceDocs,
-            'token'       => $token,
+            'token' => $token,
         ]);
     }
 
@@ -238,20 +244,21 @@ class ClientPortalController extends Controller
     public function projects(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         $projects = Project::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->with(['assignee', 'service'])
             ->orderByDesc('created_at')
             ->get();
 
         return response()->view('portal.projects', [
-            'client'   => $client,
-            'company'  => $company,
+            'client' => $client,
+            'company' => $company,
             'projects' => $projects,
-            'token'    => $token,
+            'token' => $token,
         ]);
     }
 
@@ -260,19 +267,20 @@ class ClientPortalController extends Controller
     public function tickets(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         $tickets = PortalTicket::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->orderByDesc('created_at')
             ->get();
 
         return response()->view('portal.tickets', [
-            'client'  => $client,
+            'client' => $client,
             'company' => $company,
             'tickets' => $tickets,
-            'token'   => $token,
+            'token' => $token,
         ]);
     }
 
@@ -281,8 +289,8 @@ class ClientPortalController extends Controller
         $client = $this->resolveClientByToken($token);
 
         $validated = $request->validate([
-            'subject'  => ['required', 'string', 'max:255'],
-            'body'     => ['required', 'string', 'max:5000'],
+            'subject' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string', 'max:5000'],
             'priority' => ['nullable', 'in:normal,urgent'],
         ]);
 
@@ -290,11 +298,11 @@ class ClientPortalController extends Controller
 
         PortalTicket::create([
             'company_id' => $company?->id ?? $client->company_id,
-            'client_id'  => $client->id,
-            'subject'    => $validated['subject'],
-            'body'       => $validated['body'],
-            'priority'   => $validated['priority'] ?? 'normal',
-            'status'     => 'open',
+            'client_id' => $client->id,
+            'subject' => $validated['subject'],
+            'body' => $validated['body'],
+            'priority' => $validated['priority'] ?? 'normal',
+            'status' => 'open',
         ]);
 
         return redirect()->route('portal.tickets', ['token' => $token])
@@ -306,29 +314,32 @@ class ClientPortalController extends Controller
     public function activity(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         // Gather activity logs related to the client and their records.
         $invoiceIds = Invoice::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->pluck('id');
 
         $quoteIds = Quote::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->pluck('id');
 
         $activityLogs = ActivityLog::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where(function ($query) use ($client, $invoiceIds, $quoteIds): void {
                 $query->where(function ($q) use ($client): void {
                     $q->where('subject_type', Client::class)
-                      ->where('subject_id', $client->id);
+                        ->where('subject_id', $client->id);
                 })->orWhere(function ($q) use ($invoiceIds): void {
                     $q->where('subject_type', Invoice::class)
-                      ->whereIn('subject_id', $invoiceIds);
+                        ->whereIn('subject_id', $invoiceIds);
                 })->orWhere(function ($q) use ($quoteIds): void {
                     $q->where('subject_type', Quote::class)
-                      ->whereIn('subject_id', $quoteIds);
+                        ->whereIn('subject_id', $quoteIds);
                 });
             })
             ->orderByDesc('created_at')
@@ -336,10 +347,10 @@ class ClientPortalController extends Controller
             ->get();
 
         return response()->view('portal.activity', [
-            'client'       => $client,
-            'company'      => $company,
+            'client' => $client,
+            'company' => $company,
             'activityLogs' => $activityLogs,
-            'token'        => $token,
+            'token' => $token,
         ]);
     }
 
@@ -348,20 +359,21 @@ class ClientPortalController extends Controller
     public function conversations(string $token): Response
     {
         $this->applyPortalLocale();
-        $client  = $this->resolveClientByToken($token);
+        $client = $this->resolveClientByToken($token);
         $company = $this->resolveCompany($client);
 
         $conversations = WhatsappConversation::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->with(['messages'])
             ->orderByDesc('last_message_at')
             ->get();
 
         return response()->view('portal.conversations', [
-            'client'        => $client,
-            'company'       => $company,
+            'client' => $client,
+            'company' => $company,
             'conversations' => $conversations,
-            'token'         => $token,
+            'token' => $token,
         ]);
     }
 
@@ -373,7 +385,7 @@ class ClientPortalController extends Controller
         $this->resolveClientByToken($token);
 
         $locale = $request->input('locale', 'fr');
-        if (!in_array($locale, self::SUPPORTED_LOCALES, true)) {
+        if (! in_array($locale, self::SUPPORTED_LOCALES, true)) {
             $locale = 'fr';
         }
 
@@ -383,7 +395,7 @@ class ClientPortalController extends Controller
         // Only follow the Referer if it points to this application to prevent
         // open-redirect attacks (CWE-601).
         $referer = $request->headers->get('referer');
-        $safe    = $referer && str_starts_with($referer, url('/')) ? $referer : null;
+        $safe = $referer && str_starts_with($referer, url('/')) ? $referer : null;
 
         return $safe
             ? redirect($safe)
@@ -409,16 +421,41 @@ class ClientPortalController extends Controller
 
     protected function resolveClientByToken(string $token): Client
     {
-        // portal_token is stored as a plain-text UUID (the random token is
-        // already unforgeable; see migration 2026_05_06_200002).
-        return Client::withoutCompanyScope()
-            ->where('portal_token', $token)
+        $client = Client::withoutCompanyScope()
+            ->where('portal_token_hash', hash('sha256', $token))
+            ->whereNull('portal_token_revoked_at')
+            ->where(function ($query): void {
+                $query->whereNull('portal_token_expires_at')
+                    ->orWhere('portal_token_expires_at', '>', now());
+            })
             ->firstOrFail();
+
+        $client->forceFill(['portal_token_last_used_at' => now()])->saveQuietly();
+
+        return $client;
     }
 
     protected function applyPortalLocale(): void
     {
         $locale = session('portal_locale', 'fr');
         app()->setLocale(in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : 'fr');
+    }
+
+    protected function resolvePortalInvoice(Client $client, int $invoiceId): Invoice
+    {
+        return Invoice::withoutCompanyScope()
+            ->whereKey($invoiceId)
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->firstOrFail();
+    }
+
+    protected function resolvePortalQuote(Client $client, int $quoteId): Quote
+    {
+        return Quote::withoutCompanyScope()
+            ->whereKey($quoteId)
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->firstOrFail();
     }
 }

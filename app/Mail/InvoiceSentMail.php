@@ -30,8 +30,8 @@ class InvoiceSentMail extends Mailable
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedTotal = 'FCFA '.number_format((float) $invoice->total, 0, '.', ' ');
         $this->formattedDueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
-        $this->portalUrl = $invoice->client?->portal_token
-            ? route('portal.invoice', ['token' => $invoice->client->portal_token, 'invoice' => $invoice])
+        $this->portalUrl = $invoice->client
+            ? route('portal.invoice', ['token' => $invoice->client->ensurePlainPortalToken(), 'invoice' => $invoice])
             : null;
     }
 

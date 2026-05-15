@@ -32,6 +32,15 @@ class Expense extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
+    public function saveQuietly(array $options = []): bool
+    {
+        if ($this->isDirty(['company_id', 'expense_date', 'amount'])) {
+            return $this->save($options);
+        }
+
+        return parent::saveQuietly($options);
+    }
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');

@@ -62,6 +62,7 @@ class Invoice extends Model implements HasTenantScope
     {
         static::saving(function (Invoice $invoice): void {
             FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
+            $invoice->ensureCompanyRelationsAreValid();
 
             if ($invoice->exists && $invoice->isDirty('invoice_number')) {
                 throw ValidationException::withMessages([
@@ -89,6 +90,15 @@ class Invoice extends Model implements HasTenantScope
         static::deleting(function (Invoice $invoice): void {
             FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
         });
+    }
+
+    public function saveQuietly(array $options = []): bool
+    {
+        if ($this->isDirty(['company_id', 'client_id', 'quote_id', 'issue_date', 'due_date', 'subtotal', 'discount_total', 'tax_total', 'total'])) {
+            return $this->save($options);
+        }
+
+        return parent::saveQuietly($options);
     }
 
     public function client(): BelongsTo
@@ -258,5 +268,46 @@ class Invoice extends Model implements HasTenantScope
             'balance_due' => $balanceMoney->toString(),
             'status' => $newStatus,
         ])->saveQuietly();
+    }
+
+    private function ensureCompanyRelationsAreValid(): void
+    {
+        $client = $this->client_id
+            ? Client::withoutCompanyScope()->find($this->client_id)
+            : null;
+        $quote = $this->quote_id
+            ? Quote::withoutCompanyScope()->find($this->quote_id)
+            : null;
+        $resolvedCompanyId = $this->company_id
+            ?? $client?->company_id
+            ?? $quote?->company_id;
+
+        if ($resolvedCompanyId !== null && blank($this->company_id)) {
+            $this->company_id = (int) $resolvedCompanyId;
+        }
+
+        if (app()->bound('currentCompany') && $resolvedCompanyId !== null && (int) app('currentCompany')->id !== (int) $resolvedCompanyId) {
+            throw ValidationException::withMessages([
+                'company_id' => 'The selected relations do not belong to the current company context.',
+            ]);
+        }
+
+        if ($client && $resolvedCompanyId !== null && (int) $client->company_id !== (int) $resolvedCompanyId) {
+            throw ValidationException::withMessages([
+                'client_id' => 'The selected client does not belong to this company.',
+            ]);
+        }
+
+        if ($quote && $resolvedCompanyId !== null && (int) $quote->company_id !== (int) $resolvedCompanyId) {
+            throw ValidationException::withMessages([
+                'quote_id' => 'The selected quote does not belong to this company.',
+            ]);
+        }
+
+        if ($quote && (int) $quote->client_id !== (int) $this->client_id) {
+            throw ValidationException::withMessages([
+                'quote_id' => 'The selected quote does not belong to the selected client.',
+            ]);
+        }
     }
 }

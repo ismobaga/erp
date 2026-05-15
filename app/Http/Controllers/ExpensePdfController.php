@@ -15,7 +15,7 @@ class ExpensePdfController extends Controller
 
     public function __invoke(Request $request, Expense $expense): Response
     {
-        abort_unless(auth()->user()?->canAny(['expenses.view', 'reports.view']), 403);
+        $this->authorize('view', $expense);
 
         $expense->loadMissing(['recorder', 'approver']);
 
@@ -34,7 +34,7 @@ class ExpensePdfController extends Controller
             'isDownload' => $request->boolean('download'),
         ];
 
-        $filename = 'depense-' . ($expense->reference ?: $expense->id) . '.pdf';
+        $filename = 'depense-'.($expense->reference ?: $expense->id).'.pdf';
 
         if ($request->boolean('download')) {
             return Pdf::loadView('expenses.pdf', $viewData)

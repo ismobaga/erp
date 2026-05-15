@@ -150,4 +150,8 @@ return [
     'api' => [
         'token_ttl_days' => max(1, (int) env('ERP_API_TOKEN_TTL_DAYS', 365)),
     ],
+
+    'portal' => [
+        'token_ttl_days' => max(1, (int) env('ERP_PORTAL_TOKEN_TTL_DAYS', 180)),
+    ],
 ];

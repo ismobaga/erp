@@ -32,6 +32,7 @@ class SensitiveDataRedactionProcessor implements ProcessorInterface
         'x-csrf-token',
         'x-api-key',
         'portal_token',
+        'portal_token_hash',
         'temporary_password',
         'access_token',
         'refresh_token',
@@ -74,7 +75,7 @@ class SensitiveDataRedactionProcessor implements ProcessorInterface
             if (in_array($lowerKey, self::REDACTED_KEYS, true)) {
                 $data[$key] = '[REDACTED]';
             } elseif (in_array($lowerKey, self::PARTIAL_MASK_KEYS, true) && is_string($value) && strlen($value) > 8) {
-                $data[$key] = substr($value, 0, 4) . str_repeat('*', strlen($value) - 8) . substr($value, -4);
+                $data[$key] = substr($value, 0, 4).str_repeat('*', strlen($value) - 8).substr($value, -4);
             } elseif (is_array($value)) {
                 $data[$key] = $this->redact($value, $depth + 1);
             }

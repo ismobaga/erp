@@ -15,7 +15,7 @@ class CreditNotePdfController extends Controller
 
     public function __invoke(Request $request, CreditNote $creditNote): Response
     {
-        abort_unless(auth()->user()?->canAny(['credit_notes.view', 'reports.view']), 403);
+        $this->authorize('view', $creditNote);
 
         $creditNote->loadMissing(['invoice.client']);
 
@@ -42,7 +42,7 @@ class CreditNotePdfController extends Controller
                     'defaultFont' => 'DejaVu Sans',
                 ])
                 ->setPaper('a4')
-                ->download($creditNote->credit_number . '.pdf');
+                ->download($creditNote->credit_number.'.pdf');
         }
 
         return response()->view('credit-notes.pdf', $viewData);

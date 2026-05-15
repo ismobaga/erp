@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Payments\PaymentResource;
-use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\FinancialPeriod;
@@ -379,9 +378,37 @@ class FinancialPeriodsTest extends TestCase
         $this->assertFalse($isRecordLocked->invoke(null, $openInvoice));
 
         $periodQueries = collect(DB::getQueryLog())
-            ->filter(fn(array $query): bool => (bool) preg_match('/from\s+[`"]?financial_periods[`"]?/i', $query['query']))
+            ->filter(fn (array $query): bool => (bool) preg_match('/from\s+[`"]?financial_periods[`"]?/i', $query['query']))
             ->count();
 
         $this->assertSame(1, $periodQueries);
+    }
+
+    public function test_save_quietly_cannot_bypass_closed_period_guard_on_sensitive_fields(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['type' => 'company', 'company_name' => 'Quiet Guard Corp', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => '2026-04-10',
+            'due_date' => '2026-04-20',
+            'status' => 'sent',
+            'total' => 100,
+            'balance_due' => 100,
+            'created_by' => $user->id,
+        ]);
+
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-QUIET',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        $invoice->forceFill(['issue_date' => '2026-04-11'])->saveQuietly();
     }
 }

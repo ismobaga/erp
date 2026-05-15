@@ -25,6 +25,15 @@ class CreditNote extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
+    public function saveQuietly(array $options = []): bool
+    {
+        if ($this->isDirty(['company_id', 'invoice_id', 'issue_date', 'amount'])) {
+            return $this->save($options);
+        }
+
+        return parent::saveQuietly($options);
+    }
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -74,10 +83,28 @@ class CreditNote extends Model implements HasTenantScope
 
             $creditNote->status = blank($creditNote->status) ? 'issued' : $creditNote->status;
 
-            $invoice = $creditNote->invoice;
+            $invoice = $creditNote->invoice_id
+                ? Invoice::withoutCompanyScope()->find($creditNote->invoice_id)
+                : null;
 
             if (! $invoice) {
                 return;
+            }
+
+            if (blank($creditNote->company_id)) {
+                $creditNote->company_id = (int) $invoice->company_id;
+            }
+
+            if ((int) $invoice->company_id !== (int) $creditNote->company_id) {
+                throw ValidationException::withMessages([
+                    'invoice_id' => 'The selected invoice does not belong to this company.',
+                ]);
+            }
+
+            if (app()->bound('currentCompany') && (int) app('currentCompany')->id !== (int) $creditNote->company_id) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'The selected relations do not belong to the current company context.',
+                ]);
             }
 
             if ($invoice->status === 'cancelled') {
