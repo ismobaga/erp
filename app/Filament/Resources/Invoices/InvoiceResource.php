@@ -75,8 +75,7 @@ class InvoiceResource extends Resource
                                 TextInput::make('invoice_number')
                                     ->label('Numéro de facture')
                                     ->placeholder('Attribué automatiquement à l’enregistrement')
-                                    ->helperText('Attribué automatiquement selon la séquence fiscale active et figé après émission.')
-                                    ->default(fn(): string => static::generateInvoiceNumber())
+                                    ->helperText('Le numéro sera attribué automatiquement lors de l’enregistrement.')
                                     ->readOnly()
                                     ->dehydrated(false),
                                 Select::make('client_id')
@@ -112,10 +111,7 @@ class InvoiceResource extends Resource
                                 DatePicker::make('issue_date')
                                     ->default(now())
                                     ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function ($state, Set $set): void {
-                                        $set('invoice_number', static::generateInvoiceNumber($state));
-                                    }),
+                                    ->live(),
                                 DatePicker::make('due_date')
                                     ->default(now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))),
                             ]),
