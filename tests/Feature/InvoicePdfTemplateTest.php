@@ -161,4 +161,36 @@ class InvoicePdfTemplateTest extends TestCase
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_user_cannot_access_invoice_pdf_from_another_company(): void
+    {
+        $companyA = Company::create(['name' => 'Tenant A', 'currency' => 'FCFA', 'is_active' => true]);
+        $companyB = Company::create(['name' => 'Tenant B', 'currency' => 'FCFA', 'is_active' => true]);
+
+        $this->setUpCompany($companyA);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $this->setUpCompany($companyB);
+        $otherClient = Client::create([
+            'type' => 'company',
+            'company_name' => 'Other Tenant Client',
+            'status' => 'active',
+        ]);
+
+        $foreignInvoice = Invoice::create([
+            'invoice_number' => 'INV-FOREIGN-PDF',
+            'client_id' => $otherClient->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'created_by' => $user->id,
+        ]);
+
+        $this->setUpCompany($companyA);
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $foreignInvoice))
+            ->assertNotFound();
+    }
 }

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\PortalTicket;
 use App\Models\Project;
 use App\Models\Quote;
@@ -14,6 +13,7 @@ use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ClientPortalExpansionTest extends TestCase
@@ -21,7 +21,9 @@ class ClientPortalExpansionTest extends TestCase
     use RefreshDatabase;
 
     protected Company $company;
+
     protected Client $client;
+
     protected string $token;
 
     protected function setUp(): void
@@ -31,19 +33,28 @@ class ClientPortalExpansionTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->company = Company::create([
-            'name'      => 'Acme SARL',
+            'name' => 'Acme SARL',
             'is_active' => true,
         ]);
+        $this->setUpCompany($this->company);
 
         $this->client = Client::create([
-            'company_id'   => $this->company->id,
-            'type'         => 'company',
+            'company_id' => $this->company->id,
+            'type' => 'company',
             'company_name' => 'BamakoTech',
-            'email'        => 'contact@bamakotech.ml',
-            'status'       => 'active',
+            'email' => 'contact@bamakotech.ml',
+            'status' => 'active',
         ]);
 
         $this->token = $this->client->portal_token;
+    }
+
+    public function test_portal_token_is_hashed_and_encrypted_at_rest(): void
+    {
+        $fresh = Client::withoutCompanyScope()->findOrFail($this->client->id);
+
+        $this->assertNotSame($this->token, (string) $fresh->getRawOriginal('portal_token'));
+        $this->assertSame(hash('sha256', $this->token), $fresh->portal_token_hash);
     }
 
     // ── Dashboard / index ──────────────────────────────────────────────────────
@@ -63,16 +74,44 @@ class ClientPortalExpansionTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_portal_index_rejects_revoked_tokens(): void
+    {
+        $this->client->revokePortalToken();
+
+        $this->get(route('portal.index', ['token' => $this->token]))
+            ->assertNotFound();
+    }
+
+    public function test_portal_index_rejects_expired_tokens(): void
+    {
+        $this->client->forceFill([
+            'portal_token_expires_at' => now()->subMinute(),
+        ])->save();
+
+        $this->get(route('portal.index', ['token' => $this->token]))
+            ->assertNotFound();
+    }
+
+    public function test_portal_updates_last_used_timestamp_when_token_is_valid(): void
+    {
+        $this->assertNull($this->client->fresh()->portal_token_last_used_at);
+
+        $this->get(route('portal.index', ['token' => $this->token]))
+            ->assertOk();
+
+        $this->assertNotNull($this->client->fresh()->portal_token_last_used_at);
+    }
+
     public function test_portal_index_shows_invoice_list(): void
     {
         $invoice = Invoice::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
-            'issue_date'   => now()->toDateString(),
-            'status'       => 'sent',
-            'total'        => 150000,
-            'balance_due'  => 150000,
-            'subtotal'     => 150000,
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 150000,
+            'balance_due' => 150000,
+            'subtotal' => 150000,
         ]);
 
         $response = $this->get(route('portal.index', ['token' => $this->token]));
@@ -81,18 +120,46 @@ class ClientPortalExpansionTest extends TestCase
         $response->assertSeeText($invoice->invoice_number);
     }
 
+    public function test_portal_ignores_records_with_mismatched_company_even_if_client_id_matches(): void
+    {
+        $otherCompany = Company::create([
+            'name' => 'Other Tenant',
+            'is_active' => true,
+        ]);
+
+        $foreignInvoiceId = DB::table('invoices')->insertGetId([
+            'invoice_number' => 'INV-FOREIGN-001',
+            'company_id' => $otherCompany->id,
+            'client_id' => $this->client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'subtotal' => 100,
+            'total' => 100,
+            'balance_due' => 100,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('portal.index', ['token' => $this->token]))
+            ->assertOk()
+            ->assertDontSeeText('INV-FOREIGN-001');
+
+        $this->get(route('portal.invoice', ['token' => $this->token, 'invoice' => $foreignInvoiceId]))
+            ->assertNotFound();
+    }
+
     // ── Quotes ─────────────────────────────────────────────────────────────────
 
     public function test_portal_quotes_page_lists_client_quotes(): void
     {
         $quote = Quote::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
             'quote_number' => 'QT-2026-0001',
-            'issue_date'   => now()->toDateString(),
-            'status'       => 'sent',
-            'total'        => 200000,
-            'subtotal'     => 200000,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 200000,
+            'subtotal' => 200000,
         ]);
 
         $response = $this->get(route('portal.quotes', ['token' => $this->token]));
@@ -104,22 +171,22 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_quote_detail_page_shows_line_items(): void
     {
         $quote = Quote::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
             'quote_number' => 'QT-2026-0002',
-            'issue_date'   => now()->toDateString(),
-            'status'       => 'sent',
-            'total'        => 50000,
-            'subtotal'     => 50000,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 50000,
+            'subtotal' => 50000,
         ]);
 
         QuoteItem::create([
-            'company_id'  => $this->company->id,
-            'quote_id'    => $quote->id,
+            'company_id' => $this->company->id,
+            'quote_id' => $quote->id,
             'description' => 'Développement logiciel',
-            'quantity'    => 1,
-            'unit_price'  => 50000,
-            'line_total'  => 50000,
+            'quantity' => 1,
+            'unit_price' => 50000,
+            'line_total' => 50000,
         ]);
 
         $response = $this->get(route('portal.quote', ['token' => $this->token, 'quote' => $quote]));
@@ -132,14 +199,14 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_quote_approval_converts_to_invoice(): void
     {
         $quote = Quote::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
             'quote_number' => 'QT-2026-0003',
-            'issue_date'   => now()->toDateString(),
-            'valid_until'  => now()->addDays(30)->toDateString(),
-            'status'       => 'sent',
-            'total'        => 75000,
-            'subtotal'     => 75000,
+            'issue_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(30)->toDateString(),
+            'status' => 'sent',
+            'total' => 75000,
+            'subtotal' => 75000,
         ]);
 
         $response = $this->post(route('portal.quote.approve', ['token' => $this->token, 'quote' => $quote]));
@@ -152,13 +219,13 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_quote_rejection_updates_status(): void
     {
         $quote = Quote::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
             'quote_number' => 'QT-2026-0004',
-            'issue_date'   => now()->toDateString(),
-            'status'       => 'sent',
-            'total'        => 30000,
-            'subtotal'     => 30000,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 30000,
+            'subtotal' => 30000,
         ]);
 
         $response = $this->post(route('portal.quote.reject', [
@@ -173,20 +240,20 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_cannot_approve_quote_belonging_to_another_client(): void
     {
         $otherClient = Client::create([
-            'company_id'   => $this->company->id,
-            'type'         => 'individual',
+            'company_id' => $this->company->id,
+            'type' => 'individual',
             'contact_name' => 'Other Client',
-            'status'       => 'active',
+            'status' => 'active',
         ]);
 
         $quote = Quote::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $otherClient->id,
+            'company_id' => $this->company->id,
+            'client_id' => $otherClient->id,
             'quote_number' => 'QT-2026-0099',
-            'issue_date'   => now()->toDateString(),
-            'status'       => 'sent',
-            'total'        => 10000,
-            'subtotal'     => 10000,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 10000,
+            'subtotal' => 10000,
         ]);
 
         $response = $this->post(route('portal.quote.approve', ['token' => $this->token, 'quote' => $quote]));
@@ -208,10 +275,10 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_projects_page_lists_client_projects(): void
     {
         $project = Project::create([
-            'company_id'  => $this->company->id,
-            'client_id'   => $this->client->id,
-            'name'        => 'Refonte du site web',
-            'status'      => 'in_progress',
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'name' => 'Refonte du site web',
+            'status' => 'in_progress',
             'description' => 'Refonte complète de l\'infrastructure.',
         ]);
 
@@ -233,17 +300,17 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_ticket_submission_creates_ticket(): void
     {
         $response = $this->post(route('portal.tickets.submit', ['token' => $this->token]), [
-            'subject'  => 'Problème de connexion',
-            'body'     => 'Je ne peux pas me connecter au portail.',
+            'subject' => 'Problème de connexion',
+            'body' => 'Je ne peux pas me connecter au portail.',
             'priority' => 'urgent',
         ]);
 
         $response->assertRedirectToRoute('portal.tickets', ['token' => $this->token]);
         $this->assertDatabaseHas('portal_tickets', [
             'client_id' => $this->client->id,
-            'subject'   => 'Problème de connexion',
-            'priority'  => 'urgent',
-            'status'    => 'open',
+            'subject' => 'Problème de connexion',
+            'priority' => 'urgent',
+            'status' => 'open',
         ]);
     }
 
@@ -251,7 +318,7 @@ class ClientPortalExpansionTest extends TestCase
     {
         $response = $this->post(route('portal.tickets.submit', ['token' => $this->token]), [
             'subject' => '',
-            'body'    => '',
+            'body' => '',
         ]);
 
         $response->assertSessionHasErrors(['subject', 'body']);
@@ -261,11 +328,11 @@ class ClientPortalExpansionTest extends TestCase
     {
         PortalTicket::create([
             'company_id' => $this->company->id,
-            'client_id'  => $this->client->id,
-            'subject'    => 'Question sur ma facture',
-            'body'       => 'Pouvez-vous m\'expliquer cette ligne ?',
-            'status'     => 'open',
-            'priority'   => 'normal',
+            'client_id' => $this->client->id,
+            'subject' => 'Question sur ma facture',
+            'body' => 'Pouvez-vous m\'expliquer cette ligne ?',
+            'status' => 'open',
+            'priority' => 'normal',
         ]);
 
         $response = $this->get(route('portal.tickets', ['token' => $this->token]));
@@ -288,19 +355,19 @@ class ClientPortalExpansionTest extends TestCase
     public function test_portal_conversations_page_shows_linked_conversations(): void
     {
         $conv = WhatsappConversation::create([
-            'company_id'   => $this->company->id,
-            'client_id'    => $this->client->id,
-            'chat_id'      => '+22370000001@c.us',
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'chat_id' => '+22370000001@c.us',
             'contact_name' => 'BamakoTech',
-            'status'       => 'open',
+            'status' => 'open',
         ]);
 
         WhatsappMessage::create([
             'conversation_id' => $conv->id,
-            'direction'       => 'inbound',
-            'type'            => 'text',
-            'body'            => 'Bonjour, avez-vous reçu ma demande ?',
-            'sent_at'         => now(),
+            'direction' => 'inbound',
+            'type' => 'text',
+            'body' => 'Bonjour, avez-vous reçu ma demande ?',
+            'sent_at' => now(),
         ]);
 
         $response = $this->get(route('portal.conversations', ['token' => $this->token]));

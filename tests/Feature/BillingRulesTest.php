@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -557,6 +557,59 @@ class BillingRulesTest extends TestCase
 
         $invoice->update([
             'invoice_number' => 'MANUAL-OVERRIDE-001',
+        ]);
+    }
+
+    public function test_invoice_rejects_client_from_another_company(): void
+    {
+        $companyA = Company::create(['name' => 'A', 'currency' => 'FCFA', 'is_active' => true]);
+        $companyB = Company::create(['name' => 'B', 'currency' => 'FCFA', 'is_active' => true]);
+        $this->setUpCompany($companyA);
+
+        $clientA = Client::create(['type' => 'company', 'company_name' => 'A Client', 'status' => 'active']);
+
+        $this->setUpCompany($companyB);
+        $clientB = Client::create(['type' => 'company', 'company_name' => 'B Client', 'status' => 'active']);
+
+        $this->setUpCompany($companyA);
+
+        $this->expectException(ValidationException::class);
+
+        Invoice::create([
+            'client_id' => $clientB->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'draft',
+        ]);
+    }
+
+    public function test_payment_rejects_client_invoice_company_mismatch(): void
+    {
+        $companyA = Company::create(['name' => 'A', 'currency' => 'FCFA', 'is_active' => true]);
+        $companyB = Company::create(['name' => 'B', 'currency' => 'FCFA', 'is_active' => true]);
+        $this->setUpCompany($companyA);
+
+        $clientA = Client::create(['type' => 'company', 'company_name' => 'A Client', 'status' => 'active']);
+        $invoiceA = Invoice::create([
+            'client_id' => $clientA->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 200,
+            'balance_due' => 200,
+        ]);
+
+        $this->setUpCompany($companyB);
+        $clientB = Client::create(['type' => 'company', 'company_name' => 'B Client', 'status' => 'active']);
+
+        $this->setUpCompany($companyA);
+
+        $this->expectException(ValidationException::class);
+
+        Payment::create([
+            'invoice_id' => $invoiceA->id,
+            'client_id' => $clientB->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 50,
+            'payment_method' => 'cash',
         ]);
     }
 }

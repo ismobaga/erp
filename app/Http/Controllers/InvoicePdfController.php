@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
-use App\Support\ResolvesLogoDataUri;
 use App\Services\AuditTrailService;
+use App\Support\ResolvesLogoDataUri;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +15,7 @@ class InvoicePdfController extends Controller
 
     public function __invoke(Request $request, Invoice $invoice): Response
     {
-        abort_unless(auth()->user()?->canAny(['invoices.view', 'reports.view']), 403);
+        $this->authorize('view', $invoice);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
@@ -49,10 +49,9 @@ class InvoicePdfController extends Controller
                     'defaultFont' => 'DejaVu Sans',
                 ])
                 ->setPaper('a4')
-                ->download($invoice->invoice_number . '.pdf');
+                ->download($invoice->invoice_number.'.pdf');
         }
 
         return response()->view('invoices.pdf', $viewData);
     }
-
 }

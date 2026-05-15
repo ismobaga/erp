@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 #[Fillable([
     'quote_number',
@@ -32,6 +33,40 @@ use Illuminate\Support\Facades\DB;
 class Quote extends Model implements HasTenantScope
 {
     use HasCompanyScope;
+
+    protected static function booted(): void
+    {
+        static::saving(function (Quote $quote): void {
+            $client = $quote->client_id
+                ? Client::withoutCompanyScope()->find($quote->client_id)
+                : null;
+
+            if ($client && blank($quote->company_id)) {
+                $quote->company_id = (int) $client->company_id;
+            }
+
+            if ($client && filled($quote->company_id) && (int) $client->company_id !== (int) $quote->company_id) {
+                throw ValidationException::withMessages([
+                    'client_id' => 'The selected client does not belong to this company.',
+                ]);
+            }
+
+            if ($client && app()->bound('currentCompany') && filled($quote->company_id) && (int) app('currentCompany')->id !== (int) $quote->company_id) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'The selected relations do not belong to the current company context.',
+                ]);
+            }
+        });
+    }
+
+    public function saveQuietly(array $options = []): bool
+    {
+        if ($this->isDirty(['company_id', 'client_id', 'issue_date', 'valid_until', 'subtotal', 'discount_total', 'tax_total', 'total'])) {
+            return $this->save($options);
+        }
+
+        return parent::saveQuietly($options);
+    }
 
     public function noteRecords(): MorphMany
     {
@@ -72,7 +107,13 @@ class Quote extends Model implements HasTenantScope
             // pass the existence check and create duplicate invoices.
             // Eager-load items here so the subsequent loop does not trigger
             // an additional query per conversion.
-            $fresh = static::query()->with('items')->whereKey($this->getKey())->lockForUpdate()->first();
+            $fresh = static::withoutCompanyScope()->with('items')->whereKey($this->getKey())->lockForUpdate()->first();
+
+            if (! $fresh) {
+                throw ValidationException::withMessages([
+                    'quote' => 'Quote not found.',
+                ]);
+            }
 
             if ($fresh->invoice()->exists()) {
                 return $fresh->invoice;

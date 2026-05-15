@@ -15,7 +15,7 @@ class QuotePdfController extends Controller
 
     public function __invoke(Request $request, Quote $quote): Response
     {
-        abort_unless(auth()->user()?->canAny(['quotes.view', 'reports.view']), 403);
+        $this->authorize('view', $quote);
 
         $quote->loadMissing(['client', 'items.service', 'invoice']);
 
@@ -43,7 +43,7 @@ class QuotePdfController extends Controller
                     'defaultFont' => 'DejaVu Sans',
                 ])
                 ->setPaper('a4')
-                ->download($quote->quote_number . '.pdf');
+                ->download($quote->quote_number.'.pdf');
         }
 
         return response()->view('quotes.pdf', $viewData);

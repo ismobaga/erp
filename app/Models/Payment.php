@@ -60,6 +60,15 @@ class Payment extends Model implements HasTenantScope
         return DB::transaction(fn (): bool => parent::save($options));
     }
 
+    public function saveQuietly(array $options = []): bool
+    {
+        if ($this->isDirty(['company_id', 'invoice_id', 'client_id', 'payment_date', 'amount'])) {
+            return $this->save($options);
+        }
+
+        return parent::saveQuietly($options);
+    }
+
     public function flag(string $reason, int $userId): void
     {
         $this->forceFill([
@@ -121,18 +130,44 @@ class Payment extends Model implements HasTenantScope
             // surrounding transaction (provided by the overridden save())
             // commits, preventing concurrent payments from racing past.
             /** @var Invoice|null $invoice */
-            $invoice = Invoice::query()->whereKey($payment->invoice_id)->lockForUpdate()->first();
+            $invoice = Invoice::withoutCompanyScope()->whereKey($payment->invoice_id)->lockForUpdate()->first();
+            $client = $payment->client_id
+                ? Client::withoutCompanyScope()->find($payment->client_id)
+                : null;
+            $resolvedCompanyId = $payment->company_id
+                ?? $invoice?->company_id
+                ?? $client?->company_id;
 
-            if ($invoice === null) {
-                return;
+            if ($resolvedCompanyId !== null && blank($payment->company_id)) {
+                $payment->company_id = (int) $resolvedCompanyId;
             }
 
-            // Defensive check: if both payment and invoice have company_id set,
-            // they must match (HasCompanyScope should ensure this, but this is a safety check)
-            if ($invoice->company_id && $payment->company_id && $invoice->company_id !== $payment->company_id) {
+            if (app()->bound('currentCompany') && $resolvedCompanyId !== null && (int) app('currentCompany')->id !== (int) $resolvedCompanyId) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'The selected relations do not belong to the current company context.',
+                ]);
+            }
+
+            if ($invoice !== null && $resolvedCompanyId !== null && (int) $invoice->company_id !== (int) $resolvedCompanyId) {
                 throw ValidationException::withMessages([
                     'invoice_id' => 'The selected invoice does not belong to this company.',
                 ]);
+            }
+
+            if ($client && $resolvedCompanyId !== null && (int) $client->company_id !== (int) $resolvedCompanyId) {
+                throw ValidationException::withMessages([
+                    'client_id' => 'The selected client does not belong to this company.',
+                ]);
+            }
+
+            if ($invoice !== null && $client && (int) $invoice->client_id !== (int) $client->id) {
+                throw ValidationException::withMessages([
+                    'client_id' => 'The selected client does not match the invoice.',
+                ]);
+            }
+
+            if ($invoice === null) {
+                return;
             }
 
             if ($invoice->status === 'cancelled') {
