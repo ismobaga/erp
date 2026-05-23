@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invoices\Pages;
 
+use App\Actions\ApplyPaymentAction;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Mail\InvoiceSentMail;
 use App\Models\DunningLog;
@@ -117,7 +118,7 @@ class ViewInvoice extends ViewRecord
                     /** @var Invoice $record */
                     $record = $this->getRecord();
 
-                    Payment::create([
+                    $payment = new Payment([
                         'invoice_id' => $record->id,
                         'client_id' => $record->client_id,
                         'payment_date' => today(),
@@ -127,6 +128,8 @@ class ViewInvoice extends ViewRecord
                         'reference' => $data['reference'],
                         'recorded_by' => auth()->id(),
                     ]);
+
+                    app(ApplyPaymentAction::class)->execute($payment);
 
                     Notification::make()
                         ->title('Paiement enregistré')

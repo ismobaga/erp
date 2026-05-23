@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\ApplyPaymentAction;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use Carbon\Carbon;
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -48,16 +48,6 @@ class Payment extends Model implements HasTenantScope
             'is_flagged' => 'boolean',
             'flagged_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Wrap every save in a transaction so the SELECT FOR UPDATE lock
-     * acquired in the `saving` hook is held through the actual INSERT/UPDATE,
-     * preventing concurrent overpayment race conditions.
-     */
-    public function save(array $options = []): bool
-    {
-        return DB::transaction(fn (): bool => parent::save($options));
     }
 
     public function saveQuietly(array $options = []): bool
@@ -127,8 +117,8 @@ class Payment extends Model implements HasTenantScope
             }
 
             // Lock the invoice row so that the guard holds until the
-            // surrounding transaction (provided by the overridden save())
-            // commits, preventing concurrent payments from racing past.
+            // surrounding transaction commits, preventing concurrent
+            // payments from racing past.
             /** @var Invoice|null $invoice */
             $invoice = Invoice::withoutCompanyScope()->whereKey($payment->invoice_id)->lockForUpdate()->first();
             $client = $payment->client_id
@@ -256,7 +246,7 @@ class Payment extends Model implements HasTenantScope
         }
 
         $this->invoice()->associate($candidate);
-        $this->save();
+        app(ApplyPaymentAction::class)->execute($this);
 
         return true;
     }
