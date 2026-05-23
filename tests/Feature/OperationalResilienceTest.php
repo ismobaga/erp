@@ -82,6 +82,50 @@ class OperationalResilienceTest extends TestCase
         $this->assertDatabaseHas('activity_logs', ['action' => 'system_alert_raised']);
     }
 
+    public function test_prune_audit_logs_command_prunes_old_logs_in_batches(): void
+    {
+        $retentionDays = max(7, (int) config('erp.enterprise.audit_retention_days', 365));
+        $companyId = app('currentCompany')->id;
+
+        $oldLogs = [];
+        for ($i = 0; $i < 1205; $i++) {
+            $oldLogs[] = [
+                'company_id' => $companyId,
+                'action' => 'old_audit_log',
+                'created_at' => now()->subDays($retentionDays + 1),
+                'updated_at' => now()->subDays($retentionDays + 1),
+            ];
+        }
+        DB::table('activity_logs')->insert($oldLogs);
+
+        $recentLogs = [];
+        for ($i = 0; $i < 3; $i++) {
+            $recentLogs[] = [
+                'company_id' => $companyId,
+                'action' => 'recent_audit_log',
+                'created_at' => now()->subDays($retentionDays - 1),
+                'updated_at' => now()->subDays($retentionDays - 1),
+            ];
+        }
+        DB::table('activity_logs')->insert($recentLogs);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->artisan('erp:prune-audit-logs')
+            ->expectsOutput('1205 audit log record(s) pruned.')
+            ->assertExitCode(0);
+
+        $deleteQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => (bool) preg_match('/delete\s+from\s+[`"]?activity_logs[`"]?/i', $query['query']))
+            ->count();
+
+        $this->assertGreaterThanOrEqual(2, $deleteQueries);
+        $this->assertDatabaseCount('activity_logs', 3);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'recent_audit_log']);
+        $this->assertDatabaseMissing('activity_logs', ['action' => 'old_audit_log']);
+    }
+
     public function test_finance_user_can_open_the_operational_audit_dashboard(): void
     {
         $user = User::factory()->create(['status' => 'active']);

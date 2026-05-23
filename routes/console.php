@@ -39,14 +39,25 @@ Artisan::command('reports:cleanup-exports', function (ReportExportService $repor
 
 Artisan::command('erp:prune-audit-logs', function () {
     $retentionDays = max(7, (int) config('erp.enterprise.audit_retention_days', 365));
+    $cutoff = now()->subDays($retentionDays);
+    $totalDeleted = 0;
 
-    $deleted = ActivityLog::query()
-        ->where('created_at', '<', now()->subDays($retentionDays))
-        ->delete();
+    do {
+        $deleted = ActivityLog::query()
+            ->where('created_at', '<', $cutoff)
+            ->limit(1000)
+            ->delete();
+
+        $totalDeleted += $deleted;
+
+        if ($deleted > 0) {
+            usleep(100_000);
+        }
+    } while ($deleted > 0);
 
     $this->info(
-        $deleted > 0
-        ? $deleted.' audit log record(s) pruned.'
+        $totalDeleted > 0
+        ? $totalDeleted.' audit log record(s) pruned.'
         : 'No audit log records required pruning.'
     );
 })->purpose('Prune old enterprise audit log records');
