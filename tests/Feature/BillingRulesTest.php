@@ -12,6 +12,7 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -139,7 +140,10 @@ class BillingRulesTest extends TestCase
         ]);
 
         $this->assertNull($payment->invoice_id);
-        $this->assertTrue($payment->reconcileAgainstOpenInvoice());
+
+        DB::transaction(function () use ($payment): void {
+            $this->assertTrue($payment->reconcileAgainstOpenInvoice());
+        });
 
         $payment->refresh();
         $invoice->refresh();

@@ -2,10 +2,13 @@
 
 namespace App\Filament\Resources\Payments\Pages;
 
+use App\Actions\ApplyPaymentAction;
 use App\Filament\Resources\Payments\PaymentResource;
+use App\Models\Payment;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class CreatePayment extends CreateRecord
 {
@@ -24,6 +27,15 @@ class CreatePayment extends CreateRecord
         $data['reference'] = $data['reference'] ?: PaymentResource::generatePaymentReference($data['payment_date'] ?? null);
 
         return $data;
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $payment = Payment::make($data);
+
+        app(ApplyPaymentAction::class)->execute($payment);
+
+        return $payment;
     }
 
     protected function getCreateFormAction(): Action
