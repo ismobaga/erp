@@ -92,8 +92,8 @@ class CompanyPagesController extends Controller
      */
     protected function company(): ?Company
     {
-        return Cache::remember('public.active_company', now()->addMinutes(5), static function (): ?Company {
-            return Company::query()->where('is_active', true)->first();
+        return Company::query()->where('is_active', true)->first();
+        return Cache::remember('public.active_company', now()->addMinutes(0), static function (): ?Company {
         });
     }
 
