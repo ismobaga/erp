@@ -117,8 +117,8 @@ class Payment extends Model implements HasTenantScope
             }
 
             // Lock the invoice row so that the guard holds until the
-            // surrounding transaction commits, preventing concurrent
-            // payments from racing past.
+            // transaction managed by ApplyPaymentAction commits,
+            // preventing concurrent payments from racing past.
             /** @var Invoice|null $invoice */
             $invoice = Invoice::withoutCompanyScope()->whereKey($payment->invoice_id)->lockForUpdate()->first();
             $client = $payment->client_id

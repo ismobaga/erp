@@ -118,7 +118,7 @@ class ViewInvoice extends ViewRecord
                     /** @var Invoice $record */
                     $record = $this->getRecord();
 
-                    $payment = new Payment([
+                    $payment = Payment::make([
                         'invoice_id' => $record->id,
                         'client_id' => $record->client_id,
                         'payment_date' => today(),

@@ -31,7 +31,7 @@ class CreatePayment extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        $payment = new Payment($data);
+        $payment = Payment::make($data);
 
         app(ApplyPaymentAction::class)->execute($payment);
 
