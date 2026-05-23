@@ -73,6 +73,22 @@
                     </tbody>
                 </table>
             </div>
+            <div style="padding:16px 28px 20px;">
+                @if($quotes->previousPageUrl() || $quotes->nextPageUrl())
+                    <div class="portal-pagination">
+                        @if($quotes->previousPageUrl())
+                            <a class="portal-pagination-link" href="{{ $quotes->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                        @else
+                            <span class="portal-pagination-text">←</span>
+                        @endif
+                        @if($quotes->nextPageUrl())
+                            <a class="portal-pagination-link" href="{{ $quotes->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                        @else
+                            <span class="portal-pagination-text">→</span>
+                        @endif
+                    </div>
+                @endif
+            </div>
         </div>
     @endif
 </div>

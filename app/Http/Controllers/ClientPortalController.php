@@ -38,7 +38,7 @@ class ClientPortalController extends Controller
             ->where('client_id', $client->id)
             ->with(['items'])
             ->orderByDesc('issue_date')
-            ->get();
+            ->simplePaginate(25);
 
         return response()->view('portal.index', [
             'client' => $client,
@@ -125,7 +125,7 @@ class ClientPortalController extends Controller
             ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->orderByDesc('issue_date')
-            ->get();
+            ->simplePaginate(25);
 
         return response()->view('portal.quotes', [
             'client' => $client,
@@ -201,7 +201,7 @@ class ClientPortalController extends Controller
             ->where('attachable_type', Client::class)
             ->where('attachable_id', $client->id)
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25, ['*'], 'client_docs_page');
 
         // Documents on projects belonging to this client.
         $projectIds = Project::withoutCompanyScope()
@@ -214,7 +214,7 @@ class ClientPortalController extends Controller
             ->where('attachable_type', Project::class)
             ->whereIn('attachable_id', $projectIds)
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25, ['*'], 'project_docs_page');
 
         // Documents on invoices belonging to this client.
         $invoiceIds = Invoice::withoutCompanyScope()
@@ -227,7 +227,7 @@ class ClientPortalController extends Controller
             ->where('attachable_type', Invoice::class)
             ->whereIn('attachable_id', $invoiceIds)
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25, ['*'], 'invoice_docs_page');
 
         return response()->view('portal.documents', [
             'client' => $client,
@@ -252,7 +252,7 @@ class ClientPortalController extends Controller
             ->where('client_id', $client->id)
             ->with(['assignee', 'service'])
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25);
 
         return response()->view('portal.projects', [
             'client' => $client,
@@ -274,7 +274,7 @@ class ClientPortalController extends Controller
             ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->orderByDesc('created_at')
-            ->get();
+            ->simplePaginate(25);
 
         return response()->view('portal.tickets', [
             'client' => $client,
@@ -365,9 +365,12 @@ class ClientPortalController extends Controller
         $conversations = WhatsappConversation::withoutCompanyScope()
             ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
-            ->with(['messages'])
+            ->with(['messages' => static function ($query): void {
+                $query->orderByDesc('sent_at')
+                    ->limit(25);
+            }])
             ->orderByDesc('last_message_at')
-            ->get();
+            ->simplePaginate(25);
 
         return response()->view('portal.conversations', [
             'client' => $client,

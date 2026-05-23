@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Attachment;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -13,6 +14,7 @@ use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -118,6 +120,29 @@ class ClientPortalExpansionTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText($invoice->invoice_number);
+    }
+
+    public function test_portal_index_paginates_invoices_to_twenty_five_records(): void
+    {
+        for ($i = 1; $i <= 30; $i++) {
+            Invoice::create([
+                'company_id' => $this->company->id,
+                'client_id' => $this->client->id,
+                'issue_date' => now()->subDays($i)->toDateString(),
+                'status' => 'sent',
+                'total' => 1000 + $i,
+                'balance_due' => 1000 + $i,
+                'subtotal' => 1000 + $i,
+            ]);
+        }
+
+        $response = $this->get(route('portal.index', ['token' => $this->token]));
+
+        $response->assertOk();
+        $invoices = $response->viewData('invoices');
+        $this->assertInstanceOf(Paginator::class, $invoices);
+        $this->assertCount(25, $invoices->items());
+        $this->assertTrue($invoices->hasMorePages());
     }
 
     public function test_portal_ignores_records_with_mismatched_company_even_if_client_id_matches(): void
@@ -374,6 +399,146 @@ class ClientPortalExpansionTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Bonjour, avez-vous reçu ma demande ?');
+    }
+
+    public function test_portal_lists_use_pagination_on_quotes_projects_tickets_and_conversations(): void
+    {
+        for ($i = 1; $i <= 30; $i++) {
+            Quote::create([
+                'company_id' => $this->company->id,
+                'client_id' => $this->client->id,
+                'quote_number' => 'QT-PAG-'.$i,
+                'issue_date' => now()->subDays($i)->toDateString(),
+                'status' => 'sent',
+                'total' => 1000 + $i,
+                'subtotal' => 1000 + $i,
+            ]);
+
+            Project::create([
+                'company_id' => $this->company->id,
+                'client_id' => $this->client->id,
+                'name' => 'Projet pagination '.$i,
+                'status' => 'in_progress',
+            ]);
+
+            PortalTicket::create([
+                'company_id' => $this->company->id,
+                'client_id' => $this->client->id,
+                'subject' => 'Ticket pagination '.$i,
+                'body' => 'Message '.$i,
+                'status' => 'open',
+                'priority' => 'normal',
+            ]);
+
+            $conversation = WhatsappConversation::create([
+                'company_id' => $this->company->id,
+                'client_id' => $this->client->id,
+                'chat_id' => "+2237000{$i}@c.us",
+                'contact_name' => 'Client '.$i,
+                'status' => 'open',
+                'last_message_at' => now()->subMinutes($i),
+            ]);
+
+            for ($j = 1; $j <= 30; $j++) {
+                WhatsappMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'direction' => 'inbound',
+                    'type' => 'text',
+                    'body' => "Conv {$i} message {$j}",
+                    'sent_at' => now()->subSeconds($j),
+                ]);
+            }
+        }
+
+        $quotesResponse = $this->get(route('portal.quotes', ['token' => $this->token]));
+        $quotes = $quotesResponse->viewData('quotes');
+        $this->assertInstanceOf(Paginator::class, $quotes);
+        $this->assertCount(25, $quotes->items());
+        $this->assertTrue($quotes->hasMorePages());
+
+        $projectsResponse = $this->get(route('portal.projects', ['token' => $this->token]));
+        $projects = $projectsResponse->viewData('projects');
+        $this->assertInstanceOf(Paginator::class, $projects);
+        $this->assertCount(25, $projects->items());
+        $this->assertTrue($projects->hasMorePages());
+
+        $ticketsResponse = $this->get(route('portal.tickets', ['token' => $this->token]));
+        $tickets = $ticketsResponse->viewData('tickets');
+        $this->assertInstanceOf(Paginator::class, $tickets);
+        $this->assertCount(25, $tickets->items());
+        $this->assertTrue($tickets->hasMorePages());
+
+        $conversationsResponse = $this->get(route('portal.conversations', ['token' => $this->token]));
+        $conversations = $conversationsResponse->viewData('conversations');
+        $this->assertInstanceOf(Paginator::class, $conversations);
+        $this->assertCount(25, $conversations->items());
+        $this->assertTrue($conversations->hasMorePages());
+        $this->assertLessThanOrEqual(25, $conversations->items()[0]->messages->count());
+    }
+
+    public function test_portal_documents_lists_are_paginated_per_document_category(): void
+    {
+        $project = Project::create([
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'name' => 'Projet docs',
+            'status' => 'in_progress',
+        ]);
+
+        $invoice = Invoice::create([
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 10000,
+            'balance_due' => 10000,
+            'subtotal' => 10000,
+        ]);
+
+        for ($i = 1; $i <= 30; $i++) {
+            Attachment::create([
+                'company_id' => $this->company->id,
+                'attachable_type' => Client::class,
+                'attachable_id' => $this->client->id,
+                'file_name' => "client-doc-{$i}.pdf",
+                'file_path' => "docs/client-doc-{$i}.pdf",
+            ]);
+
+            Attachment::create([
+                'company_id' => $this->company->id,
+                'attachable_type' => Project::class,
+                'attachable_id' => $project->id,
+                'file_name' => "project-doc-{$i}.pdf",
+                'file_path' => "docs/project-doc-{$i}.pdf",
+            ]);
+
+            Attachment::create([
+                'company_id' => $this->company->id,
+                'attachable_type' => Invoice::class,
+                'attachable_id' => $invoice->id,
+                'file_name' => "invoice-doc-{$i}.pdf",
+                'file_path' => "docs/invoice-doc-{$i}.pdf",
+            ]);
+        }
+
+        $response = $this->get(route('portal.documents', ['token' => $this->token]));
+
+        $response->assertOk();
+
+        $clientDocs = $response->viewData('clientDocs');
+        $this->assertInstanceOf(Paginator::class, $clientDocs);
+        $this->assertCount(25, $clientDocs->items());
+        $this->assertTrue($clientDocs->hasMorePages());
+
+        $projectDocs = $response->viewData('projectDocs');
+        $this->assertInstanceOf(Paginator::class, $projectDocs);
+        $this->assertCount(25, $projectDocs->items());
+        $this->assertTrue($projectDocs->hasMorePages());
+
+        $invoiceDocs = $response->viewData('invoiceDocs');
+        $this->assertInstanceOf(Paginator::class, $invoiceDocs);
+        $this->assertCount(25, $invoiceDocs->items());
+        $this->assertTrue($invoiceDocs->hasMorePages());
     }
 
     // ── Language Switcher ──────────────────────────────────────────────────────

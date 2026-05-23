@@ -111,6 +111,22 @@
                 @endif
             </div>
         @endforeach
+        <div style="margin-top:16px;">
+            @if($projects->previousPageUrl() || $projects->nextPageUrl())
+                <div class="portal-pagination">
+                    @if($projects->previousPageUrl())
+                        <a class="portal-pagination-link" href="{{ $projects->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                    @else
+                        <span class="portal-pagination-text">←</span>
+                    @endif
+                    @if($projects->nextPageUrl())
+                        <a class="portal-pagination-link" href="{{ $projects->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                    @else
+                        <span class="portal-pagination-text">→</span>
+                    @endif
+                </div>
+            @endif
+        </div>
     @endif
 </div>
 

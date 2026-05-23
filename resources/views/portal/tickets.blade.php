@@ -110,6 +110,22 @@
                 @endif
             </div>
         @endforeach
+        <div style="margin-top:10px;">
+            @if($tickets->previousPageUrl() || $tickets->nextPageUrl())
+                <div class="portal-pagination">
+                    @if($tickets->previousPageUrl())
+                        <a class="portal-pagination-link" href="{{ $tickets->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                    @else
+                        <span class="portal-pagination-text">←</span>
+                    @endif
+                    @if($tickets->nextPageUrl())
+                        <a class="portal-pagination-link" href="{{ $tickets->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                    @else
+                        <span class="portal-pagination-text">→</span>
+                    @endif
+                </div>
+            @endif
+        </div>
     @else
         <div class="card">
             <div class="empty" style="padding:30px 20px;">

@@ -288,3 +288,30 @@ footer {
 .bubble-inbound  { background: #f0f4f9; color: #002045; align-self: flex-start; border-bottom-left-radius: 4px; }
 .bubble-outbound { background: #002045; color: #fff;    align-self: flex-end;   border-bottom-right-radius: 4px; }
 .bubble-meta { font-size: 10px; opacity: 0.6; margin-top: 4px; }
+
+/* ── Pagination ── */
+.portal-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.portal-pagination-link,
+.portal-pagination-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-decoration: none;
+}
+.portal-pagination-link {
+    background: #002045;
+    color: #fff;
+}
+.portal-pagination-text {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
