@@ -68,6 +68,22 @@
                         </div>
                     </div>
                 @endforeach
+                <div class="portal-pagination-wrapper">
+                    @if($clientDocs->previousPageUrl() || $clientDocs->nextPageUrl())
+                        <div class="portal-pagination">
+                            @if($clientDocs->previousPageUrl())
+                                <a class="portal-pagination-link" href="{{ $clientDocs->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                            @else
+                                <span class="portal-pagination-text">←</span>
+                            @endif
+                            @if($clientDocs->nextPageUrl())
+                                <a class="portal-pagination-link" href="{{ $clientDocs->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                            @else
+                                <span class="portal-pagination-text">→</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -87,6 +103,22 @@
                         </div>
                     </div>
                 @endforeach
+                <div class="portal-pagination-wrapper">
+                    @if($projectDocs->previousPageUrl() || $projectDocs->nextPageUrl())
+                        <div class="portal-pagination">
+                            @if($projectDocs->previousPageUrl())
+                                <a class="portal-pagination-link" href="{{ $projectDocs->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                            @else
+                                <span class="portal-pagination-text">←</span>
+                            @endif
+                            @if($projectDocs->nextPageUrl())
+                                <a class="portal-pagination-link" href="{{ $projectDocs->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                            @else
+                                <span class="portal-pagination-text">→</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -106,6 +138,22 @@
                         </div>
                     </div>
                 @endforeach
+                <div class="portal-pagination-wrapper">
+                    @if($invoiceDocs->previousPageUrl() || $invoiceDocs->nextPageUrl())
+                        <div class="portal-pagination">
+                            @if($invoiceDocs->previousPageUrl())
+                                <a class="portal-pagination-link" href="{{ $invoiceDocs->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                            @else
+                                <span class="portal-pagination-text">←</span>
+                            @endif
+                            @if($invoiceDocs->nextPageUrl())
+                                <a class="portal-pagination-link" href="{{ $invoiceDocs->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                            @else
+                                <span class="portal-pagination-text">→</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             </div>
         @endif
 

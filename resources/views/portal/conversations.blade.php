@@ -90,6 +90,22 @@
                 @endif
             </div>
         @endforeach
+        <div class="portal-pagination-wrapper">
+            @if($conversations->previousPageUrl() || $conversations->nextPageUrl())
+                <div class="portal-pagination">
+                    @if($conversations->previousPageUrl())
+                        <a class="portal-pagination-link" href="{{ $conversations->previousPageUrl() }}" rel="prev" aria-label="Previous page">←</a>
+                    @else
+                        <span class="portal-pagination-text">←</span>
+                    @endif
+                    @if($conversations->nextPageUrl())
+                        <a class="portal-pagination-link" href="{{ $conversations->nextPageUrl() }}" rel="next" aria-label="Next page">→</a>
+                    @else
+                        <span class="portal-pagination-text">→</span>
+                    @endif
+                </div>
+            @endif
+        </div>
     @endif
 
 </div>
