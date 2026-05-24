@@ -75,7 +75,7 @@ class GenerateRecurringInvoices extends Command
 
                         $alreadyGenerated = Invoice::query()
                             ->where('recurring_invoice_id', $template->id)
-                            ->whereDate('issue_date', $issueDate)
+                            ->where('issue_date', $issueDate->toDateString())
                             ->lockForUpdate()
                             ->exists();
 
