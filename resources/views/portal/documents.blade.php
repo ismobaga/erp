@@ -68,7 +68,7 @@
                         </div>
                     </div>
                 @endforeach
-                <div style="margin-top:14px;">
+                <div class="portal-pagination-wrapper">
                     @if($clientDocs->previousPageUrl() || $clientDocs->nextPageUrl())
                         <div class="portal-pagination">
                             @if($clientDocs->previousPageUrl())
@@ -103,7 +103,7 @@
                         </div>
                     </div>
                 @endforeach
-                <div style="margin-top:14px;">
+                <div class="portal-pagination-wrapper">
                     @if($projectDocs->previousPageUrl() || $projectDocs->nextPageUrl())
                         <div class="portal-pagination">
                             @if($projectDocs->previousPageUrl())
@@ -138,7 +138,7 @@
                         </div>
                     </div>
                 @endforeach
-                <div style="margin-top:14px;">
+                <div class="portal-pagination-wrapper">
                     @if($invoiceDocs->previousPageUrl() || $invoiceDocs->nextPageUrl())
                         <div class="portal-pagination">
                             @if($invoiceDocs->previousPageUrl())

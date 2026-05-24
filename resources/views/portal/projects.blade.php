@@ -111,7 +111,7 @@
                 @endif
             </div>
         @endforeach
-        <div style="margin-top:16px;">
+        <div class="portal-pagination-wrapper">
             @if($projects->previousPageUrl() || $projects->nextPageUrl())
                 <div class="portal-pagination">
                     @if($projects->previousPageUrl())

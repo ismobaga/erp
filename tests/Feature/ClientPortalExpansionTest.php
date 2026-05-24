@@ -143,6 +143,8 @@ class ClientPortalExpansionTest extends TestCase
         $this->assertInstanceOf(Paginator::class, $invoices);
         $this->assertCount(25, $invoices->items());
         $this->assertTrue($invoices->hasMorePages());
+        $this->assertSame(now()->subDays(1)->toDateString(), $invoices->items()[0]->issue_date?->toDateString());
+        $this->assertSame(now()->subDays(25)->toDateString(), $invoices->items()[24]->issue_date?->toDateString());
     }
 
     public function test_portal_ignores_records_with_mismatched_company_even_if_client_id_matches(): void
@@ -433,13 +435,14 @@ class ClientPortalExpansionTest extends TestCase
             $conversation = WhatsappConversation::create([
                 'company_id' => $this->company->id,
                 'client_id' => $this->client->id,
-                'chat_id' => "+2237000{$i}@c.us",
+                'chat_id' => sprintf('+2237%04d@c.us', $i),
                 'contact_name' => 'Client '.$i,
                 'status' => 'open',
                 'last_message_at' => now()->subMinutes($i),
             ]);
 
-            for ($j = 1; $j <= 30; $j++) {
+            // Create one more message than the cap to verify truncation at 25.
+            for ($j = 1; $j <= 26; $j++) {
                 WhatsappMessage::create([
                     'conversation_id' => $conversation->id,
                     'direction' => 'inbound',
@@ -473,7 +476,8 @@ class ClientPortalExpansionTest extends TestCase
         $this->assertInstanceOf(Paginator::class, $conversations);
         $this->assertCount(25, $conversations->items());
         $this->assertTrue($conversations->hasMorePages());
-        $this->assertLessThanOrEqual(25, $conversations->items()[0]->messages->count());
+        $this->assertSame(25, $conversations->items()[0]->messages->count());
+        $this->assertSame(25, $conversations->items()[24]->messages->count());
     }
 
     public function test_portal_documents_lists_are_paginated_per_document_category(): void

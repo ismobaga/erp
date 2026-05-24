@@ -90,7 +90,7 @@
                 @endif
             </div>
         @endforeach
-        <div style="margin-top:16px;">
+        <div class="portal-pagination-wrapper">
             @if($conversations->previousPageUrl() || $conversations->nextPageUrl())
                 <div class="portal-pagination">
                     @if($conversations->previousPageUrl())

@@ -296,6 +296,9 @@ footer {
     justify-content: flex-end;
     gap: 8px;
 }
+.portal-pagination-wrapper {
+    margin-top: 16px;
+}
 .portal-pagination-link,
 .portal-pagination-text {
     display: inline-flex;
