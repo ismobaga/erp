@@ -19,7 +19,7 @@ class SendInvoiceActionsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_send_invoice_reminder_action_queues_mail_and_logs_audit_entry(): void
+    public function testSendInvoiceReminderActionQueuesMailAndLogsAuditEntry(): void
     {
         Mail::fake();
 
@@ -55,7 +55,7 @@ class SendInvoiceActionsTest extends TestCase
         ]);
     }
 
-    public function test_send_invoice_reminder_action_skips_when_client_has_no_email(): void
+    public function testSendInvoiceReminderActionSkipsWhenClientHasNoEmail(): void
     {
         Mail::fake();
 
@@ -90,7 +90,7 @@ class SendInvoiceActionsTest extends TestCase
         ]);
     }
 
-    public function test_send_invoice_whatsapp_action_uses_service(): void
+    public function testSendInvoiceWhatsappActionUsesService(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $this->actingAs($user);
@@ -126,7 +126,7 @@ class SendInvoiceActionsTest extends TestCase
         app(SendInvoiceWhatsappAction::class)->execute($invoice);
     }
 
-    public function test_send_invoice_whatsapp_reminder_action_uses_service(): void
+    public function testSendInvoiceWhatsappReminderActionUsesService(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $this->actingAs($user);

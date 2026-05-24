@@ -282,7 +282,7 @@ class InvoiceResource extends Resource
                 Action::make('sendReminder')
                     ->label(__('erp.actions.send_reminder'))
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
-                    ->action(fn (Invoice $record) => app(SendInvoiceReminderAction::class)->execute($record)),
+                    ->action(fn (Invoice $record, SendInvoiceReminderAction $action) => $action->execute($record)),
                 Action::make('exportPdf')
                     ->label(__('erp.actions.export_pdf'))
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
@@ -295,7 +295,7 @@ class InvoiceResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer la facture via WhatsApp')
                     ->modalDescription('La facture sera envoyée en PDF via WhatsApp au numéro du client.')
-                    ->action(fn (Invoice $record) => app(SendInvoiceWhatsappAction::class)->execute($record)),
+                    ->action(fn (Invoice $record, SendInvoiceWhatsappAction $action) => $action->execute($record)),
                 Action::make('sendWhatsappReminder')
                     ->label('Rappel WhatsApp')
                     ->icon('heroicon-o-bell-alert')
@@ -303,7 +303,7 @@ class InvoiceResource extends Resource
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer un rappel de paiement via WhatsApp')
-                    ->action(fn (Invoice $record) => app(SendInvoiceWhatsappReminderAction::class)->execute($record)),
+                    ->action(fn (Invoice $record, SendInvoiceWhatsappReminderAction $action) => $action->execute($record)),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
