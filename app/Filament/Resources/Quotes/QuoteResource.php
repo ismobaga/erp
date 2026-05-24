@@ -80,7 +80,6 @@ class QuoteResource extends Resource
                                     ->relationship('client', 'company_name')
                                     ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
-                                    ->preload()
                                     ->required(),
                                 DatePicker::make('issue_date')
                                     ->default(now())

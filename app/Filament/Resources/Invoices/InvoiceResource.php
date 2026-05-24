@@ -83,13 +83,11 @@ class InvoiceResource extends Resource
                                     ->relationship('client', 'company_name')
                                     ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
-                                    ->preload()
                                     ->required(),
                                 Select::make('quote_id')
                                     ->label('Devis lié')
                                     ->relationship('quote', 'quote_number')
                                     ->searchable()
-                                    ->preload()
                                     ->native(false)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Set $set): void {
