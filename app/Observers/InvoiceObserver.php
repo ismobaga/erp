@@ -22,7 +22,7 @@ class InvoiceObserver
     {
         $this->audit->log('invoice_number_assigned', $invoice, [
             'invoice_number' => $invoice->invoice_number,
-            'issue_date' => optional($invoice->issue_date)->toDateString(),
+            'issue_date' => $invoice->issue_date?->toDateString(),
         ], $invoice->created_by);
     }
 

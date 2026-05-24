@@ -218,8 +218,12 @@ class InvoiceServiceTest extends TestCase
         $action = app(\App\Actions\ApplyPaymentAction::class);
         $action->execute($payment);
 
+        // After execute(), the payment has been saved so $payment->id is set.
+        $this->assertNotNull($payment->id);
+
         Event::assertDispatched(PaymentRecorded::class, function (PaymentRecorded $event) use ($payment): bool {
-            return $event->payment->id === $payment->id;
+            return $event->payment->id === $payment->id
+                && (float) $event->payment->amount === 150.00;
         });
     }
 }
