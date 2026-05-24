@@ -2,13 +2,19 @@
 
 namespace App\Actions;
 
+use App\Events\PaymentRecorded;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\InvoiceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ApplyPaymentAction
 {
+    public function __construct(
+        private readonly InvoiceService $invoiceService,
+    ) {}
+
     public function execute(Payment $payment): bool
     {
         if (DB::transactionLevel() > 0) {
@@ -38,7 +44,11 @@ class ApplyPaymentAction
         $saved = $payment->save();
 
         if ($saved && $lockedInvoice !== null) {
-            $lockedInvoice->refreshFinancials();
+            $this->invoiceService->refreshFinancials($lockedInvoice);
+        }
+
+        if ($saved) {
+            PaymentRecorded::dispatch($payment);
         }
 
         return $saved;

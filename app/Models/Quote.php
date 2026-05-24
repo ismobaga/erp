@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Actions\ConvertQuoteToInvoiceAction;
 use App\Models\Concerns\HasCompanyScope;
-use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
 use Crommix\Core\Contracts\HasTenantScope;
@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
@@ -102,57 +101,7 @@ class Quote extends Model implements HasTenantScope
 
     public function convertToInvoice(?int $createdBy = null): Invoice
     {
-        return DB::transaction(function () use ($createdBy): Invoice {
-            // Lock the quote row so that two concurrent requests cannot both
-            // pass the existence check and create duplicate invoices.
-            // Eager-load items here so the subsequent loop does not trigger
-            // an additional query per conversion.
-            $fresh = static::withoutCompanyScope()->with('items')->whereKey($this->getKey())->lockForUpdate()->first();
-
-            if (! $fresh) {
-                throw ValidationException::withMessages([
-                    'quote' => 'Quote not found.',
-                ]);
-            }
-
-            if ($fresh->invoice()->exists()) {
-                return $fresh->invoice;
-            }
-
-            $invoice = Invoice::create([
-                'client_id' => $fresh->client_id,
-                'quote_id' => $fresh->getKey(),
-                'issue_date' => now()->toDateString(),
-                'due_date' => now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))->toDateString(),
-                'status' => 'draft',
-                'discount_total' => $fresh->discount_total,
-                'tax_total' => $fresh->tax_total,
-                'notes' => $fresh->notes,
-                'created_by' => $createdBy ?? auth()->id(),
-                'updated_by' => $createdBy ?? auth()->id(),
-            ]);
-
-            foreach ($fresh->items as $item) {
-                $invoice->items()->create([
-                    'service_id' => $item->service_id,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'line_total' => $item->line_total,
-                ]);
-            }
-
-            $fresh->forceFill(['status' => 'accepted'])->saveQuietly();
-
-            app(AuditTrailService::class)->log('quote_converted_to_invoice', $invoice, [
-                'quote_id' => $fresh->getKey(),
-                'quote_number' => $fresh->quote_number,
-                'invoice_number' => $invoice->invoice_number,
-                'converted_by' => $createdBy ?? auth()->id(),
-            ]);
-
-            return $invoice;
-        });
+        return app(ConvertQuoteToInvoiceAction::class)->execute($this, $createdBy);
     }
 
     public function recalculateTotals(): void
