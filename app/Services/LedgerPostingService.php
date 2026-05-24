@@ -391,12 +391,12 @@ class LedgerPostingService
                     'created_by' => $userId,
                 ]);
             } catch (UniqueConstraintViolationException) {
-                $race = JournalEntry::query()
+                $existingEntry = JournalEntry::query()
                     ->where('source_type', $sourceType)
                     ->where('source_id', $sourceId)
                     ->firstOrFail();
 
-                return $this->postExistingEntry($race, $userId);
+                return $this->postExistingEntry($existingEntry, $userId);
             }
 
             foreach ($lines as $line) {
