@@ -73,8 +73,19 @@ class GenerateRecurringInvoices extends Command
                         $issueDate = $template->next_due_date;
                         $dueDate = $issueDate->copy()->addDays((int) $template->net_days);
 
+                        $alreadyGenerated = Invoice::query()
+                            ->where('recurring_invoice_id', $template->id)
+                            ->where('issue_date', $issueDate->toDateString())
+                            ->lockForUpdate()
+                            ->exists();
+
+                        if ($alreadyGenerated) {
+                            return;
+                        }
+
                         $invoice = Invoice::create([
                             'client_id' => $template->client_id,
+                            'recurring_invoice_id' => $template->id,
                             'issue_date' => $issueDate,
                             'due_date' => $dueDate,
                             'status' => 'draft',

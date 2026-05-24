@@ -20,6 +20,7 @@ use Illuminate\Validation\ValidationException;
     'invoice_number',
     'client_id',
     'quote_id',
+    'recurring_invoice_id',
     'issue_date',
     'due_date',
     'status',
@@ -109,6 +110,11 @@ class Invoice extends Model implements HasTenantScope
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    public function recurringInvoice(): BelongsTo
+    {
+        return $this->belongsTo(RecurringInvoice::class);
     }
 
     public function items(): HasMany
