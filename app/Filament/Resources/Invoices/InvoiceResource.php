@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\Invoices;
 
+use App\Actions\SendInvoiceReminderAction;
+use App\Actions\SendInvoiceWhatsappAction;
+use App\Actions\SendInvoiceWhatsappReminderAction;
 use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Concerns\HasBillingFormConcerns;
 use App\Filament\Resources\Invoices\Pages\CreateInvoice;
@@ -28,7 +31,6 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -280,30 +282,7 @@ class InvoiceResource extends Resource
                 Action::make('sendReminder')
                     ->label(__('erp.actions.send_reminder'))
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
-                    ->action(function (Invoice $record): void {
-                        $client = $record->client;
-                        if (!$client || blank($client->email)) {
-                            Notification::make()
-                                ->title('Aucun e-mail client')
-                                ->body('Ce client n\'a pas d\'adresse e-mail enregistrée. Vérifiez sa fiche.')
-                                ->warning()
-                                ->send();
-                            return;
-                        }
-                        \Mail::to($client->email)->queue(new \App\Mail\InvoiceReminderMail($record));
-                        app(\App\Services\AuditTrailService::class)->log('invoice_reminder_sent', $record, [
-                            'reference' => $record->invoice_number,
-                            'client_email' => $client->email,
-                            'balance_due' => (float) $record->balance_due,
-                            'due_date' => optional($record->due_date)->format('Y-m-d'),
-                            'sent_by' => auth()->id(),
-                        ]);
-                        Notification::make()
-                            ->title('Rappel de paiement envoyé')
-                            ->body('Un rappel a été envoyé à ' . $client->email . ' pour la facture ' . $record->invoice_number . '.')
-                            ->success()
-                            ->send();
-                    }),
+                    ->action(fn (Invoice $record, SendInvoiceReminderAction $action) => $action->execute($record)),
                 Action::make('exportPdf')
                     ->label(__('erp.actions.export_pdf'))
                     ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
@@ -316,14 +295,7 @@ class InvoiceResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer la facture via WhatsApp')
                     ->modalDescription('La facture sera envoyée en PDF via WhatsApp au numéro du client.')
-                    ->action(function (Invoice $record, \App\Services\Whatsapp\WhatsappSendService $service): void {
-                        $log = $service->sendInvoice($record);
-                        if ($log->status === 'sent') {
-                            Notification::make()->title('Facture envoyée via WhatsApp')->success()->send();
-                        } else {
-                            Notification::make()->title('Échec de l\'envoi WhatsApp')->body($log->error_message)->danger()->send();
-                        }
-                    }),
+                    ->action(fn (Invoice $record, SendInvoiceWhatsappAction $action) => $action->execute($record)),
                 Action::make('sendWhatsappReminder')
                     ->label('Rappel WhatsApp')
                     ->icon('heroicon-o-bell-alert')
@@ -331,14 +303,7 @@ class InvoiceResource extends Resource
                     ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer un rappel de paiement via WhatsApp')
-                    ->action(function (Invoice $record, \App\Services\Whatsapp\WhatsappSendService $service): void {
-                        $log = $service->sendPaymentReminder($record);
-                        if ($log->status === 'sent') {
-                            Notification::make()->title('Rappel envoyé via WhatsApp')->success()->send();
-                        } else {
-                            Notification::make()->title('Échec de l\'envoi WhatsApp')->body($log->error_message)->danger()->send();
-                        }
-                    }),
+                    ->action(fn (Invoice $record, SendInvoiceWhatsappReminderAction $action) => $action->execute($record)),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
