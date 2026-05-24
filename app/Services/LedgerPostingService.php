@@ -376,13 +376,7 @@ class LedgerPostingService
                 ->first();
 
             if ($existing) {
-                $existing->loadMissing('lines');
-
-                if ($existing->status === 'draft' && $existing->lines->isNotEmpty()) {
-                    $existing->post($userId);
-                }
-
-                return $existing->fresh(['lines']);
+                return $this->postExistingEntry($existing, $userId);
             }
 
             try {
@@ -401,13 +395,8 @@ class LedgerPostingService
                     ->where('source_type', $sourceType)
                     ->where('source_id', $sourceId)
                     ->firstOrFail();
-                $race->loadMissing('lines');
 
-                if ($race->status === 'draft' && $race->lines->isNotEmpty()) {
-                    $race->post($userId);
-                }
-
-                return $race->fresh(['lines']);
+                return $this->postExistingEntry($race, $userId);
             }
 
             foreach ($lines as $line) {
@@ -419,6 +408,17 @@ class LedgerPostingService
 
             return $entry;
         });
+    }
+
+    private function postExistingEntry(JournalEntry $entry, ?int $userId): JournalEntry
+    {
+        $entry->loadMissing('lines');
+
+        if ($entry->status === 'draft' && $entry->lines->isNotEmpty()) {
+            $entry->post($userId);
+        }
+
+        return $entry->fresh(['lines']);
     }
 
     private function account(string $key, ?int $companyId = null): ?LedgerAccount
