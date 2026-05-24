@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
@@ -384,16 +385,30 @@ class LedgerPostingService
                 return $existing->fresh(['lines']);
             }
 
-            $entry = JournalEntry::create([
-                'entry_number' => $this->generateEntryNumber($date, $companyId),
-                'entry_date' => $date,
-                'description' => $description,
-                'status' => 'draft',
-                'source_type' => $sourceType,
-                'source_id' => $sourceId,
-                'financial_period_id' => $financialPeriodId,
-                'created_by' => $userId,
-            ]);
+            try {
+                $entry = JournalEntry::create([
+                    'entry_number' => $this->generateEntryNumber($date, $companyId),
+                    'entry_date' => $date,
+                    'description' => $description,
+                    'status' => 'draft',
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'financial_period_id' => $financialPeriodId,
+                    'created_by' => $userId,
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                $race = JournalEntry::query()
+                    ->where('source_type', $sourceType)
+                    ->where('source_id', $sourceId)
+                    ->firstOrFail();
+                $race->loadMissing('lines');
+
+                if ($race->status === 'draft' && $race->lines->isNotEmpty()) {
+                    $race->post($userId);
+                }
+
+                return $race->fresh(['lines']);
+            }
 
             foreach ($lines as $line) {
                 $entry->lines()->create($line);
