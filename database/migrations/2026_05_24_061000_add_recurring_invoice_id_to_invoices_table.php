@@ -19,7 +19,7 @@ return new class extends Migration
         });
 
         Schema::table('invoices', function (Blueprint $table): void {
-            if (! Schema::hasIndex('invoices', ['company_id', 'recurring_invoice_id', 'issue_date'])) {
+            if (! Schema::hasIndex('invoices', 'invoices_company_recurring_issue_unique')) {
                 $table->unique(
                     ['company_id', 'recurring_invoice_id', 'issue_date'],
                     'invoices_company_recurring_issue_unique',
