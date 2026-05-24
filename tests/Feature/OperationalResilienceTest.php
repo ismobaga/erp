@@ -232,7 +232,10 @@ class OperationalResilienceTest extends TestCase
         $healthResponse->assertJsonPath('checks.backup_verification.verified', true);
         $healthResponse->assertJsonPath('checks.disaster_recovery.restore_command', 'erp:restore-backup --force');
 
-        $diagnosticsResponse = $this->get('/health/diagnostics');
+        $this->get('/health/diagnostics')->assertRedirect('/login');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $diagnosticsResponse = $this->actingAs($user)->get('/health/diagnostics');
         $diagnosticsResponse->assertOk();
         $diagnosticsResponse->assertJsonStructure([
             'status',

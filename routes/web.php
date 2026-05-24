@@ -34,7 +34,7 @@ Route::get('/health', [HealthCheckController::class, 'status'])
     ->name('health.status');
 
 Route::get('/health/diagnostics', [HealthCheckController::class, 'diagnostics'])
-    ->middleware('throttle:30,1')
+    ->middleware(['auth', 'throttle:30,1'])
     ->name('health.diagnostics');
 
 // ── Authenticated routes ──────────────────────────────────────────────────────
