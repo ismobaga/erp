@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Services\AuditTrailService;
 use App\ValueObjects\Money;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class LedgerPostingService
@@ -375,25 +376,28 @@ class LedgerPostingService
                 ->first();
 
             if ($existing) {
-                $existing->loadMissing('lines');
-
-                if ($existing->status === 'draft' && $existing->lines->isNotEmpty()) {
-                    $existing->post($userId);
-                }
-
-                return $existing->fresh(['lines']);
+                return $this->postExistingEntry($existing, $userId);
             }
 
-            $entry = JournalEntry::create([
-                'entry_number' => $this->generateEntryNumber($date, $companyId),
-                'entry_date' => $date,
-                'description' => $description,
-                'status' => 'draft',
-                'source_type' => $sourceType,
-                'source_id' => $sourceId,
-                'financial_period_id' => $financialPeriodId,
-                'created_by' => $userId,
-            ]);
+            try {
+                $entry = JournalEntry::create([
+                    'entry_number' => $this->generateEntryNumber($date, $companyId),
+                    'entry_date' => $date,
+                    'description' => $description,
+                    'status' => 'draft',
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'financial_period_id' => $financialPeriodId,
+                    'created_by' => $userId,
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                $existingEntry = JournalEntry::query()
+                    ->where('source_type', $sourceType)
+                    ->where('source_id', $sourceId)
+                    ->firstOrFail();
+
+                return $this->postExistingEntry($existingEntry, $userId);
+            }
 
             foreach ($lines as $line) {
                 $entry->lines()->create($line);
@@ -404,6 +408,17 @@ class LedgerPostingService
 
             return $entry;
         });
+    }
+
+    private function postExistingEntry(JournalEntry $entry, ?int $userId): JournalEntry
+    {
+        $entry->loadMissing('lines');
+
+        if ($entry->status === 'draft' && $entry->lines->isNotEmpty()) {
+            $entry->post($userId);
+        }
+
+        return $entry->fresh(['lines']);
     }
 
     private function account(string $key, ?int $companyId = null): ?LedgerAccount
