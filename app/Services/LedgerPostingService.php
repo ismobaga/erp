@@ -224,7 +224,8 @@ class LedgerPostingService
 
     /**
      * When a credit note is issued/approved:
-     *   DR Sales Revenue (4100)       → credit amount (revenue reversal)
+     *   DR Sales Revenue (4100)       → credit amount net of tax (revenue reversal)
+     *   DR Tax Payable (2200)         → tax reversal (if applicable)
      *   CR Accounts Receivable (1100) → credit amount
      */
     public function postCreditNote(CreditNote $creditNote, ?int $userId = null): ?JournalEntry
@@ -239,9 +240,50 @@ class LedgerPostingService
 
         $revenue = $this->account('sales_revenue', $companyId);
         $ar = $this->account('accounts_receivable', $companyId);
+        $tax = $this->account('tax_payable', $companyId);
 
         if (!$revenue || !$ar) {
             return null;
+        }
+
+        $taxAmount = 0.0;
+        $invoice = $creditNote->invoice;
+        $invoiceTotal = (float) ($invoice?->total ?? 0);
+        $invoiceTax = (float) ($invoice?->tax_total ?? 0);
+
+        if ($invoiceTotal > 0 && $invoiceTax > 0) {
+            $taxRatio = $invoiceTax / $invoiceTotal;
+            $taxAmount = Money::of((string) $amount)
+                ->multiply((string) $taxRatio)
+                ->toFloat();
+        }
+
+        $revenueAmount = Money::of((string) $amount)
+            ->subtract(Money::of((string) $taxAmount))
+            ->toFloat();
+
+        $lines = [
+            [
+                'account_id' => $revenue->id,
+                'debit' => $revenueAmount,
+                'credit' => 0,
+                'description' => 'Revenue reversal: ' . $creditNote->credit_number
+            ],
+            [
+                'account_id' => $ar->id,
+                'debit' => 0,
+                'credit' => $amount,
+                'description' => 'Receivable credit: ' . $creditNote->credit_number
+            ],
+        ];
+
+        if ($taxAmount > 0 && $tax) {
+            $lines[] = [
+                'account_id' => $tax->id,
+                'debit' => $taxAmount,
+                'credit' => 0,
+                'description' => 'Tax reversal: ' . $creditNote->credit_number
+            ];
         }
 
         return $this->createAndPost(
@@ -249,20 +291,7 @@ class LedgerPostingService
             description: 'Credit note ' . $creditNote->credit_number,
             sourceType: 'credit_note',
             sourceId: $creditNote->id,
-            lines: [
-                [
-                    'account_id' => $revenue->id,
-                    'debit' => $amount,
-                    'credit' => 0,
-                    'description' => 'Revenue reversal: ' . $creditNote->credit_number
-                ],
-                [
-                    'account_id' => $ar->id,
-                    'debit' => 0,
-                    'credit' => $amount,
-                    'description' => 'Receivable credit: ' . $creditNote->credit_number
-                ],
-            ],
+            lines: $lines,
             userId: $userId,
             financialPeriodId: $this->resolvePeriodId($creditNote->issue_date),
             companyId: $companyId,
