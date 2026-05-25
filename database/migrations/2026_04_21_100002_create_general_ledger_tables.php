@@ -52,6 +52,7 @@ return new class extends Migration {
 
             $table->index(['status', 'entry_date']);
             $table->index(['source_type', 'source_id']);
+            $table->unique(['source_type', 'source_id'], 'journal_entries_source_unique');
             $table->index(['company_id', 'status', 'entry_date'], 'journal_entries_company_status_date_index');
 
         });

@@ -26,10 +26,28 @@ return new class extends Migration {
 
             $table->index(['is_active', 'next_due_date']);
         });
+
+        Schema::table('invoices', function (Blueprint $table): void {
+            $table->foreignId('recurring_invoice_id')
+                ->nullable()
+                ->after('quote_id')
+                ->constrained('recurring_invoices')
+                ->nullOnDelete();
+
+            $table->unique(
+                ['company_id', 'recurring_invoice_id', 'issue_date'],
+                'invoices_company_recurring_issue_unique',
+            );
+        });
     }
 
     public function down(): void
     {
+        Schema::table('invoices', function (Blueprint $table): void {
+            $table->dropUnique('invoices_company_recurring_issue_unique');
+            $table->dropConstrainedForeignId('recurring_invoice_id');
+        });
+
         Schema::dropIfExists('recurring_invoices');
     }
 };
