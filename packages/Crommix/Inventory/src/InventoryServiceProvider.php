@@ -9,7 +9,7 @@ class InventoryServiceProvider extends ServiceProvider implements ModuleContract
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('inventory.enabled', true);
+        return (bool) config('crommix_modules.inventory', config('inventory.enabled', true));
     }
 
     public static function permissions(): array

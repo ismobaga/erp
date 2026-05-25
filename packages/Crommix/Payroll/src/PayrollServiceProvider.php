@@ -9,7 +9,7 @@ class PayrollServiceProvider extends ServiceProvider implements ModuleContract
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('payroll.enabled', true);
+        return (bool) config('crommix_modules.payroll', config('payroll.enabled', true));
     }
 
     public static function permissions(): array

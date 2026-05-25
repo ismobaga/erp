@@ -11,7 +11,7 @@ class POSServiceProvider extends ServiceProvider implements ModuleContract
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('pos.enabled', true);
+        return (bool) config('crommix_modules.pos', config('pos.enabled', true));
     }
 
     public static function permissions(): array
@@ -27,6 +27,10 @@ class POSServiceProvider extends ServiceProvider implements ModuleContract
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/pos.php', 'pos');
+
+        if (!static::isEnabled()) {
+            return;
+        }
 
         $this->app->bind(PosService::class, function ($app): PosService {
             return new PosService($app->make(InventoryService::class));
