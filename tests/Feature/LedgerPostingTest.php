@@ -288,6 +288,61 @@ class LedgerPostingTest extends TestCase
         $this->assertEqualsWithDelta(100.00, (float) $creditLine->credit, 0.01);
     }
 
+    public function test_credit_note_with_tax_reverses_tax_payable(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create(['type' => 'company', 'company_name' => 'Test Co', 'status' => 'active']);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-TEST-CN-TAX-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'sent',
+            'subtotal' => 1000.00,
+            'tax_total' => 200.00,
+            'total' => 1200.00,
+            'balance_due' => 1200.00,
+            'created_by' => $user->id,
+        ]);
+
+        $creditNote = CreditNote::create([
+            'invoice_id' => $invoice->id,
+            'credit_number' => 'CN-TEST-TAX-001',
+            'issue_date' => now()->toDateString(),
+            'amount' => 120.00,
+            'reason' => 'Partial taxable refund for testing',
+            'status' => 'issued',
+            'created_by' => $user->id,
+        ]);
+
+        $entry = JournalEntry::where('source_type', 'credit_note')
+            ->where('source_id', $creditNote->id)
+            ->first();
+
+        $this->assertNotNull($entry);
+        $this->assertSame('posted', $entry->status);
+        $this->assertTrue($entry->isBalanced());
+        $this->assertCount(3, $entry->lines);
+
+        $revenue = LedgerAccount::where('code', '4100')->first();
+        $ar = LedgerAccount::where('code', '1100')->first();
+        $tax = LedgerAccount::where('code', '2200')->first();
+
+        $revenueLine = $entry->lines->firstWhere('account_id', $revenue->id);
+        $arLine = $entry->lines->firstWhere('account_id', $ar->id);
+        $taxLine = $entry->lines->firstWhere('account_id', $tax->id);
+
+        $this->assertNotNull($revenueLine);
+        $this->assertEqualsWithDelta(100.00, (float) $revenueLine->debit, 0.01);
+
+        $this->assertNotNull($arLine);
+        $this->assertEqualsWithDelta(120.00, (float) $arLine->credit, 0.01);
+
+        $this->assertNotNull($taxLine);
+        $this->assertEqualsWithDelta(20.00, (float) $taxLine->debit, 0.01);
+    }
+
     public function test_reversal_entry_swaps_debits_and_credits(): void
     {
         $user = User::factory()->create(['status' => 'active']);
