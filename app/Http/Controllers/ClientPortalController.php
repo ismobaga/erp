@@ -176,13 +176,16 @@ class ClientPortalController extends Controller
         $client = $this->resolveClientByToken($token);
         $quote = $this->resolvePortalQuote($client, $quote);
         abort_unless(in_array($quote->status, ['draft', 'sent', 'expired'], true), 422, 'This quote cannot be rejected in its current status.');
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
 
         $quote->forceFill(['status' => 'rejected'])->save();
 
         app(AuditTrailService::class)->log('portal_quote_rejected', $quote, [
             'quote_number' => $quote->quote_number,
             'client_id' => $client->id,
-            'reason' => $request->input('reason'),
+            'reason' => $validated['reason'] ?? null,
         ]);
 
         return redirect()->route('portal.quotes', ['token' => $token])
