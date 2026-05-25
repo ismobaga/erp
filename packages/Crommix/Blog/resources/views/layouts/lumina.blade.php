@@ -16,7 +16,7 @@
     {{-- Tailwind CSS --}}
     @vite(['resources/css/filament/admin/theme.css'])
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
+    <script id="tailwind-config" nonce="{{ csp_nonce() }}">
         tailwind.config = {
             darkMode: "class",
             theme: {
