@@ -74,6 +74,48 @@ class DunningWorkflowTest extends TestCase
         $this->assertTrue($eligible->contains('id', $overdue->id));
     }
 
+    public function test_eligible_invoices_excludes_invoice_with_recent_same_stage_log(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create(['type' => 'company', 'company_name' => 'Dunning Filter Co', 'status' => 'active']);
+
+        $eligibleInvoice = Invoice::create([
+            'invoice_number' => 'INV-D-001A',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(40)->toDateString(),
+            'due_date' => now()->subDays(10)->toDateString(),
+            'status' => 'overdue',
+            'total' => 500.00,
+            'balance_due' => 500.00,
+            'created_by' => $user->id,
+        ]);
+
+        $ineligibleInvoice = Invoice::create([
+            'invoice_number' => 'INV-D-001B',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(40)->toDateString(),
+            'due_date' => now()->subDays(10)->toDateString(),
+            'status' => 'overdue',
+            'total' => 500.00,
+            'balance_due' => 500.00,
+            'created_by' => $user->id,
+        ]);
+
+        DunningLog::create([
+            'invoice_id' => $ineligibleInvoice->id,
+            'client_id' => $client->id,
+            'stage' => '1',
+            'channel' => 'email',
+            'sent_at' => now(),
+            'sent_by' => $user->id,
+        ]);
+
+        $eligible = $this->dunning->eligibleInvoices();
+
+        $this->assertTrue($eligible->contains('id', $eligibleInvoice->id));
+        $this->assertFalse($eligible->contains('id', $ineligibleInvoice->id));
+    }
+
     public function test_log_reminder_creates_dunning_log_record(): void
     {
         $user = User::factory()->create(['status' => 'active']);
@@ -143,10 +185,10 @@ class DunningWorkflowTest extends TestCase
     private function makeInvoice(int $daysOverdue): Invoice
     {
         $user = User::factory()->create(['status' => 'active']);
-        $client = Client::create(['type' => 'company', 'company_name' => 'Co ' . uniqid(), 'status' => 'active']);
+        $client = Client::create(['type' => 'company', 'company_name' => 'Co '.uniqid(), 'status' => 'active']);
 
         return Invoice::create([
-            'invoice_number' => 'INV-' . uniqid(),
+            'invoice_number' => 'INV-'.uniqid(),
             'client_id' => $client->id,
             'issue_date' => now()->subDays($daysOverdue + 30)->toDateString(),
             'due_date' => $daysOverdue > 0

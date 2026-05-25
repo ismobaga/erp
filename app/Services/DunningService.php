@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\DunningLog;
 use App\Models\Invoice;
-use App\Services\AuditTrailService;
 use App\Services\Whatsapp\WhatsappSendService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -23,9 +23,9 @@ class DunningService
      */
     private const STAGE_THRESHOLDS = [
         'final' => 61,
-        '3'     => 31,
-        '2'     => 15,
-        '1'     => 1,
+        '3' => 31,
+        '2' => 15,
+        '1' => 1,
     ];
 
     private const MIN_DAYS_BETWEEN_SAME_STAGE = 7;
@@ -36,7 +36,7 @@ class DunningService
      */
     public function resolveStage(Invoice $invoice): ?string
     {
-        if (!$invoice->due_date) {
+        if (! $invoice->due_date) {
             return null;
         }
 
@@ -63,12 +63,67 @@ class DunningService
      */
     public function eligibleInvoices(): Collection
     {
+        return $this->eligibleInvoicesQuery()
+            ->with('client')
+            ->get();
+    }
+
+    private function eligibleInvoicesQuery(): Builder
+    {
+        $today = Carbon::today();
+        $recentReminderThreshold = $today->copy()->subDays(self::MIN_DAYS_BETWEEN_SAME_STAGE);
+
         return Invoice::query()
             ->where('status', 'overdue')
             ->whereNotNull('due_date')
-            ->with(['client', 'dunningLogs' => fn($q) => $q->latest()])
-            ->get()
-            ->filter(fn(Invoice $invoice): bool => $this->isEligible($invoice));
+            ->where(function (Builder $query) use ($today, $recentReminderThreshold): void {
+                $query
+                    ->where(function (Builder $stageQuery) use ($today, $recentReminderThreshold): void {
+                        $stageQuery
+                            ->whereBetween('due_date', [
+                                $today->copy()->subDays(14)->toDateString(),
+                                $today->copy()->subDay()->toDateString(),
+                            ])
+                            ->whereDoesntHave('dunningLogs', function (Builder $logQuery) use ($recentReminderThreshold): void {
+                                $logQuery
+                                    ->where('stage', '1')
+                                    ->where('sent_at', '>', $recentReminderThreshold);
+                            });
+                    })
+                    ->orWhere(function (Builder $stageQuery) use ($today, $recentReminderThreshold): void {
+                        $stageQuery
+                            ->whereBetween('due_date', [
+                                $today->copy()->subDays(30)->toDateString(),
+                                $today->copy()->subDays(15)->toDateString(),
+                            ])
+                            ->whereDoesntHave('dunningLogs', function (Builder $logQuery) use ($recentReminderThreshold): void {
+                                $logQuery
+                                    ->where('stage', '2')
+                                    ->where('sent_at', '>', $recentReminderThreshold);
+                            });
+                    })
+                    ->orWhere(function (Builder $stageQuery) use ($today, $recentReminderThreshold): void {
+                        $stageQuery
+                            ->whereBetween('due_date', [
+                                $today->copy()->subDays(60)->toDateString(),
+                                $today->copy()->subDays(31)->toDateString(),
+                            ])
+                            ->whereDoesntHave('dunningLogs', function (Builder $logQuery) use ($recentReminderThreshold): void {
+                                $logQuery
+                                    ->where('stage', '3')
+                                    ->where('sent_at', '>', $recentReminderThreshold);
+                            });
+                    })
+                    ->orWhere(function (Builder $stageQuery) use ($today, $recentReminderThreshold): void {
+                        $stageQuery
+                            ->whereDate('due_date', '<=', $today->copy()->subDays(61)->toDateString())
+                            ->whereDoesntHave('dunningLogs', function (Builder $logQuery) use ($recentReminderThreshold): void {
+                                $logQuery
+                                    ->where('stage', 'final')
+                                    ->where('sent_at', '>', $recentReminderThreshold);
+                            });
+                    });
+            });
     }
 
     public function isEligible(Invoice $invoice): bool
@@ -95,7 +150,7 @@ class DunningService
                 ->first();
         }
 
-        if (!$lastForStage) {
+        if (! $lastForStage) {
             return true;
         }
 
@@ -148,14 +203,17 @@ class DunningService
      */
     public function runAutomatedDunning(?int $systemUserId = null): int
     {
-        $invoices = $this->eligibleInvoices();
         $count = 0;
 
-        foreach ($invoices as $invoice) {
-            $this->logReminder($invoice, 'email', $systemUserId);
-            $this->tryWhatsappDunning($invoice, $systemUserId);
-            $count++;
-        }
+        $this->eligibleInvoicesQuery()
+            ->with('client')
+            ->chunkById(100, function (Collection $chunk) use (&$count, $systemUserId): void {
+                $chunk->each(function (Invoice $invoice) use (&$count, $systemUserId): void {
+                    $this->logReminder($invoice, 'email', $systemUserId);
+                    $this->tryWhatsappDunning($invoice, $systemUserId);
+                    $count++;
+                });
+            });
 
         return $count;
     }
@@ -168,7 +226,7 @@ class DunningService
     {
         $company = currentCompany();
 
-        if (!$company || !$company->whatsapp_enabled || blank($company->whatsapp_device_id)) {
+        if (! $company || ! $company->whatsapp_enabled || blank($company->whatsapp_device_id)) {
             return;
         }
 
@@ -184,14 +242,14 @@ class DunningService
         } catch (\Throwable $e) {
             Log::warning('WhatsApp dunning notification failed.', [
                 'invoice_id' => $invoice->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
     public function daysOverdue(Invoice $invoice): int
     {
-        if (!$invoice->due_date) {
+        if (! $invoice->due_date) {
             return 0;
         }
 
