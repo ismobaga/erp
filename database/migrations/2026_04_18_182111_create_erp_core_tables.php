@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -151,6 +152,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['company_id', 'payment_date'], 'payments_company_payment_date_index');
+            $table->index('invoice_id', 'payments_invoice_id_index');
 
         });
 
@@ -174,7 +176,6 @@ return new class extends Migration {
             $table->timestamps();
             $table->index('approval_status', 'expenses_approval_status_index');
             $table->index(['company_id', 'approval_status', 'expense_date'], 'expenses_company_status_date_index');
-
 
         });
 

@@ -194,9 +194,12 @@ class SecurityVerificationTest extends TestCase
     {
         $this->assertTrue(Schema::hasIndex('invoices', ['company_id', 'invoice_number'], 'unique'));
         $this->assertTrue(Schema::hasIndex('sequences', ['company_id', 'key', 'period'], 'unique'));
+        $this->assertTrue(Schema::hasIndex('journal_entries', ['source_type', 'source_id'], 'unique'));
 
         $this->assertTrue(Schema::hasIndex('invoices', ['company_id', 'client_id']));
         $this->assertTrue(Schema::hasIndex('invoices', ['company_id', 'status']));
         $this->assertTrue(Schema::hasIndex('clients', ['portal_token_hash']));
+        $this->assertTrue(Schema::hasIndex('recurring_invoices', ['company_id', 'is_active', 'next_due_date']));
+        $this->assertTrue(Schema::hasIndex('payments', ['invoice_id']));
     }
 }

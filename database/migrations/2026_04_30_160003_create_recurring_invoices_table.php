@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('recurring_invoices', function (Blueprint $table) {
@@ -24,7 +25,10 @@ return new class extends Migration {
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['is_active', 'next_due_date']);
+            $table->index(
+                ['company_id', 'is_active', 'next_due_date'],
+                'ri_company_active_due_index',
+            );
         });
 
         Schema::table('invoices', function (Blueprint $table): void {
