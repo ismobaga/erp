@@ -88,6 +88,7 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
+        $pdf = app(BusinessDocumentPdf::class);
         $company = $this->resolveCompany($client);
         $companyName = $company?->name ?: config('app.name');
 
@@ -102,12 +103,10 @@ class ClientPortalController extends Controller
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => true,
-            'compact' => (bool) config('erp.pdf.compact_when_possible', true)
-                && $invoice->items->count() <= 6
-                && mb_strlen((string) $invoice->notes) < 500,
+            'compact' => $pdf->shouldUseCompactForInvoice($invoice),
         ];
 
-        return app(BusinessDocumentPdf::class)
+        return $pdf
             ->make('invoices.pdf', $viewData)
             ->download($invoice->invoice_number.'.pdf');
     }

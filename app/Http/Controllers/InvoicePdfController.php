@@ -24,6 +24,7 @@ class InvoicePdfController extends Controller
             'download' => $request->boolean('download'),
         ], auth()->id());
 
+        $pdf = app(BusinessDocumentPdf::class);
         $company = currentCompany();
         $companyName = $company?->name ?: config('app.name');
 
@@ -38,13 +39,11 @@ class InvoicePdfController extends Controller
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => $request->boolean('download'),
-            'compact' => (bool) config('erp.pdf.compact_when_possible', true)
-                && $invoice->items->count() <= 6
-                && mb_strlen((string) $invoice->notes) < 500,
+            'compact' => $pdf->shouldUseCompactForInvoice($invoice),
         ];
 
         if ($request->boolean('download')) {
-            return app(BusinessDocumentPdf::class)
+            return $pdf
                 ->make('invoices.pdf', $viewData)
                 ->download($invoice->invoice_number.'.pdf');
         }

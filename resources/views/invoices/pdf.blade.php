@@ -476,7 +476,6 @@
 
         body.compact .items-table tbody td {
             padding: 7px 9px;
-            font-size: 11px;
         }
 
         body.compact .summary {

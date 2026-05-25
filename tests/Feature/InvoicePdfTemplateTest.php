@@ -130,7 +130,7 @@ class InvoicePdfTemplateTest extends TestCase
 
         $client = Client::create([
             'type' => 'company',
-            'company_name' => 'Client compact mode',
+            'company_name' => 'Compact Mode Test Client',
             'status' => 'active',
         ]);
 
@@ -140,13 +140,13 @@ class InvoicePdfTemplateTest extends TestCase
             'issue_date' => now()->toDateString(),
             'due_date' => now()->addDays(30)->toDateString(),
             'status' => 'sent',
-            'notes' => 'Courte note.',
+            'notes' => 'Short note.',
             'created_by' => $user->id,
         ]);
 
         InvoiceItem::create([
             'invoice_id' => $compactInvoice->id,
-            'description' => 'Ligne compacte',
+            'description' => 'Compact line',
             'quantity' => 1,
             'unit_price' => 15000,
         ]);
@@ -157,14 +157,14 @@ class InvoicePdfTemplateTest extends TestCase
             'issue_date' => now()->toDateString(),
             'due_date' => now()->addDays(30)->toDateString(),
             'status' => 'sent',
-            'notes' => str_repeat('Note longue ', 80),
+            'notes' => str_repeat('Long note ', 80),
             'created_by' => $user->id,
         ]);
 
         for ($i = 1; $i <= 7; $i++) {
             InvoiceItem::create([
                 'invoice_id' => $longInvoice->id,
-                'description' => 'Ligne longue '.$i,
+                'description' => 'Long line '.$i,
                 'quantity' => 1,
                 'unit_price' => 2000,
             ]);
@@ -173,12 +173,12 @@ class InvoicePdfTemplateTest extends TestCase
         $this->actingAs($user)
             ->get(route('invoices.pdf', $compactInvoice))
             ->assertOk()
-            ->assertSee('body class="compact"', false);
+            ->assertSee('<body class="compact">', false);
 
         $this->actingAs($user)
             ->get(route('invoices.pdf', $longInvoice))
             ->assertOk()
-            ->assertDontSee('body class="compact"', false);
+            ->assertSee('<body class="">', false);
     }
 
     public function test_authorized_user_can_download_a_real_invoice_pdf(): void

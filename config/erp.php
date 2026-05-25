@@ -162,5 +162,7 @@ return [
         'dpi' => max(72, (int) env('ERP_PDF_DPI', 120)),
         'font_subsetting' => (bool) env('ERP_PDF_FONT_SUBSETTING', false),
         'compact_when_possible' => (bool) env('ERP_PDF_COMPACT_WHEN_POSSIBLE', true),
+        'compact_max_items' => max(1, (int) env('ERP_PDF_COMPACT_MAX_ITEMS', 6)),
+        'compact_max_notes_length' => max(1, (int) env('ERP_PDF_COMPACT_MAX_NOTES_LENGTH', 500)),
     ],
 ];

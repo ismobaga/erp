@@ -24,6 +24,7 @@ class QuotePdfController extends Controller
             'download' => $request->boolean('download'),
         ], auth()->id());
 
+        $pdf = app(BusinessDocumentPdf::class);
         $company = currentCompany();
 
         $viewData = [
@@ -31,13 +32,11 @@ class QuotePdfController extends Controller
             'company' => $company,
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => $request->boolean('download'),
-            'compact' => (bool) config('erp.pdf.compact_when_possible', true)
-                && $quote->items->count() <= 6
-                && mb_strlen((string) $quote->notes) < 500,
+            'compact' => $pdf->shouldUseCompactForQuote($quote),
         ];
 
         if ($request->boolean('download')) {
-            return app(BusinessDocumentPdf::class)
+            return $pdf
                 ->make('quotes.pdf', $viewData)
                 ->download($quote->quote_number.'.pdf');
         }

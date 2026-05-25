@@ -227,6 +227,7 @@ class WhatsappSendService
 
     private function generateInvoicePdf(Invoice $invoice, ?Company $company): string
     {
+        $pdfBuilder = app(BusinessDocumentPdf::class);
         $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
@@ -242,11 +243,9 @@ class WhatsappSendService
             'isDownload' => true,
         ];
 
-        $viewData['compact'] = (bool) config('erp.pdf.compact_when_possible', true)
-            && $invoice->items->count() <= 6
-            && mb_strlen((string) $invoice->notes) < 500;
+        $viewData['compact'] = $pdfBuilder->shouldUseCompactForInvoice($invoice);
 
-        $pdf = app(BusinessDocumentPdf::class)->make('invoices.pdf', $viewData);
+        $pdf = $pdfBuilder->make('invoices.pdf', $viewData);
 
         $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $invoice->invoice_number);
         $filename = 'whatsapp/'.$safeNumber.'_'.now()->timestamp.'.pdf';
@@ -257,6 +256,7 @@ class WhatsappSendService
 
     private function generateQuotePdf(Quote $quote, ?Company $company): string
     {
+        $pdfBuilder = app(BusinessDocumentPdf::class);
         $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
@@ -279,11 +279,9 @@ class WhatsappSendService
             $viewData['invoice'] = $quote;
         }
 
-        $viewData['compact'] = (bool) config('erp.pdf.compact_when_possible', true)
-            && $quote->items->count() <= 6
-            && mb_strlen((string) $quote->notes) < 500;
+        $viewData['compact'] = $pdfBuilder->shouldUseCompactForQuote($quote);
 
-        $pdf = app(BusinessDocumentPdf::class)->make($viewName, $viewData);
+        $pdf = $pdfBuilder->make($viewName, $viewData);
 
         $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $quote->quote_number);
         $filename = 'whatsapp/'.$safeNumber.'_'.now()->timestamp.'.pdf';
