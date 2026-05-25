@@ -252,15 +252,15 @@ class LedgerPostingService
         $invoiceTax = (float) ($invoice?->tax_total ?? 0);
 
         if ($invoiceTotal > 0 && $invoiceTax > 0) {
-            $taxRatio = min(1, $invoiceTax / $invoiceTotal);
-            $taxAmount = (float) Money::of((string) $amount)
+            $taxRatio = $invoiceTax / $invoiceTotal;
+            $taxAmount = Money::of((string) $amount)
                 ->multiply((string) $taxRatio)
-                ->toString();
+                ->toFloat();
         }
 
-        $revenueAmount = (float) Money::of((string) $amount)
+        $revenueAmount = Money::of((string) $amount)
             ->subtract(Money::of((string) $taxAmount))
-            ->toString();
+            ->toFloat();
 
         $lines = [
             [
