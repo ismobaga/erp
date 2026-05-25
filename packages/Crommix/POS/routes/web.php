@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('pos.enabled', true)) {
+if (!config('crommix_modules.pos', config('pos.enabled', true))) {
     return;
 }
 

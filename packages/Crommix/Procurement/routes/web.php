@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('procurement.enabled', true)) {
+if (!config('crommix_modules.procurement', config('procurement.enabled', true))) {
     return;
 }
 

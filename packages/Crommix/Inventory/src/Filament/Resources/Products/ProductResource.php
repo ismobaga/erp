@@ -36,6 +36,21 @@ class ProductResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static function isModuleEnabled(): bool
+    {
+        return (bool) config('crommix_modules.inventory', config('inventory.enabled', true));
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::isModuleEnabled() && parent::shouldRegisterNavigation();
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::isModuleEnabled() && parent::canAccess();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

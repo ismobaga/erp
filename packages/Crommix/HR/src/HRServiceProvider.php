@@ -9,7 +9,7 @@ class HRServiceProvider extends ServiceProvider implements ModuleContract
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('hr.enabled', true);
+        return (bool) config('crommix_modules.hr', config('hr.enabled', true));
     }
 
     public static function permissions(): array

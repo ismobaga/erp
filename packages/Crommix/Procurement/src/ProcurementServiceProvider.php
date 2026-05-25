@@ -9,7 +9,7 @@ class ProcurementServiceProvider extends ServiceProvider implements ModuleContra
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('procurement.enabled', true);
+        return (bool) config('crommix_modules.procurement', config('procurement.enabled', true));
     }
 
     public static function permissions(): array

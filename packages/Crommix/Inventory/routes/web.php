@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('inventory.enabled', true)) {
+if (!config('crommix_modules.inventory', config('inventory.enabled', true))) {
     return;
 }
 

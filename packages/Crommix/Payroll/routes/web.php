@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('payroll.enabled', true)) {
+if (!config('crommix_modules.payroll', config('payroll.enabled', true))) {
     return;
 }
 

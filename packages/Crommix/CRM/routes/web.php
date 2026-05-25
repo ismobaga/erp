@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-if (!config('crm.enabled', true)) {
+if (!config('crommix_modules.crm', config('crm.enabled', true))) {
     return;
 }
 

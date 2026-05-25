@@ -9,7 +9,7 @@ class CRMServiceProvider extends ServiceProvider implements ModuleContract
 {
     public static function isEnabled(): bool
     {
-        return (bool) config('crm.enabled', true);
+        return (bool) config('crommix_modules.crm', config('crm.enabled', true));
     }
 
     public static function permissions(): array
