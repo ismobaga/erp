@@ -613,4 +613,17 @@ class ClientPortalExpansionTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('Secure client portal');
     }
+
+    // ── resolveCompany hardening ───────────────────────────────────────────────
+
+    public function test_portal_returns_404_when_client_has_no_company_id(): void
+    {
+        // Force company_id to null, bypassing the FK constraint (e.g. migration gap).
+        DB::table('clients')
+            ->where('id', $this->client->id)
+            ->update(['company_id' => null]);
+
+        $this->get(route('portal.index', ['token' => $this->token]))
+            ->assertNotFound();
+    }
 }
