@@ -12,8 +12,8 @@ use App\Models\Project;
 use App\Models\Quote;
 use App\Models\WhatsappConversation;
 use App\Services\AuditTrailService;
+use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -88,6 +88,7 @@ class ClientPortalController extends Controller
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
 
+        $pdf = app(BusinessDocumentPdf::class);
         $company = $this->resolveCompany($client);
         $companyName = $company?->name ?: config('app.name');
 
@@ -102,16 +103,11 @@ class ClientPortalController extends Controller
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => true,
+            'compact' => $pdf->shouldUseCompactForInvoice($invoice),
         ];
 
-        return Pdf::loadView('invoices.pdf', $viewData)
-            ->setOption([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => false,
-                'dpi' => 120,
-                'defaultFont' => 'DejaVu Sans',
-            ])
-            ->setPaper('a4')
+        return $pdf
+            ->make('invoices.pdf', $viewData)
             ->download($invoice->invoice_number.'.pdf');
     }
 

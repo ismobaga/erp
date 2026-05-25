@@ -58,13 +58,18 @@
         }
 
         .content {
-            padding: 48px;
+            padding: 30px 32px;
             position: relative;
             z-index: 2;
         }
 
         .doc-watermark {
-            display: none;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            user-select: none;
+            overflow: hidden;
+            z-index: 1;
         }
 
         .watermark-badge {
@@ -115,37 +120,29 @@
         }
 
         .topbar {
+            display: table;
             width: 100%;
-            overflow: hidden;
-            margin-bottom: 40px;
+            table-layout: fixed;
+            margin-bottom: 24px;
         }
 
         .topbar>div {
-            display: block;
+            display: table-cell;
             vertical-align: top;
-            width: 50%;
-        }
-
-        .topbar>div:first-child {
-            float: left;
-        }
-
-        .topbar>div:last-child {
-            float: right;
         }
 
         .brand-wrap {
-            overflow: hidden;
+            display: table;
+            width: auto;
         }
 
         .brand-wrap>* {
-            display: block;
-            float: left;
+            display: table-cell;
             vertical-align: top;
         }
 
         .brand-wrap>*+* {
-            margin-left: 16px;
+            padding-left: 16px;
         }
 
         .brand-icon {
@@ -197,12 +194,12 @@
         }
 
         .doc-word {
-            font-size: 56px;
+            font-size: 40px;
             color: #d3e4fe;
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            margin: 0 0 20px;
+            margin: 0 0 10px;
         }
 
         .doc-number-label,
@@ -224,16 +221,15 @@
         }
 
         .meta-grid {
+            display: table;
             width: 100%;
-            overflow: hidden;
-            margin-bottom: 36px;
+            table-layout: fixed;
+            margin-bottom: 24px;
         }
 
         .meta-grid>div {
-            display: block;
+            display: table-cell;
             vertical-align: top;
-            width: 50%;
-            float: left;
         }
 
         .meta-grid>div+div {
@@ -244,12 +240,13 @@
             background: #eff4ff;
             background: var(--surface-low);
             border-radius: 16px;
-            padding: 24px;
+            padding: 18px;
         }
 
         .meta-line {
-            display: block;
-            overflow: hidden;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
             padding: 12px 0;
             border-bottom: 1px solid rgba(87, 101, 122, 0.18);
             font-size: 14px;
@@ -261,21 +258,19 @@
 
         .meta-line span,
         .meta-line strong {
-            display: inline-block;
+            display: table-cell;
             vertical-align: top;
         }
 
         .meta-line span {
             width: 58%;
             padding-right: 12px;
-            float: left;
         }
 
         .meta-line strong {
             width: 42%;
             text-align: right;
             word-break: break-word;
-            float: right;
         }
 
         .danger {
@@ -289,6 +284,18 @@
             margin-top: 8px;
         }
 
+        .items-table thead {
+            display: table-header-group;
+        }
+
+        .items-table tfoot {
+            display: table-row-group;
+        }
+
+        .items-table tr {
+            page-break-inside: avoid;
+        }
+
         .items-table thead th {
             background: #eff4ff;
             color: #002045;
@@ -296,7 +303,7 @@
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.14em;
-            padding: 14px 16px;
+            padding: 8px 9px;
             text-align: left;
         }
 
@@ -310,11 +317,11 @@
         }
 
         .items-table tbody td {
-            padding: 16px;
+            padding: 8px 9px;
             border-bottom: 1px solid #d3e4fe;
             border-bottom: 1px solid var(--line);
             vertical-align: top;
-            font-size: 14px;
+            font-size: 11px;
         }
 
         .items-table tbody tr:nth-child(even) td {
@@ -338,7 +345,7 @@
 
         .summary {
             text-align: right;
-            margin-top: 28px;
+            margin-top: 14px;
         }
 
         .summary-box {
@@ -349,16 +356,21 @@
         }
 
         .summary-row {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
             padding: 8px 0;
-            overflow: hidden;
         }
 
         .summary-row span {
-            float: left;
+            display: table-cell;
+            width: 58%;
+            padding-right: 10px;
         }
 
         .summary-row strong {
-            float: right;
+            display: table-cell;
+            width: 42%;
             text-align: right;
         }
 
@@ -369,30 +381,29 @@
             color: #002045;
             border-radius: 16px;
             padding: 18px 20px;
-            display: block;
-            overflow: hidden;
+            display: table;
+            width: 100%;
+            table-layout: fixed;
         }
 
         .grand-total span,
         .grand-total strong {
-            display: inline-block;
+            display: table-cell;
             vertical-align: middle;
         }
 
         .grand-total span {
             width: 48%;
             padding-right: 12px;
-            float: left;
         }
 
         .grand-total strong {
             width: 52%;
             text-align: right;
-            float: right;
         }
 
         .grand-total strong {
-            font-size: 30px;
+            font-size: 24px;
         }
 
         .validity-banner {
@@ -438,12 +449,47 @@
         }
 
         .legal {
-            margin-top: 26px;
+            margin-top: 18px;
             text-align: center;
             font-size: 10px;
             letter-spacing: 0.12em;
             color: #7b8595;
             text-transform: uppercase;
+        }
+
+        body.compact .content {
+            padding: 26px 30px;
+        }
+
+        body.compact .doc-word {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        body.compact .topbar {
+            margin-bottom: 20px;
+        }
+
+        body.compact .panel {
+            padding: 14px 16px;
+        }
+
+        body.compact .items-table tbody td {
+            padding: 7px 9px;
+            font-size: 11px;
+        }
+
+        body.compact .summary {
+            margin-top: 12px;
+        }
+
+        body.compact .footer-note {
+            margin-top: 14px;
+            padding-top: 12px;
+        }
+
+        body.compact .watermark-badge {
+            opacity: 0.07;
         }
 
         .actions {
@@ -522,7 +568,7 @@
     </style>
 </head>
 
-<body>
+<body class="{{ ($compact ?? false) ? 'compact' : '' }}">
     @php
         $currency = $company?->currency ?: 'FCFA';
         $formatMoney = fn($amount) => number_format((float) $amount, 0, ',', ' ') . ' ' . $currency;

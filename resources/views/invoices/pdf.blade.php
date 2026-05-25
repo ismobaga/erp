@@ -59,7 +59,7 @@
         }
 
         .content {
-            padding: 48px;
+            padding: 30px 32px;
             position: relative;
             z-index: 2;
         }
@@ -189,12 +189,12 @@
         }
 
         .invoice-word {
-            font-size: 56px;
+            font-size: 40px;
             color: #d3e4fe;
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            margin: 0 0 20px;
+            margin: 0 0 10px;
         }
 
         .doc-number-label,
@@ -233,7 +233,7 @@
             background: #eff4ff;
             background: var(--surface-low);
             border-radius: 16px;
-            padding: 24px;
+            padding: 18px;
         }
 
         .meta-line {
@@ -276,6 +276,18 @@
             margin-top: 8px;
         }
 
+        .items-table thead {
+            display: table-header-group;
+        }
+
+        .items-table tfoot {
+            display: table-row-group;
+        }
+
+        .items-table tr {
+            page-break-inside: avoid;
+        }
+
         .items-table thead th {
             background: #1a365d;
             background: var(--primary-soft);
@@ -283,7 +295,7 @@
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.14em;
-            padding: 14px 16px;
+            padding: 8px 9px;
             text-align: left;
         }
 
@@ -297,10 +309,10 @@
         }
 
         .items-table tbody td {
-            padding: 16px;
+            padding: 8px 9px;
             border-bottom: 1px solid var(--line);
             vertical-align: top;
-            font-size: 14px;
+            font-size: 11px;
         }
 
         .items-table tbody tr:nth-child(even) td {
@@ -324,7 +336,7 @@
 
         .summary {
             text-align: right;
-            margin-top: 28px;
+            margin-top: 14px;
         }
 
         .summary-box {
@@ -376,7 +388,7 @@
         }
 
         .grand-total strong {
-            font-size: 30px;
+            font-size: 24px;
         }
 
         .footer-grid {
@@ -437,12 +449,46 @@
         }
 
         .legal {
-            margin-top: 26px;
+            margin-top: 18px;
             text-align: center;
             font-size: 10px;
             letter-spacing: 0.12em;
             color: #7b8595;
             text-transform: uppercase;
+        }
+
+        body.compact .content {
+            padding: 26px 30px;
+        }
+
+        body.compact .invoice-word {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        body.compact .topbar {
+            margin-bottom: 20px;
+        }
+
+        body.compact .panel {
+            padding: 14px 16px;
+        }
+
+        body.compact .items-table tbody td {
+            padding: 7px 9px;
+        }
+
+        body.compact .summary {
+            margin-top: 12px;
+        }
+
+        body.compact .footer-grid {
+            margin-top: 14px;
+            padding-top: 12px;
+        }
+
+        body.compact .watermark-badge {
+            opacity: 0.07;
         }
 
         .actions {
@@ -528,7 +574,7 @@
     </style>
 </head>
 
-<body>
+<body class="{{ ($compact ?? false) ? 'compact' : '' }}">
     @php
         $currency = $company?->currency ?: 'FCFA';
         $formatMoney = fn($amount) => number_format((float) $amount, 0, ',', ' ') . ' ' . $currency;
