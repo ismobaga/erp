@@ -74,7 +74,7 @@ class DunningWorkflowTest extends TestCase
         $this->assertTrue($eligible->contains('id', $overdue->id));
     }
 
-    public function test_eligible_invoices_excludes_recent_same_stage_contact(): void
+    public function test_eligible_invoices_excludes_invoice_with_recent_same_stage_log(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $client = Client::create(['type' => 'company', 'company_name' => 'Dunning Filter Co', 'status' => 'active']);
