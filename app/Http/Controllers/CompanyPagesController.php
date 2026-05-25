@@ -6,7 +6,6 @@ use App\Models\Company;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -20,6 +19,26 @@ class CompanyPagesController extends Controller
     public function presentation(): View
     {
         return view('company.presentation', $this->viewData());
+    }
+
+    public function about(): View
+    {
+        return view('company.about', $this->viewData());
+    }
+
+    public function services(): View
+    {
+        return view('company.services', $this->viewData());
+    }
+
+    public function solutions(): View
+    {
+        return view('company.solutions', $this->viewData());
+    }
+
+    public function contact(): View
+    {
+        return view('company.contact', $this->viewData());
     }
 
     public function confidentialite(): View
@@ -55,7 +74,7 @@ class CompanyPagesController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'intent' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
             'message' => ['nullable', 'string', 'max:2000'],
-            'source' => ['nullable', 'in:website,dms'],
+            'source' => ['nullable', 'in:website,dms,contact'],
         ], [
             'name.regex' => 'Le nom ne peut contenir que des lettres, espaces et tirets.',
             'company_name.regex' => 'Le nom de l\'entreprise ne peut contenir que des lettres, espaces et tirets.',
@@ -75,13 +94,15 @@ class CompanyPagesController extends Controller
             'source' => $source,
         ]);
 
-        $redirectTarget = $source === 'dms'
-            ? url('/dms-presentation') . '/#contact'
-            : url('/') . '/#contact';
+        $redirectTarget = match ($source) {
+            'dms' => route('dms.presentation').'/#contact',
+            'contact' => route('company.contact'),
+            default => route('company.presentation').'/#contact',
+        };
 
         return redirect()->to($redirectTarget)->with(
             'status',
-            'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
+            'Merci '.e($validated['name']).' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
         );
     }
 
@@ -93,8 +114,6 @@ class CompanyPagesController extends Controller
     protected function company(): ?Company
     {
         return Company::query()->where('is_active', true)->first();
-        return Cache::remember('public.active_company', now()->addMinutes(0), static function (): ?Company {
-        });
     }
 
     /**
@@ -106,8 +125,8 @@ class CompanyPagesController extends Controller
 
         return [
             'company' => $company,
-            'companyName' => $company?->name ?: config('app.name'),
-            'companyEmail' => $company?->email ?: '',
+            'companyName' => $company?->name ?: 'CROMMIX MALI S.A.',
+            'companyEmail' => $company?->email ?: 'contact@crommix.com',
             'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),
             'companyWebsite' => $company?->website ?: '',
