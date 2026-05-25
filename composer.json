@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "crommix/erp",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Internal ERP foundation for CROMMIX MALI S.A.",
     "keywords": [
+        "erp",
+        "accounting",
+        "filament",
         "laravel",
-        "framework"
+        "crommix"
     ],
     "license": "MIT",
     "require": {
@@ -70,7 +73,9 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
+            "@php artisan package:discover --ansi"
+        ],
+        "upgrade-filament": [
             "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
