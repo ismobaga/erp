@@ -97,11 +97,7 @@ class InvoiceResource extends Resource
                                             return;
                                         }
 
-                                        $quote = Quote::find($state);
-
-                                        if (!$quote) {
-                                            return;
-                                        }
+                                        $quote = Quote::findOrFail($state);
 
                                         $set('client_id', $quote->client_id);
                                         $set('discount_total', $quote->discount_total);
