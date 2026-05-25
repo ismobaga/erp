@@ -30,13 +30,13 @@ if (! function_exists('csp_nonce')) {
             return (string) app('csp_nonce');
         }
 
-        $nonce = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
+        try {
+            $nonce = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        } catch (Throwable $e) {
+            throw new RuntimeException('Unable to generate CSP nonce.', 0, $e);
+        }
 
         app()->instance('csp_nonce', $nonce);
-
-        if (request()) {
-            request()->attributes->set('csp_nonce', $nonce);
-        }
 
         return $nonce;
     }

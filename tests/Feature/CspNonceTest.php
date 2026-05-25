@@ -2,13 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CspNonceTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_csp_uses_nonce_and_disallows_unsafe_inline_scripts(): void
     {
         $response = $this->get('/');
