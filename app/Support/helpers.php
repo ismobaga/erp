@@ -19,3 +19,25 @@ if (! function_exists('currentCompany')) {
         return null;
     }
 }
+
+if (! function_exists('csp_nonce')) {
+    /**
+     * Return a per-request CSP nonce value.
+     */
+    function csp_nonce(): string
+    {
+        if (app()->bound('csp_nonce')) {
+            return (string) app('csp_nonce');
+        }
+
+        $nonce = rtrim(strtr(base64_encode(random_bytes(16)), '+/', '-_'), '=');
+
+        app()->instance('csp_nonce', $nonce);
+
+        if (request()) {
+            request()->attributes->set('csp_nonce', $nonce);
+        }
+
+        return $nonce;
+    }
+}

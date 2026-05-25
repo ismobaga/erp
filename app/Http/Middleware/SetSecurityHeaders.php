@@ -13,12 +13,14 @@ class SetSecurityHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $nonce = csp_nonce();
+
         $response = $next($request);
 
         // ── Content Security Policy ────────────────────────────────────
         $response->headers->set(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+            "default-src 'self'; script-src 'self' 'nonce-{$nonce}' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         );
 
         // ── Prevent Clickjacking ───────────────────────────────────────
