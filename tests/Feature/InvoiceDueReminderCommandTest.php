@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\InvoiceReminderMail;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -16,6 +17,7 @@ class InvoiceDueReminderCommandTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Client $client;
 
     protected function setUp(): void
@@ -39,6 +41,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         $invoice = Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -52,7 +55,7 @@ class InvoiceDueReminderCommandTest extends TestCase
             ->expectsOutputToContain('1 reminder(s) queued')
             ->assertExitCode(0);
 
-        Mail::assertQueued(InvoiceReminderMail::class, fn($mail) => $mail->hasTo($this->client->email));
+        Mail::assertQueued(InvoiceReminderMail::class, fn ($mail) => $mail->hasTo($this->client->email));
     }
 
     public function test_command_skips_invoices_not_due_tomorrow(): void
@@ -60,6 +63,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(20)->toDateString(),
             'due_date' => now()->addDays(5)->toDateString(),
@@ -81,6 +85,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -108,6 +113,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         ]);
 
         Invoice::create([
+            'company_id' => $noEmailClient->company_id,
             'client_id' => $noEmailClient->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -129,6 +135,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         $invoice = Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -145,5 +152,55 @@ class InvoiceDueReminderCommandTest extends TestCase
             'subject_type' => Invoice::class,
             'subject_id' => $invoice->id,
         ]);
+    }
+
+    public function test_command_only_processes_active_companies_when_console_has_no_company_binding(): void
+    {
+        Mail::fake();
+
+        Invoice::create([
+            'company_id' => $this->client->company_id,
+            'client_id' => $this->client->id,
+            'issue_date' => now()->subDays(10)->toDateString(),
+            'due_date' => now()->addDay()->toDateString(),
+            'status' => 'sent',
+            'balance_due' => 100.00,
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
+        ]);
+
+        $inactiveCompany = Company::create([
+            'name' => 'Inactive Company',
+            'currency' => 'FCFA',
+            'is_active' => false,
+        ]);
+
+        $inactiveClient = Client::create([
+            'company_id' => $inactiveCompany->id,
+            'type' => 'company',
+            'company_name' => 'Inactive Client SARL',
+            'email' => 'inactive@target.ci',
+            'status' => 'active',
+        ]);
+
+        Invoice::create([
+            'company_id' => $inactiveCompany->id,
+            'client_id' => $inactiveClient->id,
+            'issue_date' => now()->subDays(10)->toDateString(),
+            'due_date' => now()->addDay()->toDateString(),
+            'status' => 'sent',
+            'balance_due' => 300.00,
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
+        ]);
+
+        app()->forgetInstance('currentCompany');
+
+        $this->artisan('invoices:send-due-reminders')
+            ->expectsOutputToContain('1 reminder(s) queued')
+            ->assertExitCode(0);
+
+        Mail::assertQueued(InvoiceReminderMail::class, fn ($mail) => $mail->hasTo($this->client->email));
+        Mail::assertNotQueued(InvoiceReminderMail::class, fn ($mail) => $mail->hasTo('inactive@target.ci'));
     }
 }
