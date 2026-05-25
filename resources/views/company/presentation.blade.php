@@ -1,8 +1,8 @@
 @extends('layouts.public')
 
-@section('title', ($company?->company_name ?: config('app.name')) . ' — Présentation')
+@section('title', 'Accueil — CROMMIX MALI S.A.')
 
-@section('meta_description', 'CROMMIX MALI — Vos solutions logicielles pour la transformation numérique des entreprises d\'Afrique de l\'Ouest.')
+@section('meta_description', 'CROMMIX MALI S.A. — Innovation numérique pour l’Afrique, solutions logicielles et services de transformation digitale.')
 
 @section('nav_links')
     <a href="#mission" class="border-b-2 border-[#8df5e4] pb-1 text-sm font-medium text-[#002045]">Mission</a>
@@ -20,16 +20,16 @@
                 <div
                     class="mb-6 inline-flex items-center gap-2 rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">
                     <span class="h-2 w-2 rounded-full bg-[#70d8c8]"></span>
-                    Fondation de l'excellence
+                    CROMMIX MALI S.A.
                 </div>
 
                 <h1 class="mb-6 max-w-3xl text-5xl font-extrabold leading-[1.05] tracking-tight text-[#002045] lg:text-7xl">
-                    La précision dans l'architecture des ressources
+                    Innovation numérique pour l’Afrique
                 </h1>
 
                 <p class="mb-10 max-w-xl text-xl leading-relaxed text-[#43474e]">
-                    Le pilier architectural des entreprises modernes d'Afrique de l'Ouest. Nous transformons la complexité
-                    opérationnelle en clarté stratégique.
+                    CROMMIX MALI S.A. accompagne les organisations africaines avec des solutions concrètes :
+                    développement logiciel, ERP, données et conseil IT.
                 </p>
 
                 <div class="flex flex-wrap gap-4">
@@ -40,7 +40,7 @@
                     </a>
                     <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
                         class="rounded-xl border border-[#c4c6cf]/40 bg-[#eff4ff] px-8 py-4 font-bold text-[#002045] transition hover:bg-white">
-                        Request Demo
+                        Demander une démo
                     </a>
                 </div>
             </div>

@@ -22,6 +22,26 @@ class CompanyPagesController extends Controller
         return view('company.presentation', $this->viewData());
     }
 
+    public function about(): View
+    {
+        return view('company.about', $this->viewData());
+    }
+
+    public function services(): View
+    {
+        return view('company.services', $this->viewData());
+    }
+
+    public function solutions(): View
+    {
+        return view('company.solutions', $this->viewData());
+    }
+
+    public function contact(): View
+    {
+        return view('company.contact', $this->viewData());
+    }
+
     public function confidentialite(): View
     {
         return view('company.confidentialite', $this->viewData());
@@ -76,12 +96,12 @@ class CompanyPagesController extends Controller
         ]);
 
         $redirectTarget = $source === 'dms'
-            ? url('/dms-presentation') . '/#contact'
-            : url('/') . '/#contact';
+            ? url('/dms-presentation').'/#contact'
+            : url('/').'/#contact';
 
         return redirect()->to($redirectTarget)->with(
             'status',
-            'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
+            'Merci '.e($validated['name']).' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
         );
     }
 
@@ -93,8 +113,8 @@ class CompanyPagesController extends Controller
     protected function company(): ?Company
     {
         return Company::query()->where('is_active', true)->first();
-        return Cache::remember('public.active_company', now()->addMinutes(0), static function (): ?Company {
-        });
+
+        return Cache::remember('public.active_company', now()->addMinutes(0), static function (): ?Company {});
     }
 
     /**
@@ -106,7 +126,7 @@ class CompanyPagesController extends Controller
 
         return [
             'company' => $company,
-            'companyName' => $company?->name ?: config('app.name'),
+            'companyName' => $company?->name ?: 'CROMMIX MALI S.A.',
             'companyEmail' => $company?->email ?: '',
             'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),

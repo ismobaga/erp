@@ -18,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 // ── Public company / marketing pages ─────────────────────────────────────────
 Route::get('/', [CompanyPagesController::class, 'presentation'])->name('company.presentation');
 Route::get('/presentation', fn () => redirect()->route('company.presentation'));
+Route::get('/about', [CompanyPagesController::class, 'about'])->name('company.about');
+Route::get('/services', [CompanyPagesController::class, 'services'])->name('company.services');
+Route::get('/solutions', [CompanyPagesController::class, 'solutions'])->name('company.solutions');
+Route::get('/contact', [CompanyPagesController::class, 'contact'])->name('company.contact');
+Route::redirect('/login', '/admin/login');
+Route::redirect('/dashboard', '/admin/login')->name('dashboard.redirect');
 
 Route::get('/confidentialite', [CompanyPagesController::class, 'confidentialite'])->name('company.confidentialite');
 Route::get('/conditions', [CompanyPagesController::class, 'conditions'])->name('company.conditions');

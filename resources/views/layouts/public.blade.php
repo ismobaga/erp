@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', ($company?->company_name ?: config('app.name')) . ' — Présentation')</title>
+    <title>@yield('title', $companyName . ' — Site officiel')</title>
     <meta name="description" content="@yield('meta_description', 'Découvrez nos solutions et services.')">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -31,12 +31,23 @@
             </a>
 
             <div class="hidden items-center gap-8 md:flex">
-                @yield('nav_links')
+                <a href="{{ route('company.presentation') }}"
+                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Accueil</a>
+                <a href="{{ route('company.about') }}"
+                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">À propos</a>
+                <a href="{{ route('company.services') }}"
+                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Services</a>
+                <a href="{{ route('company.solutions') }}"
+                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Solutions</a>
+                <a href="{{ route('company.contact') }}"
+                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Contact</a>
+                <a href="/admin/login"
+                    class="rounded-lg border border-[#c4c6cf]/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#002045] transition hover:bg-[#eff4ff]">Connexion</a>
             </div>
 
-            <a href="#contact"
+            <a href="{{ route('company.contact') }}"
                 class="rounded-lg bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                Demander une démo
+                Nous contacter
             </a>
         </nav>
     </header>
@@ -57,6 +68,7 @@
                 <a href="{{ route('company.conditions') }}" class="transition hover:text-[#005048]">Conditions</a>
                 <a href="{{ route('company.cookies') }}" class="transition hover:text-[#005048]">Cookies</a>
                 <a href="{{ route('company.bureaux') }}" class="transition hover:text-[#005048]">Bureaux</a>
+                <a href="/admin/login" class="transition hover:text-[#005048]">Portail ERP</a>
             </div>
             <div
                 class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">

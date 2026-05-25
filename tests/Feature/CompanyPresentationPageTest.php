@@ -8,6 +8,7 @@ use Tests\TestCase;
 class CompanyPresentationPageTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_company_presentation_page_is_available(): void
     {
         $response = $this->get('/');
@@ -38,5 +39,24 @@ class CompanyPresentationPageTest extends TestCase
 
         $response->assertRedirect('/#contact');
         $response->assertSessionHas('status');
+    }
+
+    public function test_core_public_company_pages_are_available(): void
+    {
+        $this->get('/about')->assertOk()->assertSeeText('CROMMIX MALI S.A.');
+        $this->get('/services')->assertOk()->assertSeeText('Nos services');
+        $this->get('/solutions')->assertOk()->assertSeeText('Solutions & produits');
+        $this->get('/contact')->assertOk()->assertSeeText('Contact');
+    }
+
+    public function test_admin_and_dashboard_routes_stay_protected_for_guests(): void
+    {
+        $adminResponse = $this->get('/admin');
+        $adminResponse->assertStatus(302);
+        $this->assertStringContainsString('/admin/login', (string) $adminResponse->headers->get('Location'));
+
+        $dashboardResponse = $this->get('/dashboard');
+        $dashboardResponse->assertStatus(302);
+        $this->assertStringContainsString('/admin/login', (string) $dashboardResponse->headers->get('Location'));
     }
 }
