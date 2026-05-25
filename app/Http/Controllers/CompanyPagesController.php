@@ -6,7 +6,6 @@ use App\Models\Company;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -75,7 +74,7 @@ class CompanyPagesController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'intent' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\',\.0-9]+$/u'],
             'message' => ['nullable', 'string', 'max:2000'],
-            'source' => ['nullable', 'in:website,dms'],
+            'source' => ['nullable', 'in:website,dms,contact'],
         ], [
             'name.regex' => 'Le nom ne peut contenir que des lettres, espaces et tirets.',
             'company_name.regex' => 'Le nom de l\'entreprise ne peut contenir que des lettres, espaces et tirets.',
@@ -95,9 +94,11 @@ class CompanyPagesController extends Controller
             'source' => $source,
         ]);
 
-        $redirectTarget = $source === 'dms'
-            ? url('/dms-presentation').'/#contact'
-            : url('/').'/#contact';
+        $redirectTarget = match ($source) {
+            'dms' => route('dms.presentation').'/#contact',
+            'contact' => route('company.contact'),
+            default => route('company.presentation').'/#contact',
+        };
 
         return redirect()->to($redirectTarget)->with(
             'status',
@@ -113,8 +114,6 @@ class CompanyPagesController extends Controller
     protected function company(): ?Company
     {
         return Company::query()->where('is_active', true)->first();
-
-        return Cache::remember('public.active_company', now()->addMinutes(0), static function (): ?Company {});
     }
 
     /**
@@ -127,7 +126,7 @@ class CompanyPagesController extends Controller
         return [
             'company' => $company,
             'companyName' => $company?->name ?: 'CROMMIX MALI S.A.',
-            'companyEmail' => $company?->email ?: '',
+            'companyEmail' => $company?->email ?: 'contact@crommix.com',
             'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),
             'companyWebsite' => $company?->website ?: '',

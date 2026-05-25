@@ -41,6 +41,20 @@ class CompanyPresentationPageTest extends TestCase
         $response->assertSessionHas('status');
     }
 
+    public function test_contact_page_form_redirects_back_to_contact_on_success(): void
+    {
+        $response = $this->post('/contact-request', [
+            'name' => 'Awa Traoré',
+            'email' => 'awa@example.com',
+            'intent' => 'Consultation Digitale',
+            'message' => 'Nous avons besoin d’un accompagnement.',
+            'source' => 'contact',
+        ]);
+
+        $response->assertRedirect('/contact');
+        $response->assertSessionHas('status');
+    }
+
     public function test_core_public_company_pages_are_available(): void
     {
         $this->get('/about')->assertOk()->assertSeeText('CROMMIX MALI S.A.');

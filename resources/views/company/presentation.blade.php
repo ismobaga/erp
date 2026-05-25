@@ -4,14 +4,6 @@
 
 @section('meta_description', 'CROMMIX MALI S.A. — Innovation numérique pour l’Afrique, solutions logicielles et services de transformation digitale.')
 
-@section('nav_links')
-    <a href="#mission" class="border-b-2 border-[#8df5e4] pb-1 text-sm font-medium text-[#002045]">Mission</a>
-    <a href="#services" class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Services</a>
-    <a href="#portfolio" class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Portfolio</a>
-    <a href="#carrieres" class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Carrières</a>
-    <a href="#contact" class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Contact</a>
-@endsection
-
 @section('content')
     <section id="mission" class="relative overflow-hidden bg-[#f8f9ff]">
         <div class="absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-[#eff4ff] to-transparent lg:block"></div>
