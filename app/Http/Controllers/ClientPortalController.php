@@ -16,7 +16,6 @@ use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClientPortalController extends Controller
@@ -412,17 +411,15 @@ class ClientPortalController extends Controller
 
     /**
      * Resolve the Company record that owns this client.
-     * Falls back to the first active company for single-tenant deployments.
+     * Aborts with 404 if the client has no company_id set.
      */
-    protected function resolveCompany(Client $client): ?Company
+    protected function resolveCompany(Client $client): Company
     {
-        if ($client->company_id !== null) {
-            return Company::find($client->company_id);
+        if ($client->company_id === null) {
+            abort(404);
         }
 
-        return Cache::remember('portal.active_company', now()->addMinutes(5), static function (): ?Company {
-            return Company::query()->where('is_active', true)->first();
-        });
+        return Company::findOrFail($client->company_id);
     }
 
     protected function resolveClientByToken(string $token): Client
