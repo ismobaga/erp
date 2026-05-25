@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\ApplyPaymentAction;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\CreditNote;
@@ -56,7 +57,7 @@ class BillingRulesTest extends TestCase
         // flipped 'draft' to 'overdue').
         $this->assertSame('draft', $invoice->status);
 
-        Payment::create([
+        $payment1 = new Payment([
             'invoice_id' => $invoice->id,
             'client_id' => $client->id,
             'payment_date' => now()->toDateString(),
@@ -64,6 +65,7 @@ class BillingRulesTest extends TestCase
             'payment_method' => 'bank transfer',
             'recorded_by' => $user->id,
         ]);
+        app(ApplyPaymentAction::class)->execute($payment1);
 
         $invoice->refresh();
 
@@ -71,7 +73,7 @@ class BillingRulesTest extends TestCase
         $this->assertSame('150.00', $invoice->balance_due);
         $this->assertSame('partially_paid', $invoice->status);
 
-        Payment::create([
+        $payment2 = new Payment([
             'invoice_id' => $invoice->id,
             'client_id' => $client->id,
             'payment_date' => now()->toDateString(),
@@ -79,6 +81,7 @@ class BillingRulesTest extends TestCase
             'payment_method' => 'card',
             'recorded_by' => $user->id,
         ]);
+        app(ApplyPaymentAction::class)->execute($payment2);
 
         $invoice->refresh();
 
@@ -339,7 +342,7 @@ class BillingRulesTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        Payment::create([
+        $payment = new Payment([
             'invoice_id' => $invoice->id,
             'client_id' => $client->id,
             'payment_date' => now()->toDateString(),
@@ -348,6 +351,7 @@ class BillingRulesTest extends TestCase
             'allow_overpayment' => true,
             'recorded_by' => $user->id,
         ]);
+        app(ApplyPaymentAction::class)->execute($payment);
 
         $invoice->refresh();
 
