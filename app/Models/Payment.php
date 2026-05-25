@@ -5,12 +5,14 @@ namespace App\Models;
 use App\Actions\ApplyPaymentAction;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use App\Services\InvoiceService;
 use Carbon\Carbon;
 use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -194,14 +196,40 @@ class Payment extends Model implements HasTenantScope
         static::deleting(function (Payment $payment): void {
             FinancialPeriod::ensureDateIsOpen($payment->payment_date, 'payment');
         });
+    }
 
-        static::saved(function (Payment $payment): void {
-            $payment->invoice?->refreshFinancials();
-        });
+    /**
+     * Delete the payment and refresh the linked invoice's financials atomically.
+     *
+     * Wrapping both operations in a single transaction guarantees that the
+     * invoice's paid_total / balance_due / status are never left stale if
+     * refreshFinancials() throws after the DELETE has already committed.
+     */
+    public function delete(): bool|null
+    {
+        if (DB::transactionLevel() > 0) {
+            return $this->deleteWithRefresh();
+        }
 
-        static::deleted(function (Payment $payment): void {
-            $payment->invoice?->refreshFinancials();
-        });
+        return DB::transaction(fn (): bool|null => $this->deleteWithRefresh());
+    }
+
+    private function deleteWithRefresh(): bool|null
+    {
+        $lockedInvoice = $this->invoice_id !== null
+            ? Invoice::withoutCompanyScope()
+                ->whereKey($this->invoice_id)
+                ->lockForUpdate()
+                ->first()
+            : null;
+
+        $result = parent::delete();
+
+        if ($result && $lockedInvoice !== null) {
+            app(InvoiceService::class)->refreshFinancials($lockedInvoice);
+        }
+
+        return $result;
     }
 
     public function invoice(): BelongsTo
