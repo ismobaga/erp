@@ -100,36 +100,48 @@ Artisan::command('invoices:send-due-reminders', function () {
     $skipped = 0;
 
     Company::query()->where('is_active', true)->each(function (Company $company) use (&$sent, &$skipped, $targetDate): void {
+        $hadCurrentCompany = app()->bound('currentCompany');
+        $previousCompany = $hadCurrentCompany ? app('currentCompany') : null;
+
         app()->instance('currentCompany', $company);
 
-        Invoice::query()
-            ->with('client')
-            ->whereDate('due_date', $targetDate)
-            ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
-            ->where('balance_due', '>', 0)
-            ->get()
-            ->each(function (Invoice $invoice) use (&$sent, &$skipped, $targetDate): void {
-                $client = $invoice->client;
+        try {
+            Invoice::query()
+                ->with('client')
+                ->whereDate('due_date', $targetDate)
+                ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
+                ->where('balance_due', '>', 0)
+                ->chunkById(200, function ($invoices) use (&$sent, &$skipped, $targetDate): void {
+                    $invoices->each(function (Invoice $invoice) use (&$sent, &$skipped, $targetDate): void {
+                        $client = $invoice->client;
 
-                if (! $client || blank($client->email)) {
-                    $skipped++;
+                        if (! $client || blank($client->email)) {
+                            $skipped++;
 
-                    return;
-                }
+                            return;
+                        }
 
-                Mail::to($client->email)
-                    ->queue(new InvoiceReminderMail($invoice));
+                        Mail::to($client->email)
+                            ->queue(new InvoiceReminderMail($invoice));
 
-                app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
-                    'reference' => $invoice->invoice_number,
-                    'client_email' => $client->email,
-                    'balance_due' => (float) $invoice->balance_due,
-                    'due_date' => $targetDate,
-                    'sent_by' => 'scheduler',
-                ]);
+                        app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
+                            'reference' => $invoice->invoice_number,
+                            'client_email' => $client->email,
+                            'balance_due' => (float) $invoice->balance_due,
+                            'due_date' => $targetDate,
+                            'sent_by' => 'scheduler',
+                        ]);
 
-                $sent++;
-            });
+                        $sent++;
+                    });
+                });
+        } finally {
+            if ($hadCurrentCompany) {
+                app()->instance('currentCompany', $previousCompany);
+            } else {
+                app()->forgetInstance('currentCompany');
+            }
+        }
     });
 
     $this->info($sent.' reminder(s) queued for invoices due tomorrow. '.$skipped.' skipped (no client email).');

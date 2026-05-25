@@ -41,6 +41,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         $invoice = Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -62,6 +63,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(20)->toDateString(),
             'due_date' => now()->addDays(5)->toDateString(),
@@ -83,6 +85,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -110,6 +113,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         ]);
 
         Invoice::create([
+            'company_id' => $noEmailClient->company_id,
             'client_id' => $noEmailClient->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -131,6 +135,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         $invoice = Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -154,6 +159,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         Mail::fake();
 
         Invoice::create([
+            'company_id' => $this->client->company_id,
             'client_id' => $this->client->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
@@ -169,9 +175,8 @@ class InvoiceDueReminderCommandTest extends TestCase
             'is_active' => false,
         ]);
 
-        $this->setUpCompany($inactiveCompany);
-
         $inactiveClient = Client::create([
+            'company_id' => $inactiveCompany->id,
             'type' => 'company',
             'company_name' => 'Inactive Client SARL',
             'email' => 'inactive@target.ci',
@@ -179,6 +184,7 @@ class InvoiceDueReminderCommandTest extends TestCase
         ]);
 
         Invoice::create([
+            'company_id' => $inactiveCompany->id,
             'client_id' => $inactiveClient->id,
             'issue_date' => now()->subDays(10)->toDateString(),
             'due_date' => now()->addDay()->toDateString(),
