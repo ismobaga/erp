@@ -34,8 +34,8 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
-            'throw' => false,
-            'report' => false,
+            'throw' => (bool) env('FILESYSTEM_THROW', true),
+            'report' => (bool) env('FILESYSTEM_REPORT', true),
         ],
 
         'public' => [
@@ -43,8 +43,8 @@ return [
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
+            'throw' => (bool) env('FILESYSTEM_THROW', true),
+            'report' => (bool) env('FILESYSTEM_REPORT', true),
         ],
 
         's3' => [
@@ -56,8 +56,8 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
-            'report' => false,
+            'throw' => (bool) env('FILESYSTEM_THROW', true),
+            'report' => (bool) env('FILESYSTEM_REPORT', true),
         ],
 
     ],
