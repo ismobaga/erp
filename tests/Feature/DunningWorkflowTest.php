@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\InvoiceReminderMail;
 use App\Models\Client;
 use App\Models\DunningLog;
 use App\Models\Invoice;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Services\DunningService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class DunningWorkflowTest extends TestCase
@@ -178,6 +180,82 @@ class DunningWorkflowTest extends TestCase
         $invoice = $this->makeInvoice(daysOverdue: 14);
 
         $this->assertSame(14, $this->dunning->daysOverdue($invoice));
+    }
+
+    public function test_run_automated_dunning_queues_email_before_logging_reminder(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Auto Dunning Co',
+            'email' => 'billing@auto-dunning.test',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-D-AUTO-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(40)->toDateString(),
+            'due_date' => now()->subDays(10)->toDateString(),
+            'status' => 'overdue',
+            'total' => 500.00,
+            'balance_due' => 500.00,
+            'created_by' => $user->id,
+        ]);
+
+        $count = $this->dunning->runAutomatedDunning($user->id);
+
+        $this->assertSame(1, $count);
+        Mail::assertQueued(InvoiceReminderMail::class, fn (InvoiceReminderMail $mail): bool => $mail->hasTo($client->email));
+        $this->assertDatabaseHas('dunning_logs', [
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'channel' => 'email',
+            'sent_by' => $user->id,
+        ]);
+    }
+
+    public function test_run_automated_dunning_does_not_log_when_email_dispatch_fails(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Fail Dispatch Co',
+            'email' => 'billing@dispatch-fail.test',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-D-AUTO-002',
+            'client_id' => $client->id,
+            'issue_date' => now()->subDays(40)->toDateString(),
+            'due_date' => now()->subDays(10)->toDateString(),
+            'status' => 'overdue',
+            'total' => 500.00,
+            'balance_due' => 500.00,
+            'created_by' => $user->id,
+        ]);
+
+        Mail::shouldReceive('to')
+            ->once()
+            ->with($client->email)
+            ->andReturn(new class
+            {
+                public function queue($mailable): void
+                {
+                    throw new \RuntimeException('Queue driver unavailable');
+                }
+            });
+
+        $count = $this->dunning->runAutomatedDunning($user->id);
+
+        $this->assertSame(0, $count);
+        $this->assertDatabaseMissing('dunning_logs', [
+            'invoice_id' => $invoice->id,
+            'channel' => 'email',
+        ]);
     }
 
     // -------------------------------------------------------------------------

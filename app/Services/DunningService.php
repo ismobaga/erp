@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\InvoiceReminderMail;
 use App\Models\DunningLog;
 use App\Models\Invoice;
 use App\Services\Whatsapp\WhatsappSendService;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class DunningService
 {
@@ -209,6 +211,10 @@ class DunningService
             ->with('client')
             ->chunkById(100, function (Collection $chunk) use (&$count, $systemUserId): void {
                 $chunk->each(function (Invoice $invoice) use (&$count, $systemUserId): void {
+                    if (! $this->dispatchAutomatedEmailReminder($invoice)) {
+                        return;
+                    }
+
                     $this->logReminder($invoice, 'email', $systemUserId);
                     $this->tryWhatsappDunning($invoice, $systemUserId);
                     $count++;
@@ -216,6 +222,32 @@ class DunningService
             });
 
         return $count;
+    }
+
+    private function dispatchAutomatedEmailReminder(Invoice $invoice): bool
+    {
+        $client = $invoice->client;
+
+        if ($client === null || blank($client->email)) {
+            Log::warning('Automated dunning email skipped: missing client email.', [
+                'invoice_id' => $invoice->id,
+            ]);
+
+            return false;
+        }
+
+        try {
+            Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Automated dunning email dispatch failed.', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**
