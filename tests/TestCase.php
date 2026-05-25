@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\Company;
+use App\Models\FinancialPeriod;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Schema;
 
@@ -12,6 +13,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         $this->withoutVite();
+        FinancialPeriod::flushLockCache();
 
         // Automatically bind a default company to the IoC container whenever
         // the companies table is available (i.e. after migrations have run).

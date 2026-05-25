@@ -30,6 +30,8 @@ class FinancialPeriod extends Model implements HasTenantScope
 {
     use HasCompanyScope;
 
+    private static array $lockCache = [];
+
     public function noteRecords(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->orderByDesc('noted_at')->orderByDesc('id');
@@ -133,10 +135,20 @@ class FinancialPeriod extends Model implements HasTenantScope
             return null;
         }
 
-        return static::query()
+        $companyId = app()->bound('currentCompany')
+            ? (string) app('currentCompany')->id
+            : 'none';
+        $key = $companyId.':'.Carbon::parse($date)->toDateString();
+
+        return static::$lockCache[$key] ??= static::query()
             ->closed()
             ->current($date)
             ->first();
+    }
+
+    public static function flushLockCache(): void
+    {
+        static::$lockCache = [];
     }
 
     public static function isDateLocked(CarbonInterface|string|null $date): bool

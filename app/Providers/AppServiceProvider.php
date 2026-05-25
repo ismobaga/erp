@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\CreditNote;
 use App\Models\Expense;
+use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
@@ -144,5 +145,12 @@ class AppServiceProvider extends ServiceProvider
                 $action->defaultColor('gray');
             }
         });
+
+        app()->terminating([$this, 'terminate']);
+    }
+
+    public function terminate(): void
+    {
+        FinancialPeriod::flushLockCache();
     }
 }

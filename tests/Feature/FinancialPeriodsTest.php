@@ -384,6 +384,38 @@ class FinancialPeriodsTest extends TestCase
         $this->assertSame(1, $periodQueries);
     }
 
+    public function test_find_closed_for_reuses_cache_until_it_is_flushed(): void
+    {
+        FinancialPeriod::create([
+            'name' => 'April 2026',
+            'code' => 'LOCK-APR-2026-FIND-CACHE',
+            'starts_on' => '2026-04-01',
+            'ends_on' => '2026-04-30',
+            'status' => 'closed',
+        ]);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->assertNotNull(FinancialPeriod::findClosedFor('2026-04-10'));
+        $this->assertNotNull(FinancialPeriod::findClosedFor('2026-04-10'));
+
+        $periodQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => (bool) preg_match('/from\s+[`"]?financial_periods[`"]?/i', $query['query']))
+            ->count();
+
+        $this->assertSame(1, $periodQueries);
+
+        FinancialPeriod::flushLockCache();
+        FinancialPeriod::findClosedFor('2026-04-10');
+
+        $periodQueriesAfterFlush = collect(DB::getQueryLog())
+            ->filter(fn (array $query): bool => (bool) preg_match('/from\s+[`"]?financial_periods[`"]?/i', $query['query']))
+            ->count();
+
+        $this->assertSame(2, $periodQueriesAfterFlush);
+    }
+
     public function test_save_quietly_cannot_bypass_closed_period_guard_on_sensitive_fields(): void
     {
         $user = User::factory()->create();
