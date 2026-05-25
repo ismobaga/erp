@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Client;
 use App\Models\Company;
@@ -254,14 +255,40 @@ class ClientPortalExpansionTest extends TestCase
             'total' => 30000,
             'subtotal' => 30000,
         ]);
+        $reason = 'Budget insuffisant';
 
         $response = $this->post(route('portal.quote.reject', [
             'token' => $this->token,
             'quote' => $quote,
-        ]), ['reason' => 'Budget insuffisant']);
+        ]), ['reason' => $reason]);
 
         $response->assertRedirectToRoute('portal.quotes', ['token' => $this->token]);
         $this->assertEquals('rejected', $quote->fresh()->status);
+        $log = ActivityLog::query()->where('action', 'portal_quote_rejected')->first();
+        $this->assertNotNull($log);
+        $this->assertSame($reason, data_get($log->meta_json, 'reason'));
+    }
+
+    public function test_portal_quote_rejection_validates_reason_max_length(): void
+    {
+        $quote = Quote::create([
+            'company_id' => $this->company->id,
+            'client_id' => $this->client->id,
+            'quote_number' => 'QT-2026-0005',
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 12000,
+            'subtotal' => 12000,
+        ]);
+
+        $response = $this->post(route('portal.quote.reject', [
+            'token' => $this->token,
+            'quote' => $quote,
+        ]), ['reason' => str_repeat('a', 1001)]);
+
+        $response->assertSessionHasErrors(['reason']);
+        $this->assertEquals('sent', $quote->fresh()->status);
+        $this->assertDatabaseMissing('activity_logs', ['action' => 'portal_quote_rejected']);
     }
 
     public function test_portal_cannot_approve_quote_belonging_to_another_client(): void
