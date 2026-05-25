@@ -25,9 +25,16 @@ return new class extends Migration {
             $table->string('country')->nullable();
             $table->text('notes')->nullable();
             $table->string('status')->default('lead');
+            $table->text('portal_token')->nullable()->unique();
+            $table->string('portal_token_hash', 64)->nullable()->unique();
+            $table->timestamp('portal_token_expires_at')->nullable();
+            $table->timestamp('portal_token_last_used_at')->nullable();
+            $table->timestamp('portal_token_revoked_at')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index('portal_token_hash');
         });
 
         Schema::create('services', function (Blueprint $table) {
@@ -105,6 +112,8 @@ return new class extends Migration {
 
             $table->index(['company_id', 'status', 'due_date'], 'invoices_company_status_due_date_index');
             $table->index(['company_id', 'issue_date'], 'invoices_company_issue_date_index');
+            $table->index(['company_id', 'client_id'], 'invoices_company_client_index');
+            $table->index(['company_id', 'status'], 'invoices_company_status_index');
             $table->unique(['company_id', 'invoice_number'], 'invoices_company_id_invoice_number_unique');
 
         });
@@ -237,6 +246,8 @@ return new class extends Migration {
             $table->string('subject_type')->nullable();
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->json('meta_json')->nullable();
+            $table->string('ip_address', 45)->nullable();
+            $table->string('user_agent', 512)->nullable();
             $table->timestamps();
 
             $table->index('action');
