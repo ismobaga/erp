@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Services\AuditTrailService;
+use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,17 +38,14 @@ class InvoicePdfController extends Controller
             ],
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => $request->boolean('download'),
+            'compact' => (bool) config('erp.pdf.compact_when_possible', true)
+                && $invoice->items->count() <= 6
+                && mb_strlen((string) $invoice->notes) < 500,
         ];
 
         if ($request->boolean('download')) {
-            return Pdf::loadView('invoices.pdf', $viewData)
-                ->setOption([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'dpi' => 120,
-                    'defaultFont' => 'DejaVu Sans',
-                ])
-                ->setPaper('a4')
+            return app(BusinessDocumentPdf::class)
+                ->make('invoices.pdf', $viewData)
                 ->download($invoice->invoice_number.'.pdf');
         }
 

@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CreditNote;
 use App\Services\AuditTrailService;
+use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -34,14 +34,8 @@ class CreditNotePdfController extends Controller
         ];
 
         if ($request->boolean('download')) {
-            return Pdf::loadView('credit-notes.pdf', $viewData)
-                ->setOption([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'dpi' => 120,
-                    'defaultFont' => 'DejaVu Sans',
-                ])
-                ->setPaper('a4')
+            return app(BusinessDocumentPdf::class)
+                ->make('credit-notes.pdf', $viewData)
                 ->download($creditNote->credit_number.'.pdf');
         }
 

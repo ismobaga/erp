@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Quote;
 use App\Services\AuditTrailService;
+use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -25,24 +25,20 @@ class QuotePdfController extends Controller
         ], auth()->id());
 
         $company = currentCompany();
-        $companyName = $company?->name ?: config('app.name');
 
         $viewData = [
             'quote' => $quote,
             'company' => $company,
             'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
             'isDownload' => $request->boolean('download'),
+            'compact' => (bool) config('erp.pdf.compact_when_possible', true)
+                && $quote->items->count() <= 6
+                && mb_strlen((string) $quote->notes) < 500,
         ];
 
         if ($request->boolean('download')) {
-            return Pdf::loadView('quotes.pdf', $viewData)
-                ->setOption([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'dpi' => 120,
-                    'defaultFont' => 'DejaVu Sans',
-                ])
-                ->setPaper('a4')
+            return app(BusinessDocumentPdf::class)
+                ->make('quotes.pdf', $viewData)
                 ->download($quote->quote_number.'.pdf');
         }
 

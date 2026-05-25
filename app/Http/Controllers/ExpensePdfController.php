@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Services\AuditTrailService;
+use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,14 +37,8 @@ class ExpensePdfController extends Controller
         $filename = 'depense-'.($expense->reference ?: $expense->id).'.pdf';
 
         if ($request->boolean('download')) {
-            return Pdf::loadView('expenses.pdf', $viewData)
-                ->setOption([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'dpi' => 120,
-                    'defaultFont' => 'DejaVu Sans',
-                ])
-                ->setPaper('a4')
+            return app(BusinessDocumentPdf::class)
+                ->make('expenses.pdf', $viewData)
                 ->download($filename);
         }
 

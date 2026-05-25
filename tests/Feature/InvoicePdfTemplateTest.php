@@ -117,6 +117,70 @@ class InvoicePdfTemplateTest extends TestCase
         $response->assertSee('OVERDUE');
     }
 
+    public function test_invoice_pdf_uses_compact_mode_for_short_documents_and_disables_it_for_long_documents(): void
+    {
+        $this->setUpCompany(Company::create([
+            'name' => 'CROMMIX MALI S.A.',
+            'currency' => 'FCFA',
+            'is_active' => true,
+        ]));
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'Client compact mode',
+            'status' => 'active',
+        ]);
+
+        $compactInvoice = Invoice::create([
+            'invoice_number' => 'INV-COMPACT-001',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'sent',
+            'notes' => 'Courte note.',
+            'created_by' => $user->id,
+        ]);
+
+        InvoiceItem::create([
+            'invoice_id' => $compactInvoice->id,
+            'description' => 'Ligne compacte',
+            'quantity' => 1,
+            'unit_price' => 15000,
+        ]);
+
+        $longInvoice = Invoice::create([
+            'invoice_number' => 'INV-COMPACT-002',
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'sent',
+            'notes' => str_repeat('Note longue ', 80),
+            'created_by' => $user->id,
+        ]);
+
+        for ($i = 1; $i <= 7; $i++) {
+            InvoiceItem::create([
+                'invoice_id' => $longInvoice->id,
+                'description' => 'Ligne longue '.$i,
+                'quantity' => 1,
+                'unit_price' => 2000,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $compactInvoice))
+            ->assertOk()
+            ->assertSee('body class="compact"', false);
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $longInvoice))
+            ->assertOk()
+            ->assertDontSee('body class="compact"', false);
+    }
+
     public function test_authorized_user_can_download_a_real_invoice_pdf(): void
     {
         $this->setUpCompany(Company::create([
