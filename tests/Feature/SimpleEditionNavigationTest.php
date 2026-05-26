@@ -20,6 +20,10 @@ use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\OnboardingChecklistWidget;
+use App\Models\Client;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\ErpEdition;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -137,6 +141,42 @@ class SimpleEditionNavigationTest extends TestCase
 
     public function test_simple_edition_dashboard_surfaces_sme_metrics(): void
     {
+        $user = User::factory()->create(['status' => 'active']);
+
+        $client = Client::create([
+            'type' => 'company',
+            'company_name' => 'SME Client',
+            'status' => 'active',
+        ]);
+
+        $invoice = Invoice::create([
+            'client_id' => $client->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 200000,
+            'balance_due' => 150000,
+            'created_by' => $user->id,
+        ]);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'client_id' => $client->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 120000,
+            'payment_method' => 'bank_transfer',
+            'reference' => 'SME-PAY-001',
+            'recorded_by' => $user->id,
+        ]);
+
+        Expense::create([
+            'category' => 'operations',
+            'title' => 'Office rent',
+            'amount' => 50000,
+            'expense_date' => now()->toDateString(),
+            'payment_method' => 'bank_transfer',
+            'recorded_by' => $user->id,
+        ]);
+
         $widget = new class extends ArchitecturalStatsOverview
         {
             public function statsForTest(): array
@@ -148,6 +188,9 @@ class SimpleEditionNavigationTest extends TestCase
         $labels = collect($widget->statsForTest())
             ->map(fn ($stat): string => $stat->getLabel())
             ->all();
+        $values = collect($widget->statsForTest())
+            ->map(fn ($stat): string => (string) $stat->getValue())
+            ->all();
 
         $this->assertSame([
             __('erp.dashboard.money_in'),
@@ -155,5 +198,17 @@ class SimpleEditionNavigationTest extends TestCase
             __('erp.dashboard.outstanding_payments'),
             __('erp.dashboard.profitability'),
         ], $labels);
+        $this->assertSame([
+            'FCFA 120 000',
+            'FCFA 50 000',
+            'FCFA 150 000',
+            'FCFA 70 000',
+        ], $values);
+
+        $rawValues = collect($values)
+            ->map(fn (string $value): int => (int) preg_replace('/\D+/', '', $value))
+            ->all();
+
+        $this->assertSame([120000, 50000, 150000, 70000], $rawValues);
     }
 }

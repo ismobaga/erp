@@ -55,7 +55,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
             );
             $profitabilityTrend = collect($moneyInTrend)
                 ->zip($moneyOutTrend)
-                ->map(fn ($pair): int => max(0, (int) $pair[0] - (int) $pair[1]))
+                ->map(fn ($pair): int => (int) $pair[0] - (int) $pair[1])
                 ->values()
                 ->all();
 
@@ -155,6 +155,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                     $scope($query);
                 }
 
+                // Keep chart values compact for readability in the small sparkline area
                 return (int) round(((float) $query->sum($amountColumn)) / 1000);
             })
             ->all();
