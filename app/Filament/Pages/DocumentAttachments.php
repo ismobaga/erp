@@ -5,15 +5,15 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\HasPermissionAccess;
 use App\Models\Attachment;
 use App\Models\User;
+use App\Services\AuditTrailService;
+use App\Services\SecureFileUploadService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\WithFileUploads;
 
@@ -53,27 +53,27 @@ class DocumentAttachments extends Page
 
     public function uploadDocument(): void
     {
-        $disk = (string) config('erp.documents.disk', 'local');
-        $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
+        $company = currentCompany();
+
+        abort_unless((bool) $company, 403, 'No current company context.');
+
+        $user = auth()->user();
+        abort_unless((bool) $user, 403);
+
         $maxUploadKb = max(512, (int) config('erp.documents.max_upload_kb', 10240));
-        $allowedExtensions = (array) config('erp.documents.allowed_extensions', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png', 'zip', 'txt']);
 
         $validated = $this->validate([
             'documentCategory' => ['required', 'string', 'max:255'],
-            'upload' => ['required', 'file', 'max:' . $maxUploadKb, 'mimes:' . implode(',', $allowedExtensions)],
+            'upload' => ['required', 'file', 'max:'.$maxUploadKb],
         ], [], [
             'documentCategory' => 'catégorie',
             'upload' => 'document',
         ]);
 
-        $user = auth()->user();
-
-        abort_unless((bool) $user, 403);
-
         $file = $validated['upload'];
         $fileSize = $this->resolveUploadSize($file);
         $quotaBytes = max(1, (int) config('erp.documents.quota_mb', 200)) * 1024 * 1024;
-        $projectedUsage = (int) Attachment::query()->sum('size_bytes') + $fileSize;
+        $projectedUsage = (int) Attachment::query()->where('company_id', $company->id)->sum('size_bytes') + $fileSize;
 
         if ($projectedUsage > $quotaBytes) {
             throw ValidationException::withMessages([
@@ -81,28 +81,20 @@ class DocumentAttachments extends Page
             ]);
         }
 
-        $storedPath = $file->storeAs(
-            $directory . '/' . now()->format('Y/m'),
-            Str::uuid() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . Str::lower($file->getClientOriginalExtension()),
-            $disk
+        $attachment = app(SecureFileUploadService::class)->storeFile(
+            $file,
+            User::class,
+            $user->getKey(),
+            $user->getKey(),
+            $company->id,
+            $this->documentCategory,
         );
 
-        $attachment = Attachment::create([
-            'attachable_type' => User::class,
-            'attachable_id' => $user->getKey(),
-            'file_name' => $file->getClientOriginalName(),
+        app(AuditTrailService::class)->log('document_uploaded', $attachment, [
             'category' => $this->documentCategory,
-            'file_path' => $storedPath,
-            'mime_type' => $this->resolveMimeType($file->getClientOriginalExtension(), (string) ($file->getClientMimeType() ?: $file->getMimeType())),
-            'size_bytes' => $fileSize,
-            'uploaded_by' => $user->getKey(),
-        ]);
-
-        app(\App\Services\AuditTrailService::class)->log('document_uploaded', $attachment, [
-            'category' => $this->documentCategory,
-            'disk' => $disk,
-            'path' => $storedPath,
-            'size_bytes' => $fileSize,
+            'disk' => (string) config('erp.documents.disk', 'local'),
+            'path' => $attachment->file_path,
+            'size_bytes' => $attachment->size_bytes,
         ], $user->getKey());
 
         $this->reset('upload');
@@ -127,7 +119,7 @@ class DocumentAttachments extends Page
 
         $attachment->delete();
 
-        app(\App\Services\AuditTrailService::class)->log('document_deleted', $attachment, [
+        app(AuditTrailService::class)->log('document_deleted', $attachment, [
             'name' => $attachmentName,
             'disk' => (string) config('erp.documents.disk', 'local'),
             'path' => $attachment->file_path,
@@ -162,12 +154,16 @@ class DocumentAttachments extends Page
 
     protected function getViewData(): array
     {
+        $company = currentCompany();
         $documents = $this->filteredDocuments();
         $statsDocuments = Attachment::query()
+            ->when($company, fn ($q) => $q->where('company_id', $company->id))
             ->select(['file_name', 'category', 'size_bytes'])
             ->latest()
             ->get();
-        $totalBytes = (int) Attachment::query()->sum('size_bytes');
+        $totalBytes = (int) Attachment::query()
+            ->when($company, fn ($q) => $q->where('company_id', $company->id))
+            ->sum('size_bytes');
         $quotaMb = max(1, (int) config('erp.documents.quota_mb', 200));
         $quotaBytes = $quotaMb * 1024 * 1024;
 
@@ -175,7 +171,7 @@ class DocumentAttachments extends Page
             'documents' => $documents,
             'storage' => [
                 'used' => $this->formatBytes($totalBytes),
-                'quota' => $quotaMb . ' MB',
+                'quota' => $quotaMb.' MB',
                 'percent' => min(100, $quotaBytes > 0 ? (int) round(($totalBytes / $quotaBytes) * 100) : 0),
             ],
             'categories' => $this->categoryBreakdown($statsDocuments),
@@ -221,23 +217,23 @@ class DocumentAttachments extends Page
             $needle = trim($this->search);
 
             $query->where(function (Builder $inner) use ($needle): void {
-                $inner->where('file_name', 'like', '%' . $needle . '%')
-                    ->orWhere('category', 'like', '%' . $needle . '%');
+                $inner->where('file_name', 'like', '%'.$needle.'%')
+                    ->orWhere('category', 'like', '%'.$needle.'%');
             });
         }
 
         match ($this->filterType) {
             'pdf' => $query->whereRaw('LOWER(file_name) like ?', ['%.pdf']),
             'excel' => $query->where(function (Builder $inner): void {
-                    $inner->whereRaw('LOWER(file_name) like ?', ['%.xls'])
+                $inner->whereRaw('LOWER(file_name) like ?', ['%.xls'])
                     ->orWhereRaw('LOWER(file_name) like ?', ['%.xlsx'])
                     ->orWhereRaw('LOWER(file_name) like ?', ['%.csv']);
-                }),
+            }),
             'docs' => $query->where(function (Builder $inner): void {
-                    $inner->whereRaw('LOWER(file_name) like ?', ['%.doc'])
+                $inner->whereRaw('LOWER(file_name) like ?', ['%.doc'])
                     ->orWhereRaw('LOWER(file_name) like ?', ['%.docx'])
                     ->orWhereRaw('LOWER(file_name) like ?', ['%.txt']);
-                }),
+            }),
             default => null,
         };
     }
@@ -247,7 +243,7 @@ class DocumentAttachments extends Page
         $labels = ['Factures', 'Contrats', 'Devis', 'Reçus', 'Archives'];
 
         return collect($labels)->map(function (string $label) use ($documents): array {
-            $count = $documents->filter(fn(Attachment $attachment) => $attachment->resolvedCategory() === $label)->count();
+            $count = $documents->filter(fn (Attachment $attachment) => $attachment->resolvedCategory() === $label)->count();
 
             return [
                 'label' => $label,
@@ -266,12 +262,12 @@ class DocumentAttachments extends Page
         ];
 
         return collect($groups)->map(function (array $config, string $label) use ($documents): array {
-            $matching = $documents->filter(fn(Attachment $attachment) => in_array($attachment->extensionLabel(), $config['extensions'], true));
+            $matching = $documents->filter(fn (Attachment $attachment) => in_array($attachment->extensionLabel(), $config['extensions'], true));
 
             return [
                 'label' => $label,
                 'count' => $matching->count(),
-                'size' => $this->formatBytes((int) $matching->sum(fn(Attachment $attachment) => (int) ($attachment->size_bytes ?? 0))),
+                'size' => $this->formatBytes((int) $matching->sum(fn (Attachment $attachment) => (int) ($attachment->size_bytes ?? 0))),
                 'tone' => $config['tone'],
             ];
         })->values()->all();
@@ -299,23 +295,6 @@ class DocumentAttachments extends Page
         };
     }
 
-    protected function resolveMimeType(string $extension, string $fallback): string
-    {
-        return match (Str::lower($extension)) {
-            'pdf' => 'application/pdf',
-            'doc' => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls' => 'application/vnd.ms-excel',
-            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'csv' => 'text/csv',
-            'txt' => 'text/plain',
-            'zip' => 'application/zip',
-            'jpg', 'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            default => $fallback !== '' ? $fallback : 'application/octet-stream',
-        };
-    }
-
     protected function formatBytes(int $bytes): string
     {
         if ($bytes <= 0) {
@@ -323,13 +302,13 @@ class DocumentAttachments extends Page
         }
 
         if ($bytes >= 1073741824) {
-            return number_format($bytes / 1073741824, 1) . ' GB';
+            return number_format($bytes / 1073741824, 1).' GB';
         }
 
         if ($bytes >= 1048576) {
-            return number_format($bytes / 1048576, 1) . ' MB';
+            return number_format($bytes / 1048576, 1).' MB';
         }
 
-        return number_format($bytes / 1024, 0) . ' KB';
+        return number_format($bytes / 1024, 0).' KB';
     }
 }

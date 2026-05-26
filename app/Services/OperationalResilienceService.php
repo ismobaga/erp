@@ -286,6 +286,27 @@ class OperationalResilienceService
         ];
     }
 
+    /**
+     * Return a read-only dashboard snapshot without triggering active monitoring alerts.
+     * Use this for rendering dashboard widgets to avoid writing to activity_logs on page load.
+     */
+    public function dashboardSnapshot(): array
+    {
+        $failedJobs = Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0;
+        $queuedJobs = Schema::hasTable('jobs') ? DB::table('jobs')->count() : 0;
+        $openAlerts = ActivityLog::query()->where('action', 'system_alert_raised')->where('created_at', '>=', now()->subDay())->count();
+        $latestBackup = $this->latestBackupSummary();
+
+        return [
+            'latest_backup_label' => $latestBackup['label'] ?? 'No backup yet',
+            'latest_backup_note' => $latestBackup['path'] ?? 'Run the backup command to create the first archive.',
+            'failed_jobs' => (int) $failedJobs,
+            'queued_jobs' => (int) $queuedJobs,
+            'open_alerts' => (int) $openAlerts,
+            'audit_events_24h' => (int) ActivityLog::query()->where('created_at', '>=', now()->subDay())->count(),
+        ];
+    }
+
     public function verifyLatestBackup(?int $userId = null): array
     {
         $disk = (string) config('erp.resilience.backups.disk', 'local');

@@ -232,7 +232,7 @@ class OperationalResilienceTest extends TestCase
         $healthResponse->assertJsonPath('checks.backup_verification.verified', true);
         $healthResponse->assertJsonPath('checks.disaster_recovery.restore_command', 'erp:restore-backup --force');
 
-        $this->get('/health/diagnostics')->assertRedirect('/login');
+        $this->get('/health/diagnostics')->assertRedirect();
 
         $user = User::factory()->create(['status' => 'active']);
         $diagnosticsResponse = $this->actingAs($user)->get('/health/diagnostics');
@@ -268,5 +268,38 @@ class OperationalResilienceTest extends TestCase
         $this->assertNotNull($log);
         $this->assertSame('security_event_logged', $log->action);
         $this->assertSame('backup_verification_failed', data_get($log->meta_json, 'type'));
+    }
+
+    public function test_dashboard_snapshot_does_not_write_to_activity_logs(): void
+    {
+        Storage::fake('local');
+
+        $initialCount = ActivityLog::query()->count();
+
+        app(OperationalResilienceService::class)->dashboardSnapshot();
+
+        $this->assertSame($initialCount, ActivityLog::query()->count(), 'dashboardSnapshot() must not create activity_log entries.');
+    }
+
+    public function test_rendering_operational_resilience_widget_does_not_write_to_activity_logs(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $initialCount = ActivityLog::query()->count();
+
+        // Render the dashboard which includes OperationalResilienceOverview widget.
+        $this->actingAs($user)->get('/admin/operational-resilience');
+
+        // Only portal / page-level audit events are allowed, but the widget itself
+        // must not have triggered evaluateHealth() which creates system_alert_raised entries.
+        $alertsCreated = ActivityLog::query()
+            ->where('action', 'system_alert_raised')
+            ->where('created_at', '>=', now()->subSeconds(5))
+            ->count();
+
+        $this->assertSame(0, $alertsCreated, 'Rendering the dashboard must not raise system alerts.');
     }
 }

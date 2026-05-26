@@ -35,7 +35,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         try {
-            if (!$this->hasCoreTables()) {
+            if (! $this->hasCoreTables()) {
                 return $this->placeholderStats();
             }
 
@@ -53,7 +53,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                 Stat::make(__('erp.dashboard.open_invoices'), number_format($openInvoices))
                     ->description(__('erp.dashboard.open_invoices_note'))
                     ->color('warning')
-                    ->chart($this->countTrend('invoices', 'issue_date', fn($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
+                    ->chart($this->countTrend('invoices', 'issue_date', fn ($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
                 Stat::make(__('erp.dashboard.collected_revenue'), $this->money($settledRevenue))
                     ->description(__('erp.dashboard.collected_revenue_note'))
                     ->color('success')
@@ -61,9 +61,15 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                 Stat::make(__('erp.dashboard.active_projects'), number_format($activeProjects))
                     ->description(__('erp.dashboard.active_projects_note'))
                     ->color('info')
-                    ->chart($this->countTrend('projects', 'created_at', fn($query) => $query->whereIn('status', ['active', 'in_progress']))),
+                    ->chart($this->countTrend('projects', 'created_at', fn ($query) => $query->whereIn('status', ['active', 'in_progress']))),
             ];
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            report($e);
+
+            if (app()->environment(['local', 'testing'])) {
+                throw $e;
+            }
+
             return $this->placeholderStats();
         }
     }
@@ -71,7 +77,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
     protected function hasCoreTables(): bool
     {
         foreach (['clients', 'invoices', 'payments', 'projects'] as $table) {
-            if (!Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 return false;
             }
         }
@@ -81,20 +87,26 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected function money(float $amount): string
     {
-        return 'FCFA ' . number_format($amount, 0, '.', ' ');
+        return 'FCFA '.number_format($amount, 0, '.', ' ');
     }
 
     protected function countTrend(string $table, string $dateColumn, ?callable $scope = null): array
     {
-        if (!Schema::hasTable($table)) {
+        if (! Schema::hasTable($table)) {
             return array_fill(0, 7, 0);
         }
 
+        $company = currentCompany();
+
         return collect(range(6, 0))
-            ->map(function (int $offset) use ($table, $dateColumn, $scope): int {
+            ->map(function (int $offset) use ($table, $dateColumn, $scope, $company): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
                 $query = DB::table($table)->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()]);
+
+                if ($company && Schema::hasColumn($table, 'company_id')) {
+                    $query->where('company_id', $company->id);
+                }
 
                 if ($scope) {
                     $scope($query);
@@ -107,18 +119,25 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected function sumTrend(string $table, string $dateColumn, string $amountColumn): array
     {
-        if (!Schema::hasTable($table)) {
+        if (! Schema::hasTable($table)) {
             return array_fill(0, 7, 0);
         }
 
+        $company = currentCompany();
+
         return collect(range(6, 0))
-            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn): int {
+            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $company): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
 
-                return (int) round(((float) DB::table($table)
-                    ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()])
-                    ->sum($amountColumn)) / 1000);
+                $query = DB::table($table)
+                    ->whereBetween($dateColumn, [$start->toDateString(), $end->toDateString()]);
+
+                if ($company && Schema::hasColumn($table, 'company_id')) {
+                    $query->where('company_id', $company->id);
+                }
+
+                return (int) round(((float) $query->sum($amountColumn)) / 1000);
             })
             ->all();
     }

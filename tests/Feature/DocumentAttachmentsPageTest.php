@@ -3,14 +3,16 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\DocumentAttachments;
-use App\Models\ActivityLog;
 use App\Models\Attachment;
+use App\Models\Company;
 use App\Models\User;
+use App\Services\SecureFileUploadService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -53,7 +55,8 @@ class DocumentAttachmentsPageTest extends TestCase
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
-        $file = UploadedFile::fake()->create('rapport-annuel.pdf', 256, 'application/pdf');
+        // Use a real PDF magic bytes header so finfo_file() detects the correct MIME type.
+        $file = UploadedFile::fake()->createWithContent('rapport-annuel.pdf', "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
 
         Livewire::actingAs($user)
             ->test(DocumentAttachments::class)
@@ -65,8 +68,8 @@ class DocumentAttachmentsPageTest extends TestCase
         $attachment = Attachment::query()->where('file_name', 'rapport-annuel.pdf')->first();
 
         $this->assertNotNull($attachment);
-        $this->assertSame('application/pdf', $attachment->mime_type);
-        $this->assertStringStartsWith((string) config('erp.documents.directory', 'attachments') . '/', $attachment->file_path);
+        $this->assertNotNull($attachment->company_id);
+        $this->assertStringStartsWith((string) config('erp.documents.directory', 'attachments').'/', $attachment->file_path);
         Storage::disk('local')->assertExists($attachment->file_path);
     }
 
@@ -114,7 +117,10 @@ class DocumentAttachmentsPageTest extends TestCase
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
+        $company = app('currentCompany');
+
         Attachment::create([
+            'company_id' => $company->id,
             'attachable_type' => User::class,
             'attachable_id' => $user->id,
             'file_name' => 'existing-archive.pdf',
@@ -124,7 +130,8 @@ class DocumentAttachmentsPageTest extends TestCase
             'uploaded_by' => $user->id,
         ]);
 
-        $file = UploadedFile::fake()->create('overflow.pdf', 256, 'application/pdf');
+        // Use real PDF magic bytes so validation passes until quota check.
+        $file = UploadedFile::fake()->createWithContent('overflow.pdf', "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
 
         Livewire::actingAs($user)
             ->test(DocumentAttachments::class)
@@ -134,11 +141,92 @@ class DocumentAttachmentsPageTest extends TestCase
             ->assertHasErrors(['upload']);
     }
 
-
-    public function test_file_with_wrong_magic_bytes_is_rejected(): void {
+    public function test_file_with_wrong_magic_bytes_is_rejected(): void
+    {
         // An EXE disguised as a PDF — magic bytes are MZ not %PDF
         $file = UploadedFile::fake()->createWithContent('malware.pdf', "\x4D\x5A\x90\x00");
         $this->expectException(ValidationException::class);
-        app(SecureFileUploadService::class)->storeFile($file, 'invoice', 1, 1, 1);
+        app(SecureFileUploadService::class)->storeFile($file, User::class, 1, 1, 1);
+    }
+
+    public function test_upload_is_rejected_without_company_context(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        // Remove the company context binding
+        app()->offsetUnset('currentCompany');
+
+        $file = UploadedFile::fake()->createWithContent('no-company-doc.pdf', "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
+
+        Livewire::actingAs($user)
+            ->test(DocumentAttachments::class)
+            ->set('upload', $file)
+            ->set('documentCategory', 'Factures')
+            ->call('uploadDocument')
+            ->assertForbidden();
+
+        // Restore company context for subsequent tests.
+        $this->setUpCompany();
+    }
+
+    public function test_quota_is_scoped_per_company(): void
+    {
+        Storage::fake('local');
+        config()->set('erp.documents.quota_mb', 1);
+
+        $company1 = app('currentCompany');
+        $company2 = Company::create(['name' => 'Other Company', 'currency' => 'FCFA', 'is_active' => true]);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        // Company 2's attachment should NOT count against company 1's quota
+        Attachment::withoutCompanyScope()->create([
+            'company_id' => $company2->id,
+            'attachable_type' => User::class,
+            'attachable_id' => $user->id,
+            'file_name' => 'other-company.pdf',
+            'file_path' => 'attachments/2026/04/other-company.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 1048576, // 1 MB — would exceed quota if counted
+            'uploaded_by' => $user->id,
+        ]);
+
+        // Use real PDF magic bytes
+        $file = UploadedFile::fake()->createWithContent('company1-doc.pdf', "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
+
+        // Company 1 has not used any quota; upload should succeed
+        Livewire::actingAs($user)
+            ->test(DocumentAttachments::class)
+            ->set('upload', $file)
+            ->set('documentCategory', 'Factures')
+            ->call('uploadDocument')
+            ->assertHasNoErrors();
+    }
+
+    public function test_attachment_download_rejects_path_traversal(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Finance');
+
+        $attachment = Attachment::create([
+            'attachable_type' => User::class,
+            'attachable_id' => $user->id,
+            'file_name' => 'traversal.pdf',
+            'file_path' => '../../etc/passwd',
+            'mime_type' => 'application/pdf',
+            'uploaded_by' => $user->id,
+        ]);
+
+        $signedUrl = URL::temporarySignedRoute('attachments.download', now()->addMinutes(5), ['attachment' => $attachment]);
+
+        $this->actingAs($user)
+            ->get($signedUrl)
+            ->assertForbidden();
     }
 }

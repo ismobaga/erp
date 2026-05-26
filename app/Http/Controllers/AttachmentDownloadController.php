@@ -30,19 +30,31 @@ class AttachmentDownloadController
         $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
         $normalizedPath = ltrim((string) $attachment->file_path, '/');
 
-        $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
-        $allowedDir = realpath(Storage::disk($disk)->path($directory));
+        $diskDriver = config("filesystems.disks.{$disk}.driver", 'local');
 
-        abort_unless(
-            $realFilePath !== false
-            && $allowedDir !== false
-            && str_starts_with($realFilePath, $allowedDir . DIRECTORY_SEPARATOR),
-            403
-        );
+        if ($diskDriver === 'local') {
+            // For local disks: use realpath() to prevent directory traversal.
+            $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
+            $allowedDir = realpath(Storage::disk($disk)->path($directory));
+
+            abort_unless(
+                $realFilePath !== false
+                && $allowedDir !== false
+                && str_starts_with($realFilePath, $allowedDir.DIRECTORY_SEPARATOR),
+                403
+            );
+        } else {
+            // For non-local disks (S3, MinIO, etc.): validate the path starts with the expected prefix.
+            abort_unless(
+                str_starts_with($normalizedPath, $directory.'/') || $normalizedPath === $directory,
+                403
+            );
+        }
+
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
 
         // ── Audit Trail ────────────────────────────────────────────────
-        app(\App\Services\AuditTrailService::class)->log('document_downloaded', $attachment, [
+        app(AuditTrailService::class)->log('document_downloaded', $attachment, [
             'disk' => $disk,
             'path' => $normalizedPath,
             'mime_type' => $attachment->mime_type,
@@ -62,7 +74,7 @@ class AttachmentDownloadController
         }, basename((string) $attachment->file_name), [
             'Content-Type' => $this->getSafeMimeType($attachment->mime_type),
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition' => 'attachment; filename="' . addslashes(basename((string) $attachment->file_name)) . '"',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachment->file_name)).'"',
             'Cache-Control' => 'private, no-store, max-age=0',
             'Pragma' => 'no-cache',
         ]);
@@ -73,7 +85,7 @@ class AttachmentDownloadController
      */
     private function getSafeMimeType(?string $mimeType): string
     {
-        if (!$mimeType || !is_string($mimeType)) {
+        if (! $mimeType || ! is_string($mimeType)) {
             return 'application/octet-stream';
         }
 

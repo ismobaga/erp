@@ -34,7 +34,7 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         try {
-            if (!Schema::hasTable('financial_periods')) {
+            if (! Schema::hasTable('financial_periods')) {
                 return $this->placeholderStats();
             }
 
@@ -48,21 +48,25 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
                 Stat::make(__('erp.dashboard.open_periods'), number_format($openCount))
                     ->description(__('erp.dashboard.open_periods_note'))
                     ->color('success')
-                    ->chart([1, 1, 2, 2, max(1, $openCount)]),
+                    ->chart(array_fill(0, 5, max(1, $openCount))),
                 Stat::make(__('erp.dashboard.closed_periods'), number_format($closedCount))
                     ->description(__('erp.dashboard.closed_periods_note'))
                     ->color('danger')
-                    ->chart([0, 1, 1, 2, max(1, $closedCount)]),
+                    ->chart(array_fill(0, 5, max(0, $closedCount))),
                 Stat::make(__('erp.dashboard.active_period'), $currentLabel)
                     ->description(__('erp.dashboard.period_status', ['status' => $currentStatus]))
-                    ->color($currentPeriod?->isClosed() ? 'warning' : 'primary')
-                    ->chart([2, 3, 3, 4, 4]),
+                    ->color($currentPeriod?->isClosed() ? 'warning' : 'primary'),
                 Stat::make(__('erp.dashboard.date_reference'), Carbon::now()->format('d/m/Y'))
                     ->description(__('erp.dashboard.accounting_checkpoint'))
-                    ->color('info')
-                    ->chart([1, 2, 2, 3, 3]),
+                    ->color('info'),
             ];
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            report($e);
+
+            if (app()->environment(['local', 'testing'])) {
+                throw $e;
+            }
+
             return $this->placeholderStats();
         }
     }
@@ -72,20 +76,16 @@ class AccountingPeriodsOverview extends StatsOverviewWidget
         return [
             Stat::make(__('erp.dashboard.open_periods'), '0')
                 ->description(__('erp.dashboard.open_periods_note'))
-                ->color('success')
-                ->chart([1, 1, 1, 1, 1]),
+                ->color('success'),
             Stat::make(__('erp.dashboard.closed_periods'), '0')
                 ->description(__('erp.dashboard.closed_periods_note'))
-                ->color('danger')
-                ->chart([0, 0, 0, 0, 0]),
+                ->color('danger'),
             Stat::make(__('erp.dashboard.active_period'), __('erp.dashboard.no_active_period'))
                 ->description(__('erp.dashboard.period_to_configure'))
-                ->color('warning')
-                ->chart([1, 1, 1, 1, 1]),
+                ->color('warning'),
             Stat::make(__('erp.dashboard.date_reference'), Carbon::now()->format('d/m/Y'))
                 ->description(__('erp.dashboard.accounting_checkpoint'))
-                ->color('info')
-                ->chart([1, 2, 2, 3, 3]),
+                ->color('info'),
         ];
     }
 }

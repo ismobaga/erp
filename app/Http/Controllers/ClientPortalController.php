@@ -16,7 +16,9 @@ use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientPortalController extends Controller
 {
@@ -241,6 +243,90 @@ class ClientPortalController extends Controller
 
     // ── Projects ───────────────────────────────────────────────────────────────
 
+    public function downloadDocument(string $token, int $attachment): StreamedResponse
+    {
+        $this->applyPortalLocale();
+        $client = $this->resolveClientByToken($token);
+
+        // Resolve the attachment, ensuring it belongs to the client's company.
+        $attachmentModel = Attachment::withoutCompanyScope()
+            ->whereKey($attachment)
+            ->where('company_id', $client->company_id)
+            ->firstOrFail();
+
+        // Verify ownership: the attachment must be directly linked to the client,
+        // one of the client's projects, or one of the client's invoices.
+        $projectIds = Project::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->pluck('id');
+
+        $invoiceIds = Invoice::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->pluck('id');
+
+        $isClientDoc = $attachmentModel->attachable_type === Client::class
+            && (int) $attachmentModel->attachable_id === $client->id;
+
+        $isProjectDoc = $attachmentModel->attachable_type === Project::class
+            && $projectIds->contains((int) $attachmentModel->attachable_id);
+
+        $isInvoiceDoc = $attachmentModel->attachable_type === Invoice::class
+            && $invoiceIds->contains((int) $attachmentModel->attachable_id);
+
+        abort_unless($isClientDoc || $isProjectDoc || $isInvoiceDoc, 403);
+
+        $disk = (string) config('erp.documents.disk', 'local');
+        $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
+        $normalizedPath = ltrim((string) $attachmentModel->file_path, '/');
+
+        // Path safety check.
+        $diskDriver = config("filesystems.disks.{$disk}.driver", 'local');
+        if ($diskDriver === 'local') {
+            $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
+            $allowedDir = realpath(Storage::disk($disk)->path($directory));
+            abort_unless(
+                $realFilePath !== false
+                && $allowedDir !== false
+                && str_starts_with($realFilePath, $allowedDir.DIRECTORY_SEPARATOR),
+                403
+            );
+        } else {
+            abort_unless(
+                str_starts_with($normalizedPath, $directory.'/') || $normalizedPath === $directory,
+                403
+            );
+        }
+
+        abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
+
+        app(AuditTrailService::class)->log('portal_document_downloaded', $attachmentModel, [
+            'client_id' => $client->id,
+            'disk' => $disk,
+            'path' => $normalizedPath,
+        ]);
+
+        $safeMime = $this->portalSafeMimeType($attachmentModel->mime_type);
+
+        return response()->streamDownload(function () use ($disk, $normalizedPath): void {
+            $stream = Storage::disk($disk)->readStream($normalizedPath);
+
+            if ($stream === false) {
+                return;
+            }
+
+            fpassthru($stream);
+            fclose($stream);
+        }, basename((string) $attachmentModel->file_name), [
+            'Content-Type' => $safeMime,
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachmentModel->file_name)).'"',
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
     public function projects(string $token): Response
     {
         $this->applyPortalLocale();
@@ -462,5 +548,23 @@ class ClientPortalController extends Controller
             ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->firstOrFail();
+    }
+
+    private function portalSafeMimeType(?string $mimeType): string
+    {
+        $allowed = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/csv',
+            'text/plain',
+            'image/jpeg',
+            'image/png',
+            'application/zip',
+        ];
+
+        return ($mimeType && in_array($mimeType, $allowed, true)) ? $mimeType : 'application/octet-stream';
     }
 }
