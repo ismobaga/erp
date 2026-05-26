@@ -21,8 +21,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -70,19 +70,19 @@ class ProjectResource extends Resource
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
-                                    ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
+                                    ->getOptionLabelFromRecordUsing(fn (Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
                                     ->preload(),
                                 Select::make('service_id')
                                     ->label('Service')
                                     ->relationship('service', 'name')
-                                    ->getOptionLabelFromRecordUsing(fn(Service $record): string => $record->name)
+                                    ->getOptionLabelFromRecordUsing(fn (Service $record): string => $record->name)
                                     ->searchable()
                                     ->preload(),
                                 Select::make('assigned_to')
                                     ->label('Responsable')
                                     ->relationship('assignee', 'name')
-                                    ->getOptionLabelFromRecordUsing(fn(User $record): string => $record->name)
+                                    ->getOptionLabelFromRecordUsing(fn (User $record): string => $record->name)
                                     ->searchable()
                                     ->preload(),
                                 Select::make('status')
@@ -130,34 +130,34 @@ class ProjectResource extends Resource
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->recordUrl(fn(Project $record): string => static::getUrl('details', ['record' => $record]))
+            ->recordUrl(fn (Project $record): string => static::getUrl('details', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('erp.common.project'))
-                    ->description(fn(Project $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.resources.project.no_client'))
+                    ->description(fn (Project $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.resources.project.no_client'))
                     ->searchable(['name'])
                     ->wrap(),
                 TextColumn::make('status')
                     ->label(__('erp.common.status'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'completed' => 'success',
                         'in_progress' => 'info',
                         'on_hold' => 'warning',
                         'cancelled' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => __('erp.resources.project.statuses.' . $state)),
+                    ->formatStateUsing(fn (string $state): string => __('erp.resources.project.statuses.'.$state)),
                 TextColumn::make('approval_status')
                     ->label(__('erp.common.validation'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'approved' => 'success',
                         'review' => 'warning',
                         'rejected' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => __('erp.resources.project.approval_statuses.' . $state)),
+                    ->formatStateUsing(fn (string $state): string => __('erp.resources.project.approval_statuses.'.$state)),
                 TextColumn::make('assignee.name')
                     ->label('Responsable')
                     ->placeholder(__('erp.common.not_assigned')),
@@ -183,11 +183,11 @@ class ProjectResource extends Resource
                     ->label(__('erp.actions.details'))
                     ->icon(Heroicon::OutlinedEye)
                     ->color('gray')
-                    ->url(fn(Project $record): string => static::getUrl('details', ['record' => $record])),
+                    ->url(fn (Project $record): string => static::getUrl('details', ['record' => $record])),
                 Action::make('approve')
                     ->label(__('erp.actions.approve'))
                     ->color('success')
-                    ->visible(fn(Project $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('projects.update') ?? false))
+                    ->visible(fn (Project $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         $record->approve(auth()->user(), 'Projet approuvé pour lancement.');
 
@@ -199,7 +199,7 @@ class ProjectResource extends Resource
                 Action::make('start')
                     ->label(__('erp.actions.start'))
                     ->color('info')
-                    ->visible(fn(Project $record): bool => in_array($record->status, ['planned', 'on_hold'], true) && $record->approval_status !== 'rejected' && (auth()->user()?->can('projects.update') ?? false))
+                    ->visible(fn (Project $record): bool => in_array($record->status, ['planned', 'on_hold'], true) && $record->approval_status !== 'rejected' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         if ($record->approval_status === 'pending') {
                             $record->approve(auth()->user(), 'Validation automatique au démarrage.');
@@ -215,7 +215,7 @@ class ProjectResource extends Resource
                 Action::make('complete')
                     ->label(__('erp.actions.complete'))
                     ->color('primary')
-                    ->visible(fn(Project $record): bool => $record->status !== 'completed' && (auth()->user()?->can('projects.update') ?? false))
+                    ->visible(fn (Project $record): bool => $record->status !== 'completed' && (auth()->user()?->can('projects.update') ?? false))
                     ->action(function (Project $record): void {
                         $record->markCompleted();
 

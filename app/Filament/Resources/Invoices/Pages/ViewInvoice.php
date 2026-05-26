@@ -24,6 +24,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\TextSize;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Throwable;
 
 class ViewInvoice extends ViewRecord
 {
@@ -44,13 +45,13 @@ class ViewInvoice extends ViewRecord
                 ->label('Envoyer par email')
                 ->icon(Heroicon::OutlinedEnvelope)
                 ->color('info')
-                ->visible(fn(): bool => auth()->user()?->can('invoices.update') ?? false)
+                ->visible(fn (): bool => auth()->user()?->can('invoices.update') ?? false)
                 ->action(function (): void {
                     /** @var Invoice $record */
                     $record = $this->getRecord();
                     $client = $record->client;
 
-                    if (!$client || blank($client->email)) {
+                    if (! $client || blank($client->email)) {
                         Notification::make()
                             ->title('Aucun e-mail client')
                             ->body('Ce client n\'a pas d\'adresse e-mail enregistrée.')
@@ -80,7 +81,7 @@ class ViewInvoice extends ViewRecord
 
                     Notification::make()
                         ->title('Facture envoyée')
-                        ->body('La facture ' . $record->invoice_number . ' a été envoyée à ' . $client->email . '.')
+                        ->body('La facture '.$record->invoice_number.' a été envoyée à '.$client->email.'.')
                         ->success()
                         ->send();
                 }),
@@ -89,7 +90,7 @@ class ViewInvoice extends ViewRecord
                 ->icon(Heroicon::OutlinedDevicePhoneMobile)
                 ->color('success')
                 ->visible(
-                    fn(): bool => in_array($this->getRecord()->status, ['sent', 'overdue', 'partially_paid'], true)
+                    fn (): bool => in_array($this->getRecord()->status, ['sent', 'overdue', 'partially_paid'], true)
                     && (auth()->user()?->can('payments.create') ?? false)
                 )
                 ->form([
@@ -111,7 +112,7 @@ class ViewInvoice extends ViewRecord
                         ->label('Montant reçu (FCFA)')
                         ->numeric()
                         ->minValue(0.01)
-                        ->default(fn(): float => (float) $this->getRecord()->balance_due)
+                        ->default(fn (): float => (float) $this->getRecord()->balance_due)
                         ->required(),
                 ])
                 ->modalHeading('Marquer payé via Mobile Money')
@@ -134,7 +135,7 @@ class ViewInvoice extends ViewRecord
 
                     Notification::make()
                         ->title('Paiement enregistré')
-                        ->body('Paiement de FCFA ' . number_format((float) $data['amount'], 0, '.', ' ') . ' via ' . $data['operator'] . ' enregistré.')
+                        ->body('Paiement de FCFA '.number_format((float) $data['amount'], 0, '.', ' ').' via '.$data['operator'].' enregistré.')
                         ->success()
                         ->send();
 
@@ -144,11 +145,23 @@ class ViewInvoice extends ViewRecord
                 ->label('Envoyer via WhatsApp')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('success')
-                ->visible(fn (): bool => filled($this->getRecord()->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
+                ->visible(fn (): bool => filled($this->getRecord()->client?->phone) && (auth()->user()?->can('invoices.update') ?? false))
                 ->requiresConfirmation()
                 ->modalHeading('Envoyer la facture via WhatsApp')
                 ->modalDescription('La facture sera envoyée en PDF via WhatsApp au numéro du client.')
-                ->action(fn (Invoice $record, SendInvoiceWhatsappAction $action) => $action->execute($record)),
+                ->action(function (Invoice $record, SendInvoiceWhatsappAction $action): void {
+                    try {
+                        $action->execute($record);
+                    } catch (Throwable $exception) {
+                        report($exception);
+
+                        Notification::make()
+                            ->title('Envoi WhatsApp échoué')
+                            ->body('Vérifiez la configuration WhatsApp puis réessayez.')
+                            ->danger()
+                            ->send();
+                    }
+                }),
             Action::make('previewPdf')
                 ->label('Prévisualiser PDF')
                 ->icon(Heroicon::OutlinedEye)
@@ -159,7 +172,7 @@ class ViewInvoice extends ViewRecord
                 ->label('Télécharger PDF')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
-                ->url(fn(): string => route('invoices.pdf', ['invoice' => $this->getRecord(), 'download' => 1])),
+                ->url(fn (): string => route('invoices.pdf', ['invoice' => $this->getRecord(), 'download' => 1])),
             EditAction::make()->label('Modifier'),
             DeleteAction::make(),
         ];
@@ -182,7 +195,7 @@ class ViewInvoice extends ViewRecord
                                 ->copyable(),
                             TextEntry::make('client.company_name')
                                 ->label('Client')
-                                ->state(fn(Invoice $record): string => $record->client?->company_name
+                                ->state(fn (Invoice $record): string => $record->client?->company_name
                                     ?: $record->client?->contact_name
                                     ?: '—'),
                             TextEntry::make('issue_date')
@@ -207,21 +220,21 @@ class ViewInvoice extends ViewRecord
                             TextEntry::make('status')
                                 ->label('Statut')
                                 ->badge()
-                                ->color(fn(string $state): string => match ($state) {
+                                ->color(fn (string $state): string => match ($state) {
                                     'paid' => 'success',
                                     'partially_paid' => 'info',
                                     'overdue' => 'danger',
                                     'cancelled', 'draft' => 'gray',
                                     default => 'warning',
                                 })
-                                ->formatStateUsing(fn(string $state): string => __('erp.resources.invoice.statuses.' . $state)),
+                                ->formatStateUsing(fn (string $state): string => __('erp.resources.invoice.statuses.'.$state)),
                             TextEntry::make('paid_total')
                                 ->label('Déjà payé')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state)),
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state)),
                             TextEntry::make('balance_due')
                                 ->label('Solde restant')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state))
-                                ->color(fn($state): string => (float) $state > 0 ? 'danger' : 'success'),
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state))
+                                ->color(fn ($state): string => (float) $state > 0 ? 'danger' : 'success'),
                         ]),
 
                     // ── Financial summary ─────────────────────────────────────
@@ -231,16 +244,16 @@ class ViewInvoice extends ViewRecord
                         ->schema([
                             TextEntry::make('subtotal')
                                 ->label('Sous-total')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state)),
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state)),
                             TextEntry::make('discount_total')
                                 ->label('Remise')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state)),
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state)),
                             TextEntry::make('tax_total')
                                 ->label('Taxes')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state)),
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state)),
                             TextEntry::make('total')
                                 ->label('Total à recevoir')
-                                ->formatStateUsing(fn($state): string => InvoiceResource::formatMoney((float) $state))
+                                ->formatStateUsing(fn ($state): string => InvoiceResource::formatMoney((float) $state))
                                 ->size(TextSize::Large),
                         ]),
 

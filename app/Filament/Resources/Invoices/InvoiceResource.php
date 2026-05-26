@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invoices;
 
+use App\Actions\ApplyPaymentAction;
 use App\Actions\SendInvoiceReminderAction;
 use App\Actions\SendInvoiceWhatsappAction;
 use App\Actions\SendInvoiceWhatsappReminderAction;
@@ -11,14 +12,13 @@ use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
+use App\Filament\Resources\Payments\PaymentResource as PaymentsPaymentResource;
 use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\FinancialPeriod;
 use App\Models\Invoice;
-use App\Actions\ApplyPaymentAction;
-use App\Models\Quote;
-use App\Filament\Resources\Payments\PaymentResource as PaymentsPaymentResource;
 use App\Models\Payment;
+use App\Models\Quote;
 use App\Models\Service;
 use App\Services\InvoiceNumberService;
 use BackedEnum;
@@ -47,6 +47,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Throwable;
 
 class InvoiceResource extends Resource
 {
@@ -336,23 +337,33 @@ class InvoiceResource extends Resource
                     ->modalHeading('Enregistrer le paiement complet')
                     ->modalDescription('Un paiement en espèces sera créé pour solder cette facture.')
                     ->action(function (Invoice $record, ApplyPaymentAction $action): void {
-                        $payment = Payment::make([
-                            'invoice_id' => $record->getKey(),
-                            'client_id' => $record->client_id,
-                            'payment_date' => now()->toDateString(),
-                            'payment_method' => 'cash',
-                            'reference' => PaymentsPaymentResource::generatePaymentReference(),
-                            'amount' => (float) $record->balance_due,
-                            'recorded_by' => auth()->id(),
-                        ]);
+                        try {
+                            $payment = Payment::make([
+                                'invoice_id' => $record->getKey(),
+                                'client_id' => $record->client_id,
+                                'payment_date' => now()->toDateString(),
+                                'payment_method' => 'cash',
+                                'reference' => PaymentsPaymentResource::generatePaymentReference(),
+                                'amount' => (float) $record->balance_due,
+                                'recorded_by' => auth()->id(),
+                            ]);
 
-                        $action->execute($payment);
+                            $action->execute($payment);
 
-                        Notification::make()
-                            ->title('Paiement enregistré')
-                            ->body('La facture '.$record->invoice_number.' a été mise à jour automatiquement.')
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Paiement enregistré')
+                                ->body('La facture '.$record->invoice_number.' a été mise à jour automatiquement.')
+                                ->success()
+                                ->send();
+                        } catch (Throwable $exception) {
+                            report($exception);
+
+                            Notification::make()
+                                ->title('Paiement non enregistré')
+                                ->body('Vérifiez les informations du paiement puis réessayez.')
+                                ->danger()
+                                ->send();
+                        }
                     }),
                 ViewAction::make(),
                 EditAction::make(),

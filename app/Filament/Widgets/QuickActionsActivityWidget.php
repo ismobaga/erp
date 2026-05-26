@@ -2,6 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Clients\ClientResource;
+use App\Filament\Resources\Expenses\ExpenseResource;
+use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Payments\PaymentResource;
 use App\Models\ActivityLog;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Schema;
@@ -33,10 +37,10 @@ class QuickActionsActivityWidget extends Widget
 
         return [
             'quickActions' => [
-                ['label' => 'Nouveau client', 'url' => route('filament.admin.resources.clients.create')],
-                ['label' => 'Nouvelle facture', 'url' => route('filament.admin.resources.invoices.create')],
-                ['label' => 'Enregistrer paiement', 'url' => route('filament.admin.resources.payments.create')],
-                ['label' => 'Nouvelle dépense', 'url' => route('filament.admin.resources.expenses.create')],
+                ['label' => 'Nouveau client', 'url' => ClientResource::getUrl('create')],
+                ['label' => 'Nouvelle facture', 'url' => InvoiceResource::getUrl('create')],
+                ['label' => 'Enregistrer paiement', 'url' => PaymentResource::getUrl('create')],
+                ['label' => 'Nouvelle dépense', 'url' => ExpenseResource::getUrl('create')],
             ],
             'activities' => $activities,
         ];

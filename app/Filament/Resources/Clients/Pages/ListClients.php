@@ -63,7 +63,7 @@ class ListClients extends ListRecords
                     $client = Client::create([
                         'type' => $data['type'],
                         'company_name' => $data['company_name'],
-                        'contact_name' => $data['contact_name'] ?: $data['company_name'],
+                        'contact_name' => filled($data['contact_name']) ? $data['contact_name'] : $data['company_name'],
                         'phone' => $data['phone'] ?? null,
                         'status' => 'active',
                         'created_by' => auth()->id(),

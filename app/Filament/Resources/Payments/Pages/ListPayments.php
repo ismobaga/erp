@@ -41,7 +41,7 @@ class ListPayments extends ListRecords
             ActionGroup::make([
                 Action::make('batchProcess')
                     ->label('Synchroniser les factures')
-                    ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
+                    ->visible(fn (): bool => auth()->user()?->can('payments.update') ?? false)
                     ->action(function (): void {
                         // Sync invoice financials for every payment that has a linked invoice
                         // but whose invoice status may be stale (e.g., after manual DB edits or imports).
@@ -70,14 +70,14 @@ class ListPayments extends ListRecords
 
                         $notification = Notification::make()
                             ->title($synced > 0
-                                ? $synced . ' facture(s) synchronisée(s) avec succès.'
+                                ? $synced.' facture(s) synchronisée(s) avec succès.'
                                 : 'Aucune facture en attente de synchronisation.');
 
                         ($synced > 0 ? $notification->success() : $notification->info())->send();
                     }),
                 Action::make('smartLink')
                     ->label('Rapprochement automatique')
-                    ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
+                    ->visible(fn (): bool => auth()->user()?->can('payments.update') ?? false)
                     ->action(function (): void {
                         $matched = 0;
 
@@ -91,7 +91,7 @@ class ListPayments extends ListRecords
                             });
 
                         $notification = Notification::make()
-                            ->title($matched > 0 ? $matched . ' paiement(s) rapproché(s).' : 'Aucun paiement non affecté n’était éligible au rapprochement automatique.');
+                            ->title($matched > 0 ? $matched.' paiement(s) rapproché(s).' : 'Aucun paiement non affecté n’était éligible au rapprochement automatique.');
 
                         if ($matched > 0) {
                             $notification->success();
@@ -103,7 +103,7 @@ class ListPayments extends ListRecords
                     }),
                 Action::make('exportLedger')
                     ->label('Exporter le registre')
-                    ->visible(fn(): bool => auth()->user()?->canAny(['payments.view', 'reports.view']) ?? false)
+                    ->visible(fn (): bool => auth()->user()?->canAny(['payments.view', 'reports.view']) ?? false)
                     ->action(function (): void {
                         $userId = auth()->id();
 
