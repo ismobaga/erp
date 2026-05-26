@@ -28,6 +28,8 @@ class ApprovalCenter extends Page
 
     protected static string $permissionScope = 'reports';
 
+    protected static bool $hideInSimpleMode = true;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Administration';

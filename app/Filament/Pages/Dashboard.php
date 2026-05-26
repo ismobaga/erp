@@ -51,6 +51,13 @@ class Dashboard extends BaseDashboard
             ['class' => LedgerOverview::class, 'module' => 'ledger'],
         ];
 
+        if (ErpEdition::isSimple()) {
+            $widgets = array_values(array_filter(
+                $widgets,
+                fn (array $widget): bool => $widget['class'] !== OperationalResilienceOverview::class
+            ));
+        }
+
         return collect($widgets)
             ->filter(fn (array $widget): bool => ErpEdition::isModuleEnabled($widget['module']))
             ->map(fn (array $widget): string => $widget['class'])

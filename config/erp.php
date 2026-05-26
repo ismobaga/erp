@@ -2,7 +2,7 @@
 
 return [
     'edition' => [
-        'active' => strtolower((string) env('ERP_APP_EDITION', 'full')),
+        'active' => strtolower((string) env('ERP_APP_EDITION', 'simple')),
         'profiles' => [
             'full' => [
                 'enabled_modules' => ['*'],
@@ -10,7 +10,7 @@ return [
             'simple' => [
                 'enabled_modules' => array_values(array_filter(array_map(
                     static fn (string $module): string => trim(strtolower($module)),
-                    explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,quotes,invoices,payments,expenses'))
+                explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,clients,projects,invoices,payments,expenses,reports,settings'))
                 ))),
             ],
         ],

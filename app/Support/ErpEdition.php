@@ -4,6 +4,11 @@ namespace App\Support;
 
 class ErpEdition
 {
+    public static function isSimple(): bool
+    {
+        return self::current() === 'simple';
+    }
+
     public static function current(): string
     {
         return (string) config('erp.edition.active', 'full');

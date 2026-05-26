@@ -32,11 +32,11 @@ class CompanySettingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Administration';
+    protected static string|\UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationLabel = 'Paramètres société';
+    protected static ?string $navigationLabel = 'Paramètres';
 
     protected static ?string $recordTitleAttribute = 'name';
 

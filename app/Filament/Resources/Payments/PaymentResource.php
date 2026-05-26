@@ -48,7 +48,7 @@ class PaymentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
+    protected static string|\UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 4;
 

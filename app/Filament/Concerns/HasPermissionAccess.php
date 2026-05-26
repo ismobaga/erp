@@ -7,9 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 trait HasPermissionAccess
 {
+    protected static function isVisibleInCurrentEdition(): bool
+    {
+        if (! property_exists(static::class, 'hideInSimpleMode') || ! static::$hideInSimpleMode) {
+            return true;
+        }
+
+        return ! ErpEdition::isSimple();
+    }
+
     protected static function canAccessPermission(string $action): bool
     {
-        if (!static::isEditionFeatureEnabled()) {
+        if (! static::isVisibleInCurrentEdition() || ! static::isEditionFeatureEnabled()) {
             return false;
         }
 
@@ -41,41 +50,41 @@ trait HasPermissionAccess
 
     public static function canViewAny(): bool
     {
-        return static::canAccessPermission('view');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('view');
     }
 
     public static function canView(Model $record): bool
     {
-        return static::canAccessPermission('view');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('view');
     }
 
     public static function canCreate(): bool
     {
-        return static::canAccessPermission('create');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('create');
     }
 
     public static function canEdit(Model $record): bool
     {
-        return static::canAccessPermission('update');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('update');
     }
 
     public static function canDelete(Model $record): bool
     {
-        return static::canAccessPermission('delete');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('delete');
     }
 
     public static function canDeleteAny(): bool
     {
-        return static::canAccessPermission('delete');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('delete');
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && static::canViewAny();
+        return auth()->check() && static::isVisibleInCurrentEdition() && static::canViewAny();
     }
 
     public static function canAccess(): bool
     {
-        return static::canAccessPermission('view');
+        return static::isVisibleInCurrentEdition() && static::canAccessPermission('view');
     }
 }
