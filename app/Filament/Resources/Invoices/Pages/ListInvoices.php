@@ -15,7 +15,7 @@ class ListInvoices extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Registre des factures';
+        return 'Factures';
     }
 
     protected function getHeaderWidgets(): array

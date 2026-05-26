@@ -66,20 +66,44 @@ class ExpenseResource extends Resource
                                     ->label('Intitulé')
                                     ->required()
                                     ->columnSpanFull(),
-                                Select::make('category')
-                                    ->label(__('erp.common.category'))
-                                    ->options(trans('erp.resources.expense.categories'))
-                                    ->native(false)
-                                    ->default('operations')
+                                Grid::make(2)
+                                    ->schema([
+                                        Select::make('category')
+                                            ->label(__('erp.common.category'))
+                                            ->options(trans('erp.resources.expense.categories'))
+                                            ->native(false)
+                                            ->default('operations')
+                                            ->required(),
+                                        DatePicker::make('expense_date')
+                                            ->label('Date')
+                                            ->default(now())
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, callable $set): void {
+                                                $set('reference', static::generateExpenseReference($state));
+                                            })
+                                            ->required(),
+                                    ])
+                                    ->columnSpanFull(),
+                                TextInput::make('amount')
+                                    ->label('Montant')
+                                    ->numeric()
+                                    ->prefix('FCFA')
+                                    ->minValue(0.01)
                                     ->required(),
-                                DatePicker::make('expense_date')
-                                    ->label('Date')
-                                    ->default(now())
-                                    ->live()
-                                    ->afterStateUpdated(function ($state, callable $set): void {
-                                        $set('reference', static::generateExpenseReference($state));
-                                    })
-                                    ->required(),
+                                TextInput::make('reference')
+                                    ->label('Référence')
+                                    ->placeholder('EXP-20260424-0001')
+                                    ->default(fn(): string => static::generateExpenseReference())
+                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.'),
+                            ]),
+                        Section::make('Plus de détails (optionnel)')
+                            ->description('Ajoutez les informations avancées seulement si nécessaire.')
+                            ->collapsible()
+                            ->collapsed()
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
+                            ->columnSpan(['lg' => 8])
+                            ->columns(['lg' => 2])
+                            ->schema([
                                 TextInput::make('vendor')
                                     ->label('Fournisseur'),
                                 Select::make('payment_method')
@@ -91,20 +115,9 @@ class ExpenseResource extends Resource
                                         'mobile_money' => 'Mobile money',
                                     ])
                                     ->native(false),
-                                TextInput::make('reference')
-                                    ->label('Référence')
-                                    ->placeholder('EXP-20260424-0001')
-                                    ->default(fn(): string => static::generateExpenseReference())
-                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.'),
-                                TextInput::make('amount')
-                                    ->label('Montant')
-                                    ->numeric()
-                                    ->prefix('FCFA')
-                                    ->minValue(0.01)
-                                    ->required(),
                                 Textarea::make('description')
                                     ->label('Description')
-                                    ->rows(5)
+                                    ->rows(4)
                                     ->columnSpanFull(),
                             ]),
                         Section::make('Validation')
@@ -123,7 +136,7 @@ class ExpenseResource extends Resource
                                     ->content(__('erp.resources.expense.approval_hint')),
                                 Textarea::make('approval_notes')
                                     ->label('Commentaires de validation')
-                                    ->rows(5),
+                                    ->rows(4),
                             ]),
                     ]),
             ])

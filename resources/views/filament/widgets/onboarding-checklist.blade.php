@@ -13,7 +13,7 @@
                     🚀 Démarrage rapide
                 </h2>
                 <p style="font-size: 13px; color: #57657a;">
-                    {{ $completedCount }}/{{ $totalCount }} étapes complétées — vous y êtes presque !
+                    {{ $completedCount }}/{{ $totalCount }} étapes complétées — client → facture → paiement.
                 </p>
             </div>
             <div style="background: #dce9ff; border-radius: 999px; padding: 4px 4px; width: 160px; height: 10px; overflow: hidden;">

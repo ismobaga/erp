@@ -13,7 +13,7 @@ class ListExpenses extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Dépenses & remboursements';
+        return 'Dépenses';
     }
 
     protected function getHeaderActions(): array

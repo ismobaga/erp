@@ -15,7 +15,10 @@ use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\FinancialPeriod;
 use App\Models\Invoice;
+use App\Actions\ApplyPaymentAction;
 use App\Models\Quote;
+use App\Filament\Resources\Payments\PaymentResource as PaymentsPaymentResource;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Services\InvoiceNumberService;
 use BackedEnum;
@@ -31,6 +34,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -85,8 +89,22 @@ class InvoiceResource extends Resource
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
                                     ->getOptionLabelFromRecordUsing(fn (Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))
-                                    ->searchable(['company_name', 'contact_name', 'email'])
+                                    ->searchable(['company_name', 'contact_name', 'email', 'phone'])
+                                    ->helperText('Recherchez par nom, contact, e-mail ou téléphone.')
                                     ->required(),
+                                Select::make('recent_client_id')
+                                    ->label('Clients récents')
+                                    ->options(fn (): array => Client::query()
+                                        ->orderByDesc('updated_at')
+                                        ->limit(6)
+                                        ->get()
+                                        ->mapWithKeys(fn (Client $record): array => [$record->getKey() => ($record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))])
+                                        ->all())
+                                    ->searchable()
+                                    ->native(false)
+                                    ->dehydrated(false)
+                                    ->live()
+                                    ->afterStateUpdated(fn ($state, Set $set): mixed => $set('client_id', $state)),
                                 Select::make('quote_id')
                                     ->label('Depuis un devis')
                                     ->relationship('quote', 'quote_number')
@@ -286,6 +304,12 @@ class InvoiceResource extends Resource
                     ->label(__('erp.actions.export_pdf'))
                     ->visible(fn (): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
                     ->url(fn (Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
+                Action::make('previewPdf')
+                    ->label('Prévisualiser PDF')
+                    ->icon('heroicon-o-eye')
+                    ->visible(fn (): bool => auth()->user()?->can('invoices.view') ?? false)
+                    ->url(fn (Invoice $record): string => route('invoices.pdf', ['invoice' => $record]))
+                    ->openUrlInNewTab(),
                 Action::make('sendWhatsapp')
                     ->label('Envoyer via WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-right')
@@ -303,6 +327,33 @@ class InvoiceResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer un rappel de paiement via WhatsApp')
                     ->action(fn (Invoice $record, SendInvoiceWhatsappReminderAction $action) => $action->execute($record)),
+                Action::make('recordPayment')
+                    ->label('Encaisser (1 clic)')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->visible(fn (Invoice $record): bool => (float) $record->balance_due > 0 && in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('payments.create') ?? false))
+                    ->requiresConfirmation()
+                    ->modalHeading('Enregistrer le paiement complet')
+                    ->modalDescription('Un paiement en espèces sera créé pour solder cette facture.')
+                    ->action(function (Invoice $record, ApplyPaymentAction $action): void {
+                        $payment = Payment::make([
+                            'invoice_id' => $record->getKey(),
+                            'client_id' => $record->client_id,
+                            'payment_date' => now()->toDateString(),
+                            'payment_method' => 'cash',
+                            'reference' => PaymentsPaymentResource::generatePaymentReference(),
+                            'amount' => (float) $record->balance_due,
+                            'recorded_by' => auth()->id(),
+                        ]);
+
+                        $action->execute($payment);
+
+                        Notification::make()
+                            ->title('Paiement enregistré')
+                            ->body('La facture '.$record->invoice_number.' a été mise à jour automatiquement.')
+                            ->success()
+                            ->send();
+                    }),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),

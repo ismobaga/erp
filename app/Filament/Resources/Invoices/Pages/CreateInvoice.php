@@ -6,6 +6,7 @@ use App\Filament\Resources\Invoices\InvoiceResource;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateInvoice extends CreateRecord
 {
@@ -42,5 +43,13 @@ class CreateInvoice extends CreateRecord
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()->label('Annuler');
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        /** @var Model $record */
+        $record = $this->getRecord();
+
+        return InvoiceResource::getUrl('view', ['record' => $record]);
     }
 }

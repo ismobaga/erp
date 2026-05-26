@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Pages;
 
 use App\Actions\ApplyPaymentAction;
+use App\Actions\SendInvoiceWhatsappAction;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Mail\InvoiceSentMail;
 use App\Models\DunningLog;
@@ -139,6 +140,21 @@ class ViewInvoice extends ViewRecord
 
                     $this->refreshFormData(['status', 'paid_total', 'balance_due']);
                 }),
+            Action::make('sendWhatsapp')
+                ->label('Envoyer via WhatsApp')
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->color('success')
+                ->visible(fn (): bool => filled($this->getRecord()->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
+                ->requiresConfirmation()
+                ->modalHeading('Envoyer la facture via WhatsApp')
+                ->modalDescription('La facture sera envoyée en PDF via WhatsApp au numéro du client.')
+                ->action(fn (Invoice $record, SendInvoiceWhatsappAction $action) => $action->execute($record)),
+            Action::make('previewPdf')
+                ->label('Prévisualiser PDF')
+                ->icon(Heroicon::OutlinedEye)
+                ->color('gray')
+                ->url(fn (): string => route('invoices.pdf', ['invoice' => $this->getRecord()]))
+                ->openUrlInNewTab(),
             Action::make('exportPdf')
                 ->label('Télécharger PDF')
                 ->icon(Heroicon::OutlinedArrowDownTray)
@@ -183,8 +199,8 @@ class ViewInvoice extends ViewRecord
                         ]),
 
                     // ── Status ────────────────────────────────────────────────
-                    Section::make('État comptable')
-                        ->description('Suivi du recouvrement et niveau d\'urgence.')
+                    Section::make('État de paiement')
+                        ->description('Suivi immédiat des montants reçus et du restant dû.')
                         ->extraAttributes(['class' => 'ledger-summary-card'])
                         ->columnSpan(['lg' => 4])
                         ->schema([

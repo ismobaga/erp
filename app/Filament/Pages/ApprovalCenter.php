@@ -32,7 +32,7 @@ class ApprovalCenter extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Administration';
+    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
 
     protected static ?int $navigationSort = 7;
 
@@ -454,7 +454,7 @@ class ApprovalCenter extends Page
         return [
             ['name' => 'Ingénierie & Design', 'count' => 4],
             ['name' => 'Opérations terrain', 'count' => 6],
-            ['name' => 'Administration', 'count' => 2],
+            ['name' => 'Avancé', 'count' => 2],
         ];
     }
 
