@@ -26,7 +26,7 @@ final class Money
 
     private function __construct(string $amount)
     {
-        $this->amount = bcadd($amount, '0', self::SCALE);
+        $this->amount = \bcadd($amount, '0', self::SCALE);
     }
 
     /**
@@ -48,12 +48,12 @@ final class Money
 
     public function add(self $other): self
     {
-        return new self(bcadd($this->amount, $other->amount, self::SCALE));
+        return new self(\bcadd($this->amount, $other->amount, self::SCALE));
     }
 
     public function subtract(self $other): self
     {
-        return new self(bcsub($this->amount, $other->amount, self::SCALE));
+        return new self(\bcsub($this->amount, $other->amount, self::SCALE));
     }
 
     /**
@@ -63,7 +63,7 @@ final class Money
      */
     public function multiply(string|int|float $multiplier): self
     {
-        return new self(bcmul($this->amount, (string) $multiplier, self::SCALE));
+        return new self(\bcmul($this->amount, (string) $multiplier, self::SCALE));
     }
 
     /**
@@ -72,11 +72,11 @@ final class Money
      */
     public function divide(string|int|float $divisor): self
     {
-        if (bccomp((string) $divisor, '0', self::SCALE) === 0) {
+        if (\bccomp((string) $divisor, '0', self::SCALE) === 0) {
             throw new \DivisionByZeroError('Division by zero in Money::divide().');
         }
 
-        return new self(bcdiv($this->amount, (string) $divisor, self::SCALE));
+        return new self(\bcdiv($this->amount, (string) $divisor, self::SCALE));
     }
 
     /**
@@ -84,22 +84,22 @@ final class Money
      */
     public function max(self $other): self
     {
-        return bccomp($this->amount, $other->amount, self::SCALE) >= 0 ? $this : $other;
+        return \bccomp($this->amount, $other->amount, self::SCALE) >= 0 ? $this : $other;
     }
 
     public function isGreaterThan(self $other): bool
     {
-        return bccomp($this->amount, $other->amount, self::SCALE) > 0;
+        return \bccomp($this->amount, $other->amount, self::SCALE) > 0;
     }
 
     public function isGreaterThanOrEqual(self $other): bool
     {
-        return bccomp($this->amount, $other->amount, self::SCALE) >= 0;
+        return \bccomp($this->amount, $other->amount, self::SCALE) >= 0;
     }
 
     public function isZero(): bool
     {
-        return bccomp($this->amount, '0', self::SCALE) === 0;
+        return \bccomp($this->amount, '0', self::SCALE) === 0;
     }
 
     /** Return the raw BCMath string (e.g. "1234.56"). */
