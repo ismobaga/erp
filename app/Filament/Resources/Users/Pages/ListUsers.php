@@ -9,6 +9,8 @@ use App\Mail\StaffInviteMail;
 use App\Models\User;
 use App\Services\AuditTrailService;
 use App\Services\ReportExportService;
+use App\Services\Whatsapp\WhatsappSendService;
+use App\Support\PhoneFormatter;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
@@ -61,6 +63,7 @@ class ListUsers extends ListRecords
                 ->schema([
                     TextInput::make('name')->label('Nom complet')->required(),
                     TextInput::make('email')->label('Adresse e-mail')->email()->required(),
+                    TextInput::make('phone')->label('Téléphone')->tel()->required(),
                     Select::make('role')->options([
                         'financial_auditor' => 'Auditeur financier',
                         'ledger_controller' => 'Contrôleur comptable',
@@ -74,11 +77,38 @@ class ListUsers extends ListRecords
                         'global_treasury' => 'Trésorerie globale',
                     ])->required()->native(false),
                 ])
-                ->action(function (array $data) use ($roleMap, $roleLabels): void {
+                ->action(function (array $data, WhatsappSendService $whatsappSendService) use ($roleMap, $roleLabels): void {
                     if (User::query()->where('email', $data['email'])->exists()) {
                         Notification::make()
                             ->title('Adresse e-mail déjà utilisée.')
                             ->body('Un compte avec cette adresse existe déjà dans le système.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $phone = PhoneFormatter::normalize((string) $data['phone']);
+
+                    if ($phone === '') {
+                        Notification::make()
+                            ->title('Numéro de téléphone invalide.')
+                            ->body('Veuillez saisir un numéro de téléphone valide pour l’invitation.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $phoneExists = User::query()
+                        ->where('phone', $phone)
+                        ->orWhereRaw("regexp_replace(coalesce(phone, ''), '\\D+', '', 'g') = ?", [$phone])
+                        ->exists();
+
+                    if ($phoneExists) {
+                        Notification::make()
+                            ->title('Numéro de téléphone déjà utilisé.')
+                            ->body('Un compte avec ce numéro existe déjà dans le système.')
                             ->danger()
                             ->send();
 
@@ -91,8 +121,10 @@ class ListUsers extends ListRecords
                     $user = User::create([
                         'name' => $data['name'],
                         'email' => $data['email'],
+                        'phone' => $phone,
                         'password' => Hash::make($temporaryPassword),
                         'status' => 'active',
+                        'email_verified_at' => now(),
                     ]);
 
                     $spatieRoleName = $roleMap[$data['role']] ?? 'Staff';
@@ -104,16 +136,31 @@ class ListUsers extends ListRecords
                         $roleLabels[$data['role']] ?? $spatieRoleName,
                     ));
 
+                    try {
+                        $whatsappSendService->sendTextToPhone($phone, implode("\n", [
+                            'Bonjour ' . $user->name . ',',
+                            'Vous avez été invité(e) à rejoindre ' . config('app.name', 'ERP') . ' en tant que ' . ($roleLabels[$data['role']] ?? $spatieRoleName) . '.',
+                            'Connexion : ' . url('/admin/login'),
+                            'Identifiant : ' . $user->email,
+                            'Téléphone : ' . $phone,
+                            'Mot de passe provisoire : ' . $temporaryPassword,
+                            'Merci de le modifier à votre première connexion.',
+                        ]));
+                    } catch (\Throwable) {
+                        report(new \RuntimeException('WhatsApp invitation delivery failed for user ID ' . $user->getKey()));
+                    }
+
                     app(AuditTrailService::class)->log('staff_invited', $user, [
                         'role' => $data['role'],
                         'spatie_role' => $spatieRoleName,
                         'region' => $data['region'],
+                        'phone' => $phone,
                         'invited_by' => auth()->id(),
                     ]);
 
                     Notification::make()
                         ->title('Invitation envoyée')
-                        ->body($data['name'] . ' a été créé(e) et une invitation a été envoyée à ' . $data['email'] . '.')
+                        ->body($data['name'] . ' a été créé(e) et une invitation a été envoyée à ' . $data['email'] . ' et au ' . $phone . '.')
                         ->success()
                         ->send();
                 }),

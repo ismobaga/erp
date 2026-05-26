@@ -8,6 +8,7 @@ use App\Models\FinancialPeriod;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
+use App\Auth\PhoneOrEmailUserProvider;
 use App\Observers\CreditNoteObserver;
 use App\Observers\ExpenseObserver;
 use App\Observers\InvoiceObserver;
@@ -23,6 +24,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -49,10 +51,14 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        Auth::provider('phone-or-email', function ($app, array $config): PhoneOrEmailUserProvider {
+            return new PhoneOrEmailUserProvider($app['hash'], $config['model']);
+        });
+
         RateLimiter::for('contact', function (Request $request): Limit {
             $email = strtolower((string) $request->input('email', 'guest'));
 
-            return Limit::perHour(3)->by($request->ip().'|'.$email);
+            return Limit::perHour(3)->by($request->ip() . '|' . $email);
         });
 
         RateLimiter::for('pdf', function (Request $request): Limit {
@@ -62,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('portal', function (Request $request): Limit {
             $token = (string) $request->route('token', 'portal');
 
-            return Limit::perHour(60)->by($request->ip().'|'.$token);
+            return Limit::perHour(60)->by($request->ip() . '|' . $token);
         });
 
         RateLimiter::for('api-public', function (Request $request): Limit {
@@ -72,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
                 ?? $request->ip()
             );
 
-            return Limit::perMinute(120)->by('api-public|'.$identifier);
+            return Limit::perMinute(120)->by('api-public|' . $identifier);
         });
 
         RateLimiter::for('api-private', function (Request $request): Limit {
@@ -82,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
                 ?? $request->ip()
             );
 
-            return Limit::perMinute(60)->by('api-private|'.$identifier);
+            return Limit::perMinute(60)->by('api-private|' . $identifier);
         });
 
         RateLimiter::for('api-webhooks', function (Request $request): Limit {
@@ -91,7 +97,7 @@ class AppServiceProvider extends ServiceProvider
                 ?? $request->ip()
             );
 
-            return Limit::perMinute(90)->by('api-webhooks|'.$identifier);
+            return Limit::perMinute(90)->by('api-webhooks|' . $identifier);
         });
 
         Invoice::observe(InvoiceObserver::class);
@@ -106,11 +112,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(CreditNote::class, CreditNotePolicy::class);
 
         // Enforce consistent action semantics across the whole admin panel.
-        CreateAction::configureUsing(fn (CreateAction $action) => $action->defaultColor('primary'));
-        EditAction::configureUsing(fn (EditAction $action) => $action->defaultColor('gray'));
-        ViewAction::configureUsing(fn (ViewAction $action) => $action->defaultColor('gray'));
-        DeleteAction::configureUsing(fn (DeleteAction $action) => $action->defaultColor('danger'));
-        DeleteBulkAction::configureUsing(fn (DeleteBulkAction $action) => $action->defaultColor('danger'));
+        CreateAction::configureUsing(fn(CreateAction $action) => $action->defaultColor('primary'));
+        EditAction::configureUsing(fn(EditAction $action) => $action->defaultColor('gray'));
+        ViewAction::configureUsing(fn(ViewAction $action) => $action->defaultColor('gray'));
+        DeleteAction::configureUsing(fn(DeleteAction $action) => $action->defaultColor('danger'));
+        DeleteBulkAction::configureUsing(fn(DeleteBulkAction $action) => $action->defaultColor('danger'));
 
         Action::configureUsing(function (Action $action): void {
             if ($action->getColor() !== null) {

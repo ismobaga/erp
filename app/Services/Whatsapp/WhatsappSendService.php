@@ -20,7 +20,7 @@ class WhatsappSendService
         $client = $invoice->client;
 
         if ($client === null) {
-            throw new RuntimeException('Invoice #'.$invoice->invoice_number.' has no associated client.');
+            throw new RuntimeException('Invoice #' . $invoice->invoice_number . ' has no associated client.');
         }
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -29,7 +29,7 @@ class WhatsappSendService
         $template = (string) config('whatsapp_templates.invoice', 'Bonjour {client}, veuillez trouver ci-joint votre facture {number}.');
         $caption = str_replace(
             ['{client}', '{number}', '{amount}'],
-            [$clientName, (string) $invoice->invoice_number, number_format((float) $invoice->total, 2, ',', ' ').' FCFA'],
+            [$clientName, (string) $invoice->invoice_number, number_format((float) $invoice->total, 2, ',', ' ') . ' FCFA'],
             $template
         );
 
@@ -79,7 +79,7 @@ class WhatsappSendService
         $client = $quote->client;
 
         if ($client === null) {
-            throw new RuntimeException('Quote #'.$quote->quote_number.' has no associated client.');
+            throw new RuntimeException('Quote #' . $quote->quote_number . ' has no associated client.');
         }
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -138,7 +138,7 @@ class WhatsappSendService
         $client = $invoice->client;
 
         if ($client === null) {
-            throw new RuntimeException('Invoice #'.$invoice->invoice_number.' has no associated client.');
+            throw new RuntimeException('Invoice #' . $invoice->invoice_number . ' has no associated client.');
         }
 
         $phone = PhoneFormatter::toWhatsappJid((string) $client->phone);
@@ -225,6 +225,17 @@ class WhatsappSendService
         return $log;
     }
 
+    public function sendTextToPhone(string $phone, string $message): array
+    {
+        $deviceId = $this->resolveDeviceId(currentCompany());
+
+        return app(GowaClient::class)->sendText(
+            phone: PhoneFormatter::toWhatsappJid($phone),
+            message: $message,
+            deviceId: $deviceId,
+        );
+    }
+
     private function generateInvoicePdf(Invoice $invoice, ?Company $company): string
     {
         $pdfBuilder = app(BusinessDocumentPdf::class);
@@ -248,7 +259,7 @@ class WhatsappSendService
         $pdf = $pdfBuilder->make('invoices.pdf', $viewData);
 
         $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $invoice->invoice_number);
-        $filename = 'whatsapp/'.$safeNumber.'_'.now()->timestamp.'.pdf';
+        $filename = 'whatsapp/' . $safeNumber . '_' . now()->timestamp . '.pdf';
         Storage::put($filename, $pdf->output());
 
         return $filename;
@@ -284,7 +295,7 @@ class WhatsappSendService
         $pdf = $pdfBuilder->make($viewName, $viewData);
 
         $safeNumber = preg_replace('/[^A-Za-z0-9\-]/', '_', (string) $quote->quote_number);
-        $filename = 'whatsapp/'.$safeNumber.'_'.now()->timestamp.'.pdf';
+        $filename = 'whatsapp/' . $safeNumber . '_' . now()->timestamp . '.pdf';
         Storage::put($filename, $pdf->output());
 
         return $filename;

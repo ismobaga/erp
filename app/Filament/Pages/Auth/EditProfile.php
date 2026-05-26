@@ -7,6 +7,7 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Support\PhoneFormatter;
 
 class EditProfile extends BaseEditProfile
 {
@@ -16,22 +17,22 @@ class EditProfile extends BaseEditProfile
 
     // ── Personal info ─────────────────────────────────────────────────────────
 
-    public string $profileName       = '';
-    public string $profileEmail      = '';
-    public string $profilePhone      = '';
+    public string $profileName = '';
+    public string $profileEmail = '';
+    public string $profilePhone = '';
     public string $profileDepartment = '';
 
     // ── Preferences ───────────────────────────────────────────────────────────
 
-    public string $prefLanguage      = 'fr';
-    public string $prefTheme         = 'light';
-    public bool   $prefNotifications = true;
+    public string $prefLanguage = 'fr';
+    public string $prefTheme = 'light';
+    public bool $prefNotifications = true;
 
     // ── Password change ───────────────────────────────────────────────────────
 
-    public string $currentPassword      = '';
-    public string $newPassword          = '';
-    public string $newPasswordConfirm   = '';
+    public string $currentPassword = '';
+    public string $newPassword = '';
+    public string $newPasswordConfirm = '';
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -40,14 +41,14 @@ class EditProfile extends BaseEditProfile
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        $this->profileName       = $user->name       ?? '';
-        $this->profileEmail      = $user->email      ?? '';
-        $this->profilePhone      = $user->phone      ?? '';
+        $this->profileName = $user->name ?? '';
+        $this->profileEmail = $user->email ?? '';
+        $this->profilePhone = $user->phone ?? '';
         $this->profileDepartment = $user->department ?? '';
 
         $prefs = $user->preferences ?? [];
-        $this->prefLanguage      = $prefs['language']      ?? 'fr';
-        $this->prefTheme         = $prefs['theme']         ?? 'light';
+        $this->prefLanguage = $prefs['language'] ?? 'fr';
+        $this->prefTheme = $prefs['theme'] ?? 'light';
         $this->prefNotifications = (bool) ($prefs['notifications'] ?? true);
     }
 
@@ -56,18 +57,18 @@ class EditProfile extends BaseEditProfile
     public function saveProfile(): void
     {
         $data = $this->validate([
-            'profileName'       => ['required', 'string', 'max:255'],
-            'profileEmail'      => ['required', 'email', 'max:255'],
-            'profilePhone'      => ['nullable', 'string', 'max:50'],
+            'profileName' => ['required', 'string', 'max:255'],
+            'profileEmail' => ['required', 'email', 'max:255'],
+            'profilePhone' => ['nullable', 'string', 'max:50'],
             'profileDepartment' => ['nullable', 'string', 'max:255'],
         ]);
 
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $user->update([
-            'name'       => $data['profileName'],
-            'email'      => $data['profileEmail'],
-            'phone'      => $data['profilePhone'],
+            'name' => $data['profileName'],
+            'email' => $data['profileEmail'],
+            'phone' => filled($data['profilePhone']) ? PhoneFormatter::normalize((string) $data['profilePhone']) : null,
             'department' => $data['profileDepartment'],
         ]);
 
@@ -85,8 +86,8 @@ class EditProfile extends BaseEditProfile
         $user = auth()->user();
         $user->update([
             'preferences' => [
-                'language'      => $this->prefLanguage,
-                'theme'         => $this->prefTheme,
+                'language' => $this->prefLanguage,
+                'theme' => $this->prefTheme,
                 'notifications' => $this->prefNotifications,
             ],
         ]);
@@ -102,23 +103,23 @@ class EditProfile extends BaseEditProfile
     public function changePassword(): void
     {
         $this->validate([
-            'currentPassword'    => ['required', 'string'],
-            'newPassword'        => ['required', 'string', 'min:8', 'same:newPasswordConfirm'],
+            'currentPassword' => ['required', 'string'],
+            'newPassword' => ['required', 'string', 'min:8', 'same:newPasswordConfirm'],
             'newPasswordConfirm' => ['required', 'string'],
         ]);
 
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        if (! Hash::check($this->currentPassword, $user->password)) {
+        if (!Hash::check($this->currentPassword, $user->password)) {
             $this->addError('currentPassword', 'Le mot de passe actuel est incorrect.');
             return;
         }
 
         $user->update(['password' => Hash::make($this->newPassword)]);
 
-        $this->currentPassword    = '';
-        $this->newPassword        = '';
+        $this->currentPassword = '';
+        $this->newPassword = '';
         $this->newPasswordConfirm = '';
 
         Notification::make()
@@ -138,41 +139,50 @@ class EditProfile extends BaseEditProfile
             ->orderByDesc('last_activity')
             ->get()
             ->map(function (object $row) use ($currentId): array {
-                $ua       = $row->user_agent ?? '';
+                $ua = $row->user_agent ?? '';
                 $isMobile = preg_match('/Mobile|Android|iPhone|iPad/i', $ua) === 1;
                 $isTablet = preg_match('/iPad|Tablet/i', $ua) === 1;
 
                 $device = $isTablet ? 'tablet' : ($isMobile ? 'mobile' : 'desktop');
 
                 $browser = 'Navigateur';
-                if (str_contains($ua, 'Edge'))         $browser = 'Edge';
-                elseif (str_contains($ua, 'Chrome'))   $browser = 'Chrome';
-                elseif (str_contains($ua, 'Firefox'))  $browser = 'Firefox';
-                elseif (str_contains($ua, 'Safari'))   $browser = 'Safari';
+                if (str_contains($ua, 'Edge'))
+                    $browser = 'Edge';
+                elseif (str_contains($ua, 'Chrome'))
+                    $browser = 'Chrome';
+                elseif (str_contains($ua, 'Firefox'))
+                    $browser = 'Firefox';
+                elseif (str_contains($ua, 'Safari'))
+                    $browser = 'Safari';
 
                 $os = 'OS inconnu';
-                if (str_contains($ua, 'Android'))      $os = 'Android';
-                elseif (str_contains($ua, 'iOS') || str_contains($ua, 'iPhone') || str_contains($ua, 'iPad')) $os = 'iOS';
-                elseif (str_contains($ua, 'Windows'))  $os = 'Windows';
-                elseif (str_contains($ua, 'Mac'))      $os = 'macOS';
-                elseif (str_contains($ua, 'Linux'))    $os = 'Linux';
+                if (str_contains($ua, 'Android'))
+                    $os = 'Android';
+                elseif (str_contains($ua, 'iOS') || str_contains($ua, 'iPhone') || str_contains($ua, 'iPad'))
+                    $os = 'iOS';
+                elseif (str_contains($ua, 'Windows'))
+                    $os = 'Windows';
+                elseif (str_contains($ua, 'Mac'))
+                    $os = 'macOS';
+                elseif (str_contains($ua, 'Linux'))
+                    $os = 'Linux';
 
                 $lastActivity = $row->last_activity;
-                $diff         = now()->timestamp - $lastActivity;
+                $diff = now()->timestamp - $lastActivity;
                 $timeAgo = match (true) {
-                    $diff < 60      => 'À l\'instant',
-                    $diff < 3600    => 'Il y a ' . floor($diff / 60) . ' min',
-                    $diff < 86400   => 'Il y a ' . floor($diff / 3600) . 'h',
-                    default         => 'Il y a ' . floor($diff / 86400) . ' j',
+                    $diff < 60 => 'À l\'instant',
+                    $diff < 3600 => 'Il y a ' . floor($diff / 60) . ' min',
+                    $diff < 86400 => 'Il y a ' . floor($diff / 3600) . 'h',
+                    default => 'Il y a ' . floor($diff / 86400) . ' j',
                 };
 
                 return [
-                    'id'        => $row->id,
-                    'device'    => $device,
-                    'name'      => ucfirst($device) . ' · ' . $browser,
-                    'details'   => $browser . ' · ' . $os . ' · IP: ' . ($row->ip_address ?? '—'),
-                    'time'      => $timeAgo,
-                    'current'   => $row->id === $currentId,
+                    'id' => $row->id,
+                    'device' => $device,
+                    'name' => ucfirst($device) . ' · ' . $browser,
+                    'details' => $browser . ' · ' . $os . ' · IP: ' . ($row->ip_address ?? '—'),
+                    'time' => $timeAgo,
+                    'current' => $row->id === $currentId,
                 ];
             })
             ->toArray();

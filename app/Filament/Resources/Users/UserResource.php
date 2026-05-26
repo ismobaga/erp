@@ -7,6 +7,7 @@ use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
+use App\Support\PhoneFormatter;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -64,7 +65,8 @@ class UserResource extends Resource
                                     ->unique(ignoreRecord: true),
                                 TextInput::make('phone')
                                     ->label('Téléphone')
-                                    ->tel(),
+                                    ->tel()
+                                    ->dehydrateStateUsing(fn($state): ?string => filled($state) ? PhoneFormatter::normalize((string) $state) : null),
                                 Select::make('status')
                                     ->options([
                                         'active' => 'Actif',
