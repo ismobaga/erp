@@ -214,7 +214,10 @@ class DocumentAttachmentsPageTest extends TestCase
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
+        $company = app('currentCompany');
+
         $attachment = Attachment::create([
+            'company_id' => $company->id,
             'attachable_type' => User::class,
             'attachable_id' => $user->id,
             'file_name' => 'traversal.pdf',

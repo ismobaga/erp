@@ -293,8 +293,6 @@ class ClientPortalController extends Controller
             'path' => $normalizedPath,
         ]);
 
-        $safeMime = $this->getSafeMimeType($attachmentModel->mime_type);
-
         return response()->streamDownload(function () use ($disk, $normalizedPath): void {
             $stream = Storage::disk($disk)->readStream($normalizedPath);
 
@@ -305,7 +303,7 @@ class ClientPortalController extends Controller
             fpassthru($stream);
             fclose($stream);
         }, basename((string) $attachmentModel->file_name), [
-            'Content-Type' => $safeMime,
+            'Content-Type' => $this->getSafeMimeType($attachmentModel->mime_type),
             'X-Content-Type-Options' => 'nosniff',
             'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachmentModel->file_name)).'"',
             'Cache-Control' => 'private, no-store, max-age=0',
