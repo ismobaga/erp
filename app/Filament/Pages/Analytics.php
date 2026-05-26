@@ -21,11 +21,11 @@ class Analytics extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
+    protected static string|\UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $navigationLabel = 'Vue globale';
+    protected static ?string $navigationLabel = 'Rapports';
 
     protected static ?string $title = 'Tableau de bord analytique';
 

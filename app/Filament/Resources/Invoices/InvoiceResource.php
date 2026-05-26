@@ -54,7 +54,7 @@ class InvoiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
+    protected static string|\UnitEnum|null $navigationGroup = null;
 
     protected static ?int $navigationSort = 3;
 
@@ -68,8 +68,8 @@ class InvoiceResource extends Resource
             ->components([
                 Grid::make(['lg' => 12])
                     ->schema([
-                        Section::make('Identité de la facture')
-                            ->description('Créez un document de facturation officiel lié au suivi comptable opérationnel.')
+                        Section::make('Facture')
+                            ->description('Créez rapidement une facture client prête à être envoyée.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpan(['lg' => 8])
                             ->columns(['lg' => 2])
@@ -87,7 +87,7 @@ class InvoiceResource extends Resource
                                     ->searchable(['company_name', 'contact_name', 'email'])
                                     ->required(),
                                 Select::make('quote_id')
-                                    ->label('Devis lié')
+                                    ->label('Depuis un devis')
                                     ->relationship('quote', 'quote_number')
                                     ->searchable()
                                     ->native(false)
@@ -105,14 +105,16 @@ class InvoiceResource extends Resource
                                         $set('notes', $quote->notes);
                                     }),
                                 DatePicker::make('issue_date')
+                                    ->label('Date d’émission')
                                     ->default(now())
                                     ->required()
                                     ->live(),
                                 DatePicker::make('due_date')
+                                    ->label('Date d’échéance (optionnelle)')
                                     ->default(now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))),
                             ]),
-                        Section::make('État comptable')
-                            ->description('Suivez le recouvrement et le niveau d’urgence du paiement.')
+                        Section::make('Suivi du paiement')
+                            ->description('Gardez un œil sur le statut et le montant restant à recevoir.')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 4])
                             ->schema([
@@ -126,8 +128,8 @@ class InvoiceResource extends Resource
                                     ->label(__('erp.resources.invoice.collection_summary'))
                                     ->content(__('erp.resources.invoice.collection_brief')),
                             ]),
-                        Section::make('Lignes de facture')
-                            ->description('Définissez les prestations facturables, quantités et prix unitaires.')
+                        Section::make('Articles et services')
+                            ->description('Ajoutez ce que vous facturez avec la quantité et le prix.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpanFull()
                             ->schema([
@@ -179,17 +181,17 @@ class InvoiceResource extends Resource
                                     ->columns(6)
                                     ->columnSpanFull(),
                             ]),
-                        Section::make('Notes de facturation')
-                            ->description('Ajoutez les instructions, remarques d’envoi et consignes de recouvrement.')
+                        Section::make('Notes et conditions')
+                            ->description('Ajoutez des détails utiles pour le client si nécessaire.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
                             ->columnSpan(['lg' => 7])
                             ->schema([
                                 Textarea::make('notes')
-                                    ->label('Notes administratives')
+                                    ->label('Notes (optionnelles)')
                                     ->rows(6)
                                     ->placeholder('Ajoutez les instructions de paiement, le contexte interne ou les références contractuelles...'),
                             ]),
-                        Section::make('Résumé financier')
+                        Section::make('Résumé')
                             ->extraAttributes(['class' => 'ledger-summary-card'])
                             ->columnSpan(['lg' => 5])
                             ->schema([
@@ -200,7 +202,7 @@ class InvoiceResource extends Resource
                                     ->default(0)
                                     ->live(),
                                 TextInput::make('tax_total')
-                                    ->label('Taxes totales')
+                                    ->label('Taxes (optionnelles)')
                                     ->numeric()
                                     ->prefix('FCFA')
                                     ->default(0)

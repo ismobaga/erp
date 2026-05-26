@@ -26,6 +26,8 @@ class NotificationHub extends Page
 
     protected static string $permissionScope = 'reports';
 
+    protected static bool $hideInSimpleMode = true;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Administration';

@@ -17,6 +17,8 @@ class OperationalResilience extends Page
 
     protected static string $permissionScope = 'reports';
 
+    protected static bool $hideInSimpleMode = true;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Administration';
