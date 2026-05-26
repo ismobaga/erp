@@ -5,8 +5,8 @@ namespace App\Filament\Resources\Invoices;
 use App\Actions\SendInvoiceReminderAction;
 use App\Actions\SendInvoiceWhatsappAction;
 use App\Actions\SendInvoiceWhatsappReminderAction;
-use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Concerns\HasBillingFormConcerns;
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
@@ -29,8 +29,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -41,12 +41,13 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class InvoiceResource extends Resource
 {
-    use HasPermissionAccess;
     use HasBillingFormConcerns;
+    use HasPermissionAccess;
 
     protected static string $permissionScope = 'invoices';
 
@@ -83,7 +84,7 @@ class InvoiceResource extends Resource
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
-                                    ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
+                                    ->getOptionLabelFromRecordUsing(fn (Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
                                     ->required(),
                                 Select::make('quote_id')
@@ -151,7 +152,7 @@ class InvoiceResource extends Resource
 
                                                 $service = Service::find($state);
 
-                                                if (!$service) {
+                                                if (! $service) {
                                                     return;
                                                 }
 
@@ -176,7 +177,7 @@ class InvoiceResource extends Resource
                                             ->live(),
                                         Placeholder::make('line_total_preview')
                                             ->label('Total de la ligne')
-                                            ->content(fn(Get $get): string => static::formatMoney(((float) ($get('quantity') ?? 0)) * ((float) ($get('unit_price') ?? 0)))),
+                                            ->content(fn (Get $get): string => static::formatMoney(((float) ($get('quantity') ?? 0)) * ((float) ($get('unit_price') ?? 0)))),
                                     ])
                                     ->columns(6)
                                     ->columnSpanFull(),
@@ -209,10 +210,10 @@ class InvoiceResource extends Resource
                                     ->live(),
                                 Placeholder::make('subtotal_preview')
                                     ->label('Sous-total')
-                                    ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
+                                    ->content(fn (Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
                                 Placeholder::make('grand_total_preview')
                                     ->label('Total à recevoir')
-                                    ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
+                                    ->content(fn (Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
                             ]),
                     ]),
             ])
@@ -223,45 +224,45 @@ class InvoiceResource extends Resource
     {
         return $table
             ->defaultSort('issue_date', 'desc')
-            ->recordUrl(fn(Invoice $record): string => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (Invoice $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('invoice_number')
                     ->label(__('erp.common.invoice'))
-                    ->description(fn(Invoice $record): string => $record->quote?->quote_number
+                    ->description(fn (Invoice $record): string => $record->quote?->quote_number
                         ? __('erp.resources.invoice.linked_quote', ['quote' => $record->quote->quote_number])
                         : __('erp.resources.invoice.standalone_billing'))
                     ->searchable(),
                 TextColumn::make('client_name')
                     ->label(__('erp.common.client'))
-                    ->state(fn(Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
-                    ->description(fn(Invoice $record): string => $record->client?->email ?: __('erp.common.no_billing_email')),
+                    ->state(fn (Invoice $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
+                    ->description(fn (Invoice $record): string => $record->client?->email ?: __('erp.common.no_billing_email')),
                 TextColumn::make('issue_date')
                     ->label(__('erp.resources.invoice.issue_and_due'))
-                    ->state(fn(Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? __('erp.common.not_issued'))
-                    ->description(fn(Invoice $record): string => $record->due_date
+                    ->state(fn (Invoice $record): string => optional($record->issue_date)->format('M d, Y') ?? __('erp.common.not_issued'))
+                    ->description(fn (Invoice $record): string => $record->due_date
                         ? __('erp.resources.invoice.due_prefix', ['date' => optional($record->due_date)->format('M d, Y') ?? __('erp.common.to_define')])
                         : __('erp.resources.invoice.no_due_date'))
                     ->sortable(),
                 TextColumn::make('total')
                     ->label(__('erp.resources.invoice.total_amount'))
-                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->formatStateUsing(fn ($state): string => static::formatMoney((float) $state))
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn(Invoice $record): string => static::lockStatusLabel($record))
+                    ->state(fn (Invoice $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn(Invoice $record): string => static::lockStatusColor($record)),
+                    ->color(fn (Invoice $record): string => static::lockStatusColor($record)),
                 TextColumn::make('balance_due')
                     ->label(__('erp.resources.invoice.balance_due'))
-                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
-                    ->description(fn(Invoice $record): string => (float) $record->paid_total > 0
+                    ->formatStateUsing(fn ($state): string => static::formatMoney((float) $state))
+                    ->description(fn (Invoice $record): string => (float) $record->paid_total > 0
                         ? __('erp.resources.invoice.paid_prefix', ['amount' => static::formatMoney((float) $record->paid_total)])
                         : __('erp.resources.invoice.no_payment_recorded'))
                     ->sortable(),
                 TextColumn::make('status')
                     ->label(__('erp.common.status'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'paid' => 'success',
                         'partially_paid' => 'info',
                         'overdue' => 'danger',
@@ -269,7 +270,7 @@ class InvoiceResource extends Resource
                         'draft' => 'gray',
                         default => 'warning',
                     })
-                    ->formatStateUsing(fn(string $state): string => __('erp.resources.invoice.statuses.' . $state)),
+                    ->formatStateUsing(fn (string $state): string => __('erp.resources.invoice.statuses.'.$state)),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -279,17 +280,17 @@ class InvoiceResource extends Resource
             ->recordActions([
                 Action::make('sendReminder')
                     ->label(__('erp.actions.send_reminder'))
-                    ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
+                    ->visible(fn (Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && (auth()->user()?->can('invoices.update') ?? false))
                     ->action(fn (Invoice $record, SendInvoiceReminderAction $action) => $action->execute($record)),
                 Action::make('exportPdf')
                     ->label(__('erp.actions.export_pdf'))
-                    ->visible(fn(): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
-                    ->url(fn(Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
+                    ->visible(fn (): bool => auth()->user()?->canAny(['invoices.view', 'reports.view']) ?? false)
+                    ->url(fn (Invoice $record): string => route('invoices.pdf', ['invoice' => $record, 'download' => 1])),
                 Action::make('sendWhatsapp')
                     ->label('Envoyer via WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->color('success')
-                    ->visible(fn(Invoice $record): bool => filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
+                    ->visible(fn (Invoice $record): bool => filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer la facture via WhatsApp')
                     ->modalDescription('La facture sera envoyée en PDF via WhatsApp au numéro du client.')
@@ -298,7 +299,7 @@ class InvoiceResource extends Resource
                     ->label('Rappel WhatsApp')
                     ->icon('heroicon-o-bell-alert')
                     ->color('warning')
-                    ->visible(fn(Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
+                    ->visible(fn (Invoice $record): bool => in_array($record->status, ['sent', 'overdue', 'partially_paid'], true) && filled($record->client?->phone) && (auth()->user()?->can('invoices.view') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer un rappel de paiement via WhatsApp')
                     ->action(fn (Invoice $record, SendInvoiceWhatsappReminderAction $action) => $action->execute($record)),
@@ -312,11 +313,11 @@ class InvoiceResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('Aucune facture pour le moment')
-            ->emptyStateDescription('Créez votre première facture pour commencer à suivre vos créances.')
+            ->emptyStateDescription('Créez votre première facture pour commencer à suivre les factures impayées.')
             ->emptyStateIcon(Heroicon::OutlinedDocumentText);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['client', 'quote']);
     }
@@ -324,13 +325,13 @@ class InvoiceResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return static::canAccessPermission('update')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
         return static::canAccessPermission('delete')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
@@ -368,18 +369,18 @@ class InvoiceResource extends Resource
             ->closed()
             ->select('starts_on', 'ends_on')
             ->get()
-            ->map(fn(FinancialPeriod $period): array => [
+            ->map(fn (FinancialPeriod $period): array => [
                 $period->starts_on?->toDateString(),
                 $period->ends_on?->toDateString(),
             ])
-            ->filter(fn(array $range): bool => filled($range[0]) && filled($range[1]))
+            ->filter(fn (array $range): bool => filled($range[0]) && filled($range[1]))
             ->values()
             ->all();
     }
 
     protected static function lockStatusLabel(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'Ouverte';
         }
 
@@ -388,7 +389,7 @@ class InvoiceResource extends Resource
 
     protected static function lockStatusColor(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'success';
         }
 
@@ -415,13 +416,13 @@ class InvoiceResource extends Resource
     /**
      * Generate an invoice number for Filament forms.
      *
-     * @param mixed $issueDate Invoice issue date
-     * @param int|null $companyId Company to scope the sequence to
+     * @param  mixed  $issueDate  Invoice issue date
+     * @param  int|null  $companyId  Company to scope the sequence to
      */
     public static function generateInvoiceNumber(mixed $issueDate = null, ?int $companyId = null): string
     {
         // If company_id not provided, try to resolve from current context
-        if (!$companyId) {
+        if (! $companyId) {
             if (app()->bound('currentCompany')) {
                 $companyId = app('currentCompany')->id;
             } elseif (auth()->check()) {

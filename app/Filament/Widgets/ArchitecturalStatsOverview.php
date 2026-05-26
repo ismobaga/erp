@@ -2,10 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Client;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\Project;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +28,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected function getDescription(): ?string
     {
-        return __('erp.dashboard.operational_overview_desc');
+        return __('erp.dashboard.business_snapshot_desc');
     }
 
     protected function getStats(): array
@@ -39,29 +38,44 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                 return $this->placeholderStats();
             }
 
-            $clients = Client::query()->count();
-            $activeClients = Client::query()->whereIn('status', ['active', 'customer'])->count();
-            $openInvoices = Invoice::query()->whereIn('status', ['sent', 'overdue', 'partially_paid'])->count();
-            $settledRevenue = (float) Payment::query()->sum('amount');
-            $activeProjects = Project::query()->whereIn('status', ['active', 'in_progress'])->count();
+            $moneyIn = (float) Payment::query()->sum('amount');
+            $moneyOut = (float) Expense::query()->sum('amount');
+            $outstandingPayments = (float) Invoice::query()
+                ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
+                ->sum('balance_due');
+            $profitability = $moneyIn - $moneyOut;
+
+            $moneyInTrend = $this->sumTrend('payments', 'payment_date', 'amount');
+            $moneyOutTrend = $this->sumTrend('expenses', 'expense_date', 'amount');
+            $outstandingTrend = $this->sumTrend(
+                'invoices',
+                'issue_date',
+                'balance_due',
+                fn ($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']),
+            );
+            $profitabilityTrend = collect($moneyInTrend)
+                ->zip($moneyOutTrend)
+                ->map(fn ($pair): int => (int) $pair[0] - (int) $pair[1])
+                ->values()
+                ->all();
 
             return [
-                Stat::make(__('erp.dashboard.client_portfolio'), number_format($clients))
-                    ->description(__('erp.dashboard.active_relations', ['count' => number_format($activeClients)]))
-                    ->color('primary')
-                    ->chart($this->countTrend('clients', 'created_at')),
-                Stat::make(__('erp.dashboard.open_invoices'), number_format($openInvoices))
-                    ->description(__('erp.dashboard.open_invoices_note'))
-                    ->color('warning')
-                    ->chart($this->countTrend('invoices', 'issue_date', fn ($query) => $query->whereIn('status', ['sent', 'overdue', 'partially_paid']))),
-                Stat::make(__('erp.dashboard.collected_revenue'), $this->money($settledRevenue))
-                    ->description(__('erp.dashboard.collected_revenue_note'))
+                Stat::make(__('erp.dashboard.money_in'), $this->money($moneyIn))
+                    ->description(__('erp.dashboard.money_in_note'))
                     ->color('success')
-                    ->chart($this->sumTrend('payments', 'payment_date', 'amount')),
-                Stat::make(__('erp.dashboard.active_projects'), number_format($activeProjects))
-                    ->description(__('erp.dashboard.active_projects_note'))
+                    ->chart($moneyInTrend),
+                Stat::make(__('erp.dashboard.money_out'), $this->money($moneyOut))
+                    ->description(__('erp.dashboard.money_out_note'))
+                    ->color('warning')
+                    ->chart($moneyOutTrend),
+                Stat::make(__('erp.dashboard.outstanding_payments'), $this->money($outstandingPayments))
+                    ->description(__('erp.dashboard.outstanding_payments_note'))
+                    ->color('danger')
+                    ->chart($outstandingTrend),
+                Stat::make(__('erp.dashboard.profitability'), $this->money($profitability))
+                    ->description(__('erp.dashboard.profitability_note'))
                     ->color('info')
-                    ->chart($this->countTrend('projects', 'created_at', fn ($query) => $query->whereIn('status', ['active', 'in_progress']))),
+                    ->chart($profitabilityTrend),
             ];
         } catch (Throwable $e) {
             report($e);
@@ -76,7 +90,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
 
     protected function hasCoreTables(): bool
     {
-        foreach (['clients', 'invoices', 'payments', 'projects'] as $table) {
+        foreach (['invoices', 'payments', 'expenses'] as $table) {
             if (! Schema::hasTable($table)) {
                 return false;
             }
@@ -117,7 +131,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
             ->all();
     }
 
-    protected function sumTrend(string $table, string $dateColumn, string $amountColumn): array
+    protected function sumTrend(string $table, string $dateColumn, string $amountColumn, ?callable $scope = null): array
     {
         if (! Schema::hasTable($table)) {
             return array_fill(0, 7, 0);
@@ -126,7 +140,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
         $company = currentCompany();
 
         return collect(range(6, 0))
-            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $company): int {
+            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $scope, $company): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
 
@@ -137,6 +151,11 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
                     $query->where('company_id', $company->id);
                 }
 
+                if ($scope) {
+                    $scope($query);
+                }
+
+                // Keep chart values compact for readability in the small sparkline area
                 return (int) round(((float) $query->sum($amountColumn)) / 1000);
             })
             ->all();
@@ -145,20 +164,20 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
     protected function placeholderStats(): array
     {
         return [
-            Stat::make(__('erp.dashboard.client_portfolio'), '0')
-                ->description(__('erp.dashboard.no_clients'))
-                ->color('primary')
-                ->chart(array_fill(0, 7, 0)),
-            Stat::make(__('erp.dashboard.open_invoices'), '0')
-                ->description(__('erp.dashboard.no_invoices'))
-                ->color('warning')
-                ->chart(array_fill(0, 7, 0)),
-            Stat::make(__('erp.dashboard.collected_revenue'), 'FCFA 0')
+            Stat::make(__('erp.dashboard.money_in'), 'FCFA 0')
                 ->description(__('erp.dashboard.no_payments'))
                 ->color('success')
                 ->chart(array_fill(0, 7, 0)),
-            Stat::make(__('erp.dashboard.active_projects'), '0')
-                ->description(__('erp.dashboard.no_projects'))
+            Stat::make(__('erp.dashboard.money_out'), 'FCFA 0')
+                ->description(__('erp.dashboard.no_expenses'))
+                ->color('warning')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make(__('erp.dashboard.outstanding_payments'), 'FCFA 0')
+                ->description(__('erp.dashboard.no_invoices'))
+                ->color('danger')
+                ->chart(array_fill(0, 7, 0)),
+            Stat::make(__('erp.dashboard.profitability'), 'FCFA 0')
+                ->description(__('erp.dashboard.no_profit_data'))
                 ->color('info')
                 ->chart(array_fill(0, 7, 0)),
         ];
