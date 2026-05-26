@@ -55,7 +55,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
             );
             $profitabilityTrend = collect($moneyInTrend)
                 ->zip($moneyOutTrend)
-                ->map(fn (array $pair): int => max(0, (int) $pair[0] - (int) $pair[1]))
+                ->map(fn ($pair): int => max(0, (int) $pair[0] - (int) $pair[1]))
                 ->values()
                 ->all();
 
@@ -140,7 +140,7 @@ class ArchitecturalStatsOverview extends StatsOverviewWidget
         $company = currentCompany();
 
         return collect(range(6, 0))
-            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $company): int {
+            ->map(function (int $offset) use ($table, $dateColumn, $amountColumn, $scope, $company): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
 

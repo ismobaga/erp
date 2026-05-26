@@ -10,7 +10,7 @@ return [
             'simple' => [
                 'enabled_modules' => array_values(array_filter(array_map(
                     static fn (string $module): string => trim(strtolower($module)),
-                explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,clients,projects,invoices,payments,expenses,reports,settings'))
+                    explode(',', (string) env('ERP_SIMPLE_ENABLED_MODULES', 'dashboard,clients,projects,invoices,payments,expenses,reports,settings'))
                 ))),
             ],
             'growing' => [

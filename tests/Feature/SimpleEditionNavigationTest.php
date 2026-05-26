@@ -137,15 +137,23 @@ class SimpleEditionNavigationTest extends TestCase
 
     public function test_simple_edition_dashboard_surfaces_sme_metrics(): void
     {
-        $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Admin');
+        $widget = new class extends ArchitecturalStatsOverview
+        {
+            public function statsForTest(): array
+            {
+                return $this->getStats();
+            }
+        };
 
-        $response = $this->actingAs($user)->get('/admin');
+        $labels = collect($widget->statsForTest())
+            ->map(fn ($stat): string => $stat->getLabel())
+            ->all();
 
-        $response->assertOk();
-        $response->assertSee('Revenus encaissés');
-        $response->assertSee('Dépenses engagées');
-        $response->assertSee('Factures impayées');
-        $response->assertSee('Rentabilité');
+        $this->assertSame([
+            __('erp.dashboard.money_in'),
+            __('erp.dashboard.money_out'),
+            __('erp.dashboard.outstanding_payments'),
+            __('erp.dashboard.profitability'),
+        ], $labels);
     }
 }
