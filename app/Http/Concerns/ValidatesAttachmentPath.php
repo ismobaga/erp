@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 trait ValidatesAttachmentPath
 {
     /**
-     * Abort (403) if the given normalised path is not safely contained within the
+     * Abort (403) if the given normalized path is not safely contained within the
      * configured document storage directory, supporting both local and cloud disks.
      *
      * For **local** disks, `realpath()` is used to resolve symlinks and collapse

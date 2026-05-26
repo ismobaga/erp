@@ -245,14 +245,14 @@ class ClientPortalController extends Controller
 
     // ── Projects ───────────────────────────────────────────────────────────────
 
-    public function downloadDocument(string $token, int $attachmentId): StreamedResponse
+    public function downloadDocument(string $token, int $attachment): StreamedResponse
     {
         $this->applyPortalLocale();
         $client = $this->resolveClientByToken($token);
 
         // Resolve the attachment, ensuring it belongs to the client's company.
-        $attachment = Attachment::withoutCompanyScope()
-            ->whereKey($attachmentId)
+        $attachmentModel = Attachment::withoutCompanyScope()
+            ->whereKey($attachment)
             ->where('company_id', $client->company_id)
             ->firstOrFail();
 
@@ -268,32 +268,32 @@ class ClientPortalController extends Controller
             ->where('client_id', $client->id)
             ->pluck('id');
 
-        $isClientDoc = $attachment->attachable_type === Client::class
-            && (int) $attachment->attachable_id === $client->id;
+        $isClientDoc = $attachmentModel->attachable_type === Client::class
+            && (int) $attachmentModel->attachable_id === $client->id;
 
-        $isProjectDoc = $attachment->attachable_type === Project::class
-            && $projectIds->contains((int) $attachment->attachable_id);
+        $isProjectDoc = $attachmentModel->attachable_type === Project::class
+            && $projectIds->contains((int) $attachmentModel->attachable_id);
 
-        $isInvoiceDoc = $attachment->attachable_type === Invoice::class
-            && $invoiceIds->contains((int) $attachment->attachable_id);
+        $isInvoiceDoc = $attachmentModel->attachable_type === Invoice::class
+            && $invoiceIds->contains((int) $attachmentModel->attachable_id);
 
         abort_unless($isClientDoc || $isProjectDoc || $isInvoiceDoc, 403);
 
         $disk = (string) config('erp.documents.disk', 'local');
         $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
-        $normalizedPath = ltrim((string) $attachment->file_path, '/');
+        $normalizedPath = ltrim((string) $attachmentModel->file_path, '/');
 
         $this->abortUnlessSafePath($normalizedPath, $disk, $directory);
 
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
 
-        app(AuditTrailService::class)->log('portal_document_downloaded', $attachment, [
+        app(AuditTrailService::class)->log('portal_document_downloaded', $attachmentModel, [
             'client_id' => $client->id,
             'disk' => $disk,
             'path' => $normalizedPath,
         ]);
 
-        $safeMime = $this->getSafeMimeType($attachment->mime_type);
+        $safeMime = $this->getSafeMimeType($attachmentModel->mime_type);
 
         return response()->streamDownload(function () use ($disk, $normalizedPath): void {
             $stream = Storage::disk($disk)->readStream($normalizedPath);
@@ -304,10 +304,10 @@ class ClientPortalController extends Controller
 
             fpassthru($stream);
             fclose($stream);
-        }, basename((string) $attachment->file_name), [
+        }, basename((string) $attachmentModel->file_name), [
             'Content-Type' => $safeMime,
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachment->file_name)).'"',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachmentModel->file_name)).'"',
             'Cache-Control' => 'private, no-store, max-age=0',
             'Pragma' => 'no-cache',
         ]);
