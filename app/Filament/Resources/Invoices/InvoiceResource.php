@@ -312,7 +312,7 @@ class InvoiceResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('Aucune facture pour le moment')
-            ->emptyStateDescription('Créez votre première facture pour commencer à suivre vos créances.')
+            ->emptyStateDescription('Créez votre première facture pour commencer à suivre les factures impayées.')
             ->emptyStateIcon(Heroicon::OutlinedDocumentText);
     }
 

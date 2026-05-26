@@ -65,6 +65,36 @@ class SimpleEditionNavigationTest extends TestCase
         ], ErpEdition::enabledModules());
     }
 
+    public function test_growing_profile_unlocks_progressive_modules(): void
+    {
+        config([
+            'erp.edition.active' => 'growing',
+            'erp.edition.profiles.growing.enabled_modules' => [
+                'dashboard',
+                'clients',
+                'projects',
+                'quotes',
+                'invoices',
+                'payments',
+                'expenses',
+                'reports',
+                'settings',
+            ],
+        ]);
+
+        $this->assertSame([
+            'dashboard',
+            'clients',
+            'projects',
+            'quotes',
+            'invoices',
+            'payments',
+            'expenses',
+            'reports',
+            'settings',
+        ], ErpEdition::enabledModules());
+    }
+
     public function test_simple_edition_navigation_hides_advanced_modules_by_default(): void
     {
         $user = User::factory()->create(['status' => 'active']);
@@ -103,5 +133,19 @@ class SimpleEditionNavigationTest extends TestCase
             OnboardingChecklistWidget::class,
             ArchitecturalStatsOverview::class,
         ], $dashboard->getWidgets());
+    }
+
+    public function test_simple_edition_dashboard_surfaces_sme_metrics(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Admin');
+
+        $response = $this->actingAs($user)->get('/admin');
+
+        $response->assertOk();
+        $response->assertSee('Revenus encaissés');
+        $response->assertSee('Dépenses engagées');
+        $response->assertSee('Factures impayées');
+        $response->assertSee('Rentabilité');
     }
 }
