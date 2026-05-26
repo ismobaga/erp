@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DemoGuard;
 use Crommix\SaaS\Contracts\HasSubscription;
 use Crommix\SaaS\Models\FeatureFlag;
 use Crommix\SaaS\Models\TenantBillingEvent;
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'invoice_default_notes',
     'quote_default_notes',
     'is_active',
+    'is_demo',
     'whatsapp_device_id',
     'whatsapp_enabled',
     // White-label & SaaS fields
@@ -54,12 +56,20 @@ class Company extends Model implements HasSubscription
     {
         return [
             'is_active' => 'boolean',
+            'is_demo' => 'boolean',
             'whatsapp_enabled' => 'boolean',
             'bank_account_number' => 'encrypted',
             'bank_swift_code' => 'encrypted',
             'onboarded_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Company $company): void {
+            DemoGuard::ensureCompanyDeletionAllowed($company);
+        });
     }
 
     /**

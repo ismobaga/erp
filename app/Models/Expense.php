@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
+use App\Support\DemoGuard;
 use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -77,6 +78,7 @@ class Expense extends Model implements HasTenantScope
         });
 
         static::deleting(function (Expense $expense): void {
+            DemoGuard::ensureAccountingDeletionAllowed($expense->company_id, 'expense');
             FinancialPeriod::ensureDateIsOpen($expense->expense_date, 'expense');
         });
     }

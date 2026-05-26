@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\InvoiceNumberService;
 use App\Services\InvoiceService;
+use App\Support\DemoGuard;
 use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -79,6 +80,7 @@ class Invoice extends Model implements HasTenantScope
         });
 
         static::deleting(function (Invoice $invoice): void {
+            DemoGuard::ensureAccountingDeletionAllowed($invoice->company_id, 'invoice');
             FinancialPeriod::ensureDateIsOpen($invoice->issue_date, 'invoice');
         });
     }
