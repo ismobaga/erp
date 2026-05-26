@@ -20,6 +20,7 @@ use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\OnboardingChecklistWidget;
+use App\Filament\Widgets\QuickActionsActivityWidget;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
@@ -135,6 +136,7 @@ class SimpleEditionNavigationTest extends TestCase
 
         $this->assertSame([
             OnboardingChecklistWidget::class,
+            QuickActionsActivityWidget::class,
             ArchitecturalStatsOverview::class,
         ], $dashboard->getWidgets());
     }

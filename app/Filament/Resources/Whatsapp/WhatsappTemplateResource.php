@@ -34,7 +34,7 @@ class WhatsappTemplateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'WhatsApp';
+    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
 
     protected static ?int $navigationSort = 21;
 

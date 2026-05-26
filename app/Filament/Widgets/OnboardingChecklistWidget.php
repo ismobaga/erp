@@ -56,7 +56,7 @@ class OnboardingChecklistWidget extends Widget
             [
                 'done' => $hasInvoice,
                 'label' => 'Créer votre première facture',
-                'description' => 'Émettez une facture officielle rattachée à un client.',
+                'description' => 'Émettez une facture, prévisualisez le PDF et partagez-la rapidement.',
                 'url' => route('filament.admin.resources.invoices.create'),
                 'cta' => 'Créer une facture',
             ],

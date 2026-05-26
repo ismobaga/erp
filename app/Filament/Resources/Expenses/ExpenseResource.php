@@ -18,8 +18,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -66,20 +66,44 @@ class ExpenseResource extends Resource
                                     ->label('Intitulé')
                                     ->required()
                                     ->columnSpanFull(),
-                                Select::make('category')
-                                    ->label(__('erp.common.category'))
-                                    ->options(trans('erp.resources.expense.categories'))
-                                    ->native(false)
-                                    ->default('operations')
+                                Grid::make(2)
+                                    ->schema([
+                                        Select::make('category')
+                                            ->label(__('erp.common.category'))
+                                            ->options(trans('erp.resources.expense.categories'))
+                                            ->native(false)
+                                            ->default('operations')
+                                            ->required(),
+                                        DatePicker::make('expense_date')
+                                            ->label('Date')
+                                            ->default(now())
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, callable $set): void {
+                                                $set('reference', static::generateExpenseReference($state));
+                                            })
+                                            ->required(),
+                                    ])
+                                    ->columnSpanFull(),
+                                TextInput::make('amount')
+                                    ->label('Montant')
+                                    ->numeric()
+                                    ->prefix('FCFA')
+                                    ->minValue(0.01)
                                     ->required(),
-                                DatePicker::make('expense_date')
-                                    ->label('Date')
-                                    ->default(now())
-                                    ->live()
-                                    ->afterStateUpdated(function ($state, callable $set): void {
-                                        $set('reference', static::generateExpenseReference($state));
-                                    })
-                                    ->required(),
+                                TextInput::make('reference')
+                                    ->label('Référence')
+                                    ->placeholder('EXP-20260424-0001')
+                                    ->default(fn (): string => static::generateExpenseReference())
+                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.'),
+                            ]),
+                        Section::make('Plus de détails (optionnel)')
+                            ->description('Ajoutez les informations avancées seulement si nécessaire.')
+                            ->collapsible()
+                            ->collapsed()
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-secondary'])
+                            ->columnSpan(['lg' => 8])
+                            ->columns(['lg' => 2])
+                            ->schema([
                                 TextInput::make('vendor')
                                     ->label('Fournisseur'),
                                 Select::make('payment_method')
@@ -91,20 +115,9 @@ class ExpenseResource extends Resource
                                         'mobile_money' => 'Mobile money',
                                     ])
                                     ->native(false),
-                                TextInput::make('reference')
-                                    ->label('Référence')
-                                    ->placeholder('EXP-20260424-0001')
-                                    ->default(fn(): string => static::generateExpenseReference())
-                                    ->helperText('Référence générée automatiquement, modifiable si nécessaire.'),
-                                TextInput::make('amount')
-                                    ->label('Montant')
-                                    ->numeric()
-                                    ->prefix('FCFA')
-                                    ->minValue(0.01)
-                                    ->required(),
                                 Textarea::make('description')
                                     ->label('Description')
-                                    ->rows(5)
+                                    ->rows(4)
                                     ->columnSpanFull(),
                             ]),
                         Section::make('Validation')
@@ -123,7 +136,7 @@ class ExpenseResource extends Resource
                                     ->content(__('erp.resources.expense.approval_hint')),
                                 Textarea::make('approval_notes')
                                     ->label('Commentaires de validation')
-                                    ->rows(5),
+                                    ->rows(4),
                             ]),
                     ]),
             ])
@@ -137,22 +150,22 @@ class ExpenseResource extends Resource
             ->columns([
                 TextColumn::make('title')
                     ->label(__('erp.common.expense'))
-                    ->description(fn(Expense $record): string => $record->vendor ?: __('erp.resources.expense.vendor_missing'))
+                    ->description(fn (Expense $record): string => $record->vendor ?: __('erp.resources.expense.vendor_missing'))
                     ->searchable(['title', 'vendor', 'reference'])
                     ->wrap(),
                 TextColumn::make('category')
                     ->label(__('erp.common.category'))
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => __('erp.resources.expense.categories.' . $state)),
+                    ->formatStateUsing(fn (string $state): string => __('erp.resources.expense.categories.'.$state)),
                 TextColumn::make('amount')
                     ->label(__('erp.common.amount'))
-                    ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
+                    ->formatStateUsing(fn ($state): string => 'FCFA '.number_format((float) $state, 2, '.', ' '))
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn(Expense $record): string => static::lockStatusLabel($record))
+                    ->state(fn (Expense $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn(Expense $record): string => static::lockStatusColor($record)),
+                    ->color(fn (Expense $record): string => static::lockStatusColor($record)),
                 TextColumn::make('expense_date')
                     ->label(__('erp.common.date'))
                     ->date()
@@ -160,13 +173,13 @@ class ExpenseResource extends Resource
                 TextColumn::make('approval_status')
                     ->label(__('erp.common.validation'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'approved' => 'success',
                         'review' => 'warning',
                         'rejected' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => __('erp.resources.expense.approval_statuses.' . $state)),
+                    ->formatStateUsing(fn (string $state): string => __('erp.resources.expense.approval_statuses.'.$state)),
                 TextColumn::make('updated_at')
                     ->label(__('erp.common.updated_at'))
                     ->since(),
@@ -180,7 +193,7 @@ class ExpenseResource extends Resource
                 Action::make('approve')
                     ->label(__('erp.actions.approve'))
                     ->color('success')
-                    ->visible(fn(Expense $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('expenses.update') ?? false))
+                    ->visible(fn (Expense $record): bool => $record->approval_status !== 'approved' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->approve(auth()->user(), 'Validation effectuée depuis le terminal de gestion.');
 
@@ -192,7 +205,7 @@ class ExpenseResource extends Resource
                 Action::make('review')
                     ->label(__('erp.actions.review'))
                     ->color('warning')
-                    ->visible(fn(Expense $record): bool => $record->approval_status === 'pending' && (auth()->user()?->can('expenses.update') ?? false))
+                    ->visible(fn (Expense $record): bool => $record->approval_status === 'pending' && (auth()->user()?->can('expenses.update') ?? false))
                     ->action(function (Expense $record): void {
                         $record->markForReview(auth()->user(), 'Contrôle complémentaire demandé.');
 
@@ -205,7 +218,7 @@ class ExpenseResource extends Resource
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->url(fn(Expense $record): string => route('expenses.pdf', ['expense' => $record, 'download' => 1])),
+                    ->url(fn (Expense $record): string => route('expenses.pdf', ['expense' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -219,13 +232,13 @@ class ExpenseResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return static::canAccessPermission('update')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
         return static::canAccessPermission('delete')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
@@ -235,7 +248,7 @@ class ExpenseResource extends Resource
 
     protected static function lockStatusLabel(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'Ouverte';
         }
 
@@ -244,7 +257,7 @@ class ExpenseResource extends Resource
 
     protected static function lockStatusColor(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'success';
         }
 
@@ -270,26 +283,26 @@ class ExpenseResource extends Resource
     public static function generateExpenseReference(mixed $expenseDate = null): string
     {
         $date = $expenseDate ? Carbon::parse($expenseDate) : now();
-        $prefix = 'EXP-' . $date->format('Ymd') . '-';
+        $prefix = 'EXP-'.$date->format('Ymd').'-';
 
         $max = Expense::query()
             ->whereNotNull('reference')
-            ->where('reference', 'like', $prefix . '%')
+            ->where('reference', 'like', $prefix.'%')
             ->pluck('reference')
             ->reduce(function (int $carry, ?string $reference) use ($prefix): int {
-                if (!filled($reference) || !str_starts_with($reference, $prefix)) {
+                if (! filled($reference) || ! str_starts_with($reference, $prefix)) {
                     return $carry;
                 }
 
                 $suffix = substr($reference, strlen($prefix));
 
-                if (!ctype_digit($suffix)) {
+                if (! ctype_digit($suffix)) {
                     return $carry;
                 }
 
                 return max($carry, (int) $suffix);
             }, 0);
 
-        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

@@ -7,6 +7,7 @@ use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\LedgerOverview;
 use App\Filament\Widgets\OnboardingChecklistWidget;
 use App\Filament\Widgets\OperationalResilienceOverview;
+use App\Filament\Widgets\QuickActionsActivityWidget;
 use App\Support\ErpEdition;
 use Filament\Pages\Dashboard as BaseDashboard;
 
@@ -45,6 +46,7 @@ class Dashboard extends BaseDashboard
     {
         $widgets = [
             ['class' => OnboardingChecklistWidget::class, 'module' => 'dashboard'],
+            ['class' => QuickActionsActivityWidget::class, 'module' => 'dashboard'],
             ['class' => ArchitecturalStatsOverview::class, 'module' => 'dashboard'],
             ['class' => AccountingPeriodsOverview::class, 'module' => 'financial_periods'],
             ['class' => OperationalResilienceOverview::class, 'module' => 'reports'],

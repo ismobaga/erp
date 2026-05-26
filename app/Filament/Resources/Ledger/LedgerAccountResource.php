@@ -37,7 +37,7 @@ class LedgerAccountResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Comptabilité';
+    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
 
     protected static ?int $navigationSort = 10;
 
