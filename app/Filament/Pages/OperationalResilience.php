@@ -41,7 +41,7 @@ class OperationalResilience extends Page
 
                     Notification::make()
                         ->title('Sauvegarde créée')
-                        ->body('Archive générée: ' . ($backup['path'] ?? 'backup'))
+                        ->body('Archive générée: '.($backup['path'] ?? 'backup'))
                         ->success()
                         ->send();
                 }),
@@ -52,7 +52,7 @@ class OperationalResilience extends Page
 
                     Notification::make()
                         ->title('Contrôle exécuté')
-                        ->body('Jobs échoués: ' . $summary['failed_jobs'] . ' · Alertes: ' . $summary['open_alerts'])
+                        ->body('Jobs échoués: '.$summary['failed_jobs'].' · Alertes: '.$summary['open_alerts'])
                         ->success()
                         ->send();
                 }),
@@ -63,13 +63,13 @@ class OperationalResilience extends Page
                 ->requiresConfirmation()
                 ->modalHeading('Purger tous les jobs échoués')
                 ->modalDescription('Cette action supprime définitivement tous les jobs échoués. Confirmez pour continuer.')
-                ->visible(fn(): bool => auth()->user()?->can('reports.delete') ?? false)
+                ->visible(fn (): bool => auth()->user()?->can('reports.delete') ?? false)
                 ->action(function (): void {
                     $count = app(OperationalResilienceService::class)->purgeFailedJobs(auth()->id());
 
                     Notification::make()
                         ->title('Jobs purgés')
-                        ->body($count . ' job(s) échoué(s) supprimé(s).')
+                        ->body($count.' job(s) échoué(s) supprimé(s).')
                         ->success()
                         ->send();
                 }),
@@ -77,7 +77,7 @@ class OperationalResilience extends Page
                 ->label('Télécharger la sauvegarde')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
-                ->visible(fn(): bool => auth()->user()?->can('reports.delete') ?? false)
+                ->visible(fn (): bool => auth()->user()?->can('reports.delete') ?? false)
                 ->action(function (): mixed {
                     $service = app(OperationalResilienceService::class);
                     $summary = $service->latestBackupSummaryPublic();
@@ -101,7 +101,7 @@ class OperationalResilience extends Page
         $service = app(OperationalResilienceService::class);
 
         return [
-            'summary' => $service->dashboardSummary(),
+            'summary' => $service->dashboardSnapshot(),
             'backups' => $service->backupFeed(),
             'alerts' => $service->alertFeed(),
             'audits' => $service->auditFeed(),

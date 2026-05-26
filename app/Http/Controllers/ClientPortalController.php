@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ValidatesAttachmentPath;
 use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Client;
@@ -16,11 +17,14 @@ use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\ResolvesLogoDataUri;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientPortalController extends Controller
 {
     use ResolvesLogoDataUri;
+    use ValidatesAttachmentPath;
 
     /** Supported locale codes for the portal language switcher. */
     private const SUPPORTED_LOCALES = ['fr', 'en'];
@@ -240,6 +244,72 @@ class ClientPortalController extends Controller
     }
 
     // ── Projects ───────────────────────────────────────────────────────────────
+
+    public function downloadDocument(string $token, int $attachment): StreamedResponse
+    {
+        $this->applyPortalLocale();
+        $client = $this->resolveClientByToken($token);
+
+        // Resolve the attachment, ensuring it belongs to the client's company.
+        $attachmentModel = Attachment::withoutCompanyScope()
+            ->whereKey($attachment)
+            ->where('company_id', $client->company_id)
+            ->firstOrFail();
+
+        // Verify ownership: the attachment must be directly linked to the client,
+        // one of the client's projects, or one of the client's invoices.
+        $projectIds = Project::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->pluck('id');
+
+        $invoiceIds = Invoice::withoutCompanyScope()
+            ->where('company_id', $client->company_id)
+            ->where('client_id', $client->id)
+            ->pluck('id');
+
+        $isClientDoc = $attachmentModel->attachable_type === Client::class
+            && (int) $attachmentModel->attachable_id === $client->id;
+
+        $isProjectDoc = $attachmentModel->attachable_type === Project::class
+            && $projectIds->contains((int) $attachmentModel->attachable_id);
+
+        $isInvoiceDoc = $attachmentModel->attachable_type === Invoice::class
+            && $invoiceIds->contains((int) $attachmentModel->attachable_id);
+
+        abort_unless($isClientDoc || $isProjectDoc || $isInvoiceDoc, 403);
+
+        $disk = (string) config('erp.documents.disk', 'local');
+        $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
+        $normalizedPath = ltrim((string) $attachmentModel->file_path, '/');
+
+        $this->abortUnlessSafePath($normalizedPath, $disk, $directory);
+
+        abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
+
+        app(AuditTrailService::class)->log('portal_document_downloaded', $attachmentModel, [
+            'client_id' => $client->id,
+            'disk' => $disk,
+            'path' => $normalizedPath,
+        ]);
+
+        return response()->streamDownload(function () use ($disk, $normalizedPath): void {
+            $stream = Storage::disk($disk)->readStream($normalizedPath);
+
+            if ($stream === false) {
+                return;
+            }
+
+            fpassthru($stream);
+            fclose($stream);
+        }, basename((string) $attachmentModel->file_name), [
+            'Content-Type' => $this->getSafeMimeType($attachmentModel->mime_type),
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachmentModel->file_name)).'"',
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
 
     public function projects(string $token): Response
     {

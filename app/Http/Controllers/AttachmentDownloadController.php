@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ValidatesAttachmentPath;
 use App\Models\Attachment;
 use App\Services\AuditTrailService;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentDownloadController
 {
+    use ValidatesAttachmentPath;
+
     public function __invoke(Request $request, Attachment $attachment): StreamedResponse
     {
         abort_unless(auth()->check(), 403);
@@ -30,19 +33,12 @@ class AttachmentDownloadController
         $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
         $normalizedPath = ltrim((string) $attachment->file_path, '/');
 
-        $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
-        $allowedDir = realpath(Storage::disk($disk)->path($directory));
+        $this->abortUnlessSafePath($normalizedPath, $disk, $directory);
 
-        abort_unless(
-            $realFilePath !== false
-            && $allowedDir !== false
-            && str_starts_with($realFilePath, $allowedDir . DIRECTORY_SEPARATOR),
-            403
-        );
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
 
         // ── Audit Trail ────────────────────────────────────────────────
-        app(\App\Services\AuditTrailService::class)->log('document_downloaded', $attachment, [
+        app(AuditTrailService::class)->log('document_downloaded', $attachment, [
             'disk' => $disk,
             'path' => $normalizedPath,
             'mime_type' => $attachment->mime_type,
@@ -62,35 +58,9 @@ class AttachmentDownloadController
         }, basename((string) $attachment->file_name), [
             'Content-Type' => $this->getSafeMimeType($attachment->mime_type),
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition' => 'attachment; filename="' . addslashes(basename((string) $attachment->file_name)) . '"',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachment->file_name)).'"',
             'Cache-Control' => 'private, no-store, max-age=0',
             'Pragma' => 'no-cache',
         ]);
-    }
-
-    /**
-     * Return a safe MIME type, defaulting to binary for unknown types.
-     */
-    private function getSafeMimeType(?string $mimeType): string
-    {
-        if (!$mimeType || !is_string($mimeType)) {
-            return 'application/octet-stream';
-        }
-
-        // Whitelist of allowed MIME types
-        $allowed = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/csv',
-            'text/plain',
-            'image/jpeg',
-            'image/png',
-            'application/zip',
-        ];
-
-        return in_array($mimeType, $allowed, true) ? $mimeType : 'application/octet-stream';
     }
 }

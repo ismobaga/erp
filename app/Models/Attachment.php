@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 #[Fillable([
+    'company_id',
     'attachable_type',
     'attachable_id',
     'file_name',
@@ -28,6 +29,16 @@ class Attachment extends Model implements HasTenantScope
     protected static function booted(): void
     {
         static::saving(function (self $attachment): void {
+            // Enforce that a company context exists before creating an attachment.
+            if ($attachment->exists === false && blank($attachment->company_id)) {
+                if (! app()->bound('currentCompany')) {
+                    throw ValidationException::withMessages([
+                        'company_id' => 'A current company context is required to create an attachment.',
+                    ]);
+                }
+                $attachment->company_id = (int) app('currentCompany')->id;
+            }
+
             $attachableType = $attachment->attachable_type;
             $attachable = null;
 

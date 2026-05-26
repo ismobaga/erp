@@ -12,11 +12,11 @@ class SecureFileUploadService
     /**
      * Validate and store an uploaded file securely.
      *
-     * @param UploadedFile $file The uploaded file
-     * @param string $modelType The type of model this attachment belongs to
-     * @param int $modelId The ID of the model
-     * @param int $uploadedById The ID of the user uploading the file
-     * @param int $companyId The company ID for scoping
+     * @param  UploadedFile  $file  The uploaded file
+     * @param  string  $modelType  The type of model this attachment belongs to
+     * @param  int  $modelId  The ID of the model
+     * @param  int  $uploadedById  The ID of the user uploading the file
+     * @param  int  $companyId  The company ID for scoping
      * @return Attachment The created attachment record
      *
      * @throws ValidationException
@@ -27,6 +27,7 @@ class SecureFileUploadService
         int $modelId,
         int $uploadedById,
         int $companyId,
+        ?string $category = null,
     ): Attachment {
         $this->validateFile($file);
 
@@ -47,7 +48,7 @@ class SecureFileUploadService
             'mime_type' => $this->getSecureMimeType($file),
             'size_bytes' => $file->getSize(),
             'uploaded_by' => $uploadedById,
-            'category' => $this->categorizeFile($file),
+            'category' => $category ?? $this->categorizeFile($file),
         ]);
     }
 
@@ -70,7 +71,7 @@ class SecureFileUploadService
             'jpeg',
             'png',
             'zip',
-            'txt'
+            'txt',
         ]);
 
         // Check file size
@@ -83,7 +84,7 @@ class SecureFileUploadService
 
         // Validate extension
         $extension = strtolower($file->getClientOriginalExtension());
-        if (!in_array($extension, $allowedExtensions, true)) {
+        if (! in_array($extension, $allowedExtensions, true)) {
             throw ValidationException::withMessages([
                 'file' => "L'extension de fichier '{$extension}' n'est pas autorisée.",
             ]);
@@ -91,7 +92,7 @@ class SecureFileUploadService
 
         // Validate MIME type using fileinfo
         $detectedMimeType = $this->getFileMimeType($file);
-        if (!$this->isAllowedMimeType($detectedMimeType)) {
+        if (! $this->isAllowedMimeType($detectedMimeType)) {
             throw ValidationException::withMessages([
                 'file' => "Le type de fichier détecté '{$detectedMimeType}' n'est pas autorisé.",
             ]);
@@ -127,7 +128,7 @@ class SecureFileUploadService
     private function validateFileSignature(UploadedFile $file, string $extension): void
     {
         $handle = fopen($file->getPathname(), 'rb');
-        if (!$handle) {
+        if (! $handle) {
             throw ValidationException::withMessages(['file' => 'Impossible de lire le fichier.']);
         }
 

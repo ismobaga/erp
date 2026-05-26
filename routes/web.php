@@ -22,7 +22,7 @@ Route::get('/about', [CompanyPagesController::class, 'about'])->name('company.ab
 Route::get('/services', [CompanyPagesController::class, 'services'])->name('company.services');
 Route::get('/solutions', [CompanyPagesController::class, 'solutions'])->name('company.solutions');
 Route::get('/contact', [CompanyPagesController::class, 'contact'])->name('company.contact');
-Route::redirect('/login', '/admin/login');
+Route::redirect('/login', '/admin/login')->name('login');
 Route::redirect('/dashboard', '/admin/login')->name('dashboard.redirect');
 
 Route::get('/confidentialite', [CompanyPagesController::class, 'confidentialite'])->name('company.confidentialite');
@@ -91,6 +91,9 @@ Route::prefix('portal/{token}')->middleware('throttle:portal')->group(function (
 
     // Documents
     Route::get('/documents', [ClientPortalController::class, 'documents'])->name('portal.documents');
+    Route::get('/documents/{attachment}/download', [ClientPortalController::class, 'downloadDocument'])
+        ->whereNumber('attachment')
+        ->name('portal.document.download');
 
     // Projects
     Route::get('/projects', [ClientPortalController::class, 'projects'])->name('portal.projects');

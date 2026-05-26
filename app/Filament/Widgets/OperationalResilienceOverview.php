@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Services\OperationalResilienceService;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Throwable;
 
 class OperationalResilienceOverview extends StatsOverviewWidget
 {
@@ -26,17 +27,32 @@ class OperationalResilienceOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $summary = app(OperationalResilienceService::class)->dashboardSummary();
+        try {
+            $summary = app(OperationalResilienceService::class)->dashboardSnapshot();
 
-        return [
-            Stat::make(__('erp.dashboard.latest_backup'), $summary['latest_backup_label'])
-                ->description((string) $summary['latest_backup_note']),
-            Stat::make('Jobs échoués', (string) $summary['failed_jobs'])
-                ->description(__('erp.dashboard.queue_pending', ['count' => $summary['queued_jobs']])),
-            Stat::make(__('erp.dashboard.system_alerts'), (string) $summary['open_alerts'])
-                ->description(__('erp.dashboard.alert_thresholds')),
-            Stat::make(__('erp.dashboard.audit_24h'), (string) $summary['audit_events_24h'])
-                ->description(__('erp.dashboard.audit_events_recent')),
-        ];
+            return [
+                Stat::make(__('erp.dashboard.latest_backup'), $summary['latest_backup_label'])
+                    ->description((string) $summary['latest_backup_note']),
+                Stat::make('Jobs échoués', (string) $summary['failed_jobs'])
+                    ->description(__('erp.dashboard.queue_pending', ['count' => $summary['queued_jobs']])),
+                Stat::make(__('erp.dashboard.system_alerts'), (string) $summary['open_alerts'])
+                    ->description(__('erp.dashboard.alert_thresholds')),
+                Stat::make(__('erp.dashboard.audit_24h'), (string) $summary['audit_events_24h'])
+                    ->description(__('erp.dashboard.audit_events_recent')),
+            ];
+        } catch (Throwable $e) {
+            report($e);
+
+            if (app()->environment(['local', 'testing'])) {
+                throw $e;
+            }
+
+            return [
+                Stat::make(__('erp.dashboard.latest_backup'), 'N/A')->description(''),
+                Stat::make('Jobs échoués', '0')->description(''),
+                Stat::make(__('erp.dashboard.system_alerts'), '0')->description(''),
+                Stat::make(__('erp.dashboard.audit_24h'), '0')->description(''),
+            ];
+        }
     }
 }
