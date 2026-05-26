@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Concerns\ValidatesAttachmentPath;
 use App\Models\ActivityLog;
 use App\Models\Attachment;
 use App\Models\Client;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ClientPortalController extends Controller
 {
     use ResolvesLogoDataUri;
+    use ValidatesAttachmentPath;
 
     /** Supported locale codes for the portal language switcher. */
     private const SUPPORTED_LOCALES = ['fr', 'en'];
@@ -243,14 +245,14 @@ class ClientPortalController extends Controller
 
     // ── Projects ───────────────────────────────────────────────────────────────
 
-    public function downloadDocument(string $token, int $attachment): StreamedResponse
+    public function downloadDocument(string $token, int $attachmentId): StreamedResponse
     {
         $this->applyPortalLocale();
         $client = $this->resolveClientByToken($token);
 
         // Resolve the attachment, ensuring it belongs to the client's company.
-        $attachmentModel = Attachment::withoutCompanyScope()
-            ->whereKey($attachment)
+        $attachment = Attachment::withoutCompanyScope()
+            ->whereKey($attachmentId)
             ->where('company_id', $client->company_id)
             ->firstOrFail();
 
@@ -266,48 +268,32 @@ class ClientPortalController extends Controller
             ->where('client_id', $client->id)
             ->pluck('id');
 
-        $isClientDoc = $attachmentModel->attachable_type === Client::class
-            && (int) $attachmentModel->attachable_id === $client->id;
+        $isClientDoc = $attachment->attachable_type === Client::class
+            && (int) $attachment->attachable_id === $client->id;
 
-        $isProjectDoc = $attachmentModel->attachable_type === Project::class
-            && $projectIds->contains((int) $attachmentModel->attachable_id);
+        $isProjectDoc = $attachment->attachable_type === Project::class
+            && $projectIds->contains((int) $attachment->attachable_id);
 
-        $isInvoiceDoc = $attachmentModel->attachable_type === Invoice::class
-            && $invoiceIds->contains((int) $attachmentModel->attachable_id);
+        $isInvoiceDoc = $attachment->attachable_type === Invoice::class
+            && $invoiceIds->contains((int) $attachment->attachable_id);
 
         abort_unless($isClientDoc || $isProjectDoc || $isInvoiceDoc, 403);
 
         $disk = (string) config('erp.documents.disk', 'local');
         $directory = trim((string) config('erp.documents.directory', 'attachments'), '/');
-        $normalizedPath = ltrim((string) $attachmentModel->file_path, '/');
+        $normalizedPath = ltrim((string) $attachment->file_path, '/');
 
-        // Path safety check.
-        $diskDriver = config("filesystems.disks.{$disk}.driver", 'local');
-        if ($diskDriver === 'local') {
-            $realFilePath = realpath(Storage::disk($disk)->path($normalizedPath));
-            $allowedDir = realpath(Storage::disk($disk)->path($directory));
-            abort_unless(
-                $realFilePath !== false
-                && $allowedDir !== false
-                && str_starts_with($realFilePath, $allowedDir.DIRECTORY_SEPARATOR),
-                403
-            );
-        } else {
-            abort_unless(
-                str_starts_with($normalizedPath, $directory.'/') || $normalizedPath === $directory,
-                403
-            );
-        }
+        $this->abortUnlessSafePath($normalizedPath, $disk, $directory);
 
         abort_unless(Storage::disk($disk)->exists($normalizedPath), 404);
 
-        app(AuditTrailService::class)->log('portal_document_downloaded', $attachmentModel, [
+        app(AuditTrailService::class)->log('portal_document_downloaded', $attachment, [
             'client_id' => $client->id,
             'disk' => $disk,
             'path' => $normalizedPath,
         ]);
 
-        $safeMime = $this->portalSafeMimeType($attachmentModel->mime_type);
+        $safeMime = $this->getSafeMimeType($attachment->mime_type);
 
         return response()->streamDownload(function () use ($disk, $normalizedPath): void {
             $stream = Storage::disk($disk)->readStream($normalizedPath);
@@ -318,10 +304,10 @@ class ClientPortalController extends Controller
 
             fpassthru($stream);
             fclose($stream);
-        }, basename((string) $attachmentModel->file_name), [
+        }, basename((string) $attachment->file_name), [
             'Content-Type' => $safeMime,
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachmentModel->file_name)).'"',
+            'Content-Disposition' => 'attachment; filename="'.addslashes(basename((string) $attachment->file_name)).'"',
             'Cache-Control' => 'private, no-store, max-age=0',
             'Pragma' => 'no-cache',
         ]);
@@ -548,23 +534,5 @@ class ClientPortalController extends Controller
             ->where('company_id', $client->company_id)
             ->where('client_id', $client->id)
             ->firstOrFail();
-    }
-
-    private function portalSafeMimeType(?string $mimeType): string
-    {
-        $allowed = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/csv',
-            'text/plain',
-            'image/jpeg',
-            'image/png',
-            'application/zip',
-        ];
-
-        return ($mimeType && in_array($mimeType, $allowed, true)) ? $mimeType : 'application/octet-stream';
     }
 }
