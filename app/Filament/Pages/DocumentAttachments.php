@@ -71,8 +71,9 @@ class DocumentAttachments extends Page
         abort_unless((bool) $user, 403);
 
         $file = $validated['upload'];
+        $fileSize = $this->resolveUploadSize($file);
         $quotaBytes = max(1, (int) config('erp.documents.quota_mb', 200)) * 1024 * 1024;
-        $projectedUsage = (int) Attachment::query()->sum('size_bytes') + (int) $file->getSize();
+        $projectedUsage = (int) Attachment::query()->sum('size_bytes') + $fileSize;
 
         if ($projectedUsage > $quotaBytes) {
             throw ValidationException::withMessages([
@@ -93,7 +94,7 @@ class DocumentAttachments extends Page
             'category' => $this->documentCategory,
             'file_path' => $storedPath,
             'mime_type' => $this->resolveMimeType($file->getClientOriginalExtension(), (string) ($file->getClientMimeType() ?: $file->getMimeType())),
-            'size_bytes' => $file->getSize(),
+            'size_bytes' => $fileSize,
             'uploaded_by' => $user->getKey(),
         ]);
 
@@ -101,7 +102,7 @@ class DocumentAttachments extends Page
             'category' => $this->documentCategory,
             'disk' => $disk,
             'path' => $storedPath,
-            'size_bytes' => $file->getSize(),
+            'size_bytes' => $fileSize,
         ], $user->getKey());
 
         $this->reset('upload');
@@ -136,6 +137,27 @@ class DocumentAttachments extends Page
             ->title('Document supprimé.')
             ->success()
             ->send();
+    }
+
+    protected function resolveUploadSize($file): int
+    {
+        $path = $file->getPathname();
+
+        if (is_string($path) && is_file($path)) {
+            $size = @filesize($path);
+
+            if ($size !== false) {
+                return (int) $size;
+            }
+        }
+
+        try {
+            return (int) $file->getSize();
+        } catch (\Throwable) {
+            throw ValidationException::withMessages([
+                'upload' => 'Le fichier temporaire a expiré. Sélectionnez-le à nouveau puis réessayez.',
+            ]);
+        }
     }
 
     protected function getViewData(): array
