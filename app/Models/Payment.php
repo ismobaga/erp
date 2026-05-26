@@ -6,6 +6,7 @@ use App\Actions\ApplyPaymentAction;
 use App\Models\Concerns\HasCompanyScope;
 use App\Services\AuditTrailService;
 use App\Services\InvoiceService;
+use App\Support\DemoGuard;
 use Carbon\Carbon;
 use Crommix\Core\Contracts\HasTenantScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -194,6 +195,7 @@ class Payment extends Model implements HasTenantScope
         });
 
         static::deleting(function (Payment $payment): void {
+            DemoGuard::ensureAccountingDeletionAllowed($payment->company_id, 'payment');
             FinancialPeriod::ensureDateIsOpen($payment->payment_date, 'payment');
         });
     }
@@ -205,16 +207,16 @@ class Payment extends Model implements HasTenantScope
      * invoice's paid_total / balance_due / status are never left stale if
      * refreshFinancials() throws after the DELETE has already committed.
      */
-    public function delete(): bool|null
+    public function delete(): ?bool
     {
         if (DB::transactionLevel() > 0) {
             return $this->deleteWithRefresh();
         }
 
-        return DB::transaction(fn (): bool|null => $this->deleteWithRefresh());
+        return DB::transaction(fn (): ?bool => $this->deleteWithRefresh());
     }
 
-    private function deleteWithRefresh(): bool|null
+    private function deleteWithRefresh(): ?bool
     {
         $lockedInvoice = $this->invoice_id !== null
             ? Invoice::withoutCompanyScope()

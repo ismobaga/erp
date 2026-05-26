@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DemoGuard;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -60,5 +61,15 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->belongsToMany(Company::class, 'company_user')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $isDemoAdmin = strcasecmp($user->email, 'admin@demo.erp') === 0
+                && $user->companies()->where('is_demo', true)->exists();
+
+            DemoGuard::ensureDemoAdminDeletionAllowed($isDemoAdmin);
+        });
     }
 }
