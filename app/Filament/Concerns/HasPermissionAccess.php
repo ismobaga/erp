@@ -7,13 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 
 trait HasPermissionAccess
 {
+    protected static function hidesInSimpleMode(): bool
+    {
+        static $cache = [];
+
+        return $cache[static::class] ??= (function (): bool {
+            if (! property_exists(static::class, 'hideInSimpleMode')) {
+                return false;
+            }
+
+            $property = new \ReflectionProperty(static::class, 'hideInSimpleMode');
+
+            return $property->isStatic() && (bool) $property->getValue(null);
+        })();
+    }
+
     protected static function isVisibleInCurrentEdition(): bool
     {
-        if (! property_exists(static::class, 'hideInSimpleMode') || ! static::$hideInSimpleMode) {
-            return true;
-        }
-
-        return ! ErpEdition::isSimple();
+        return ! (static::hidesInSimpleMode() && ErpEdition::isSimple());
     }
 
     protected static function canAccessPermission(string $action): bool
