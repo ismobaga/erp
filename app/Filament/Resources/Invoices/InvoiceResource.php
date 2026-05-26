@@ -105,12 +105,12 @@ class InvoiceResource extends Resource
                                         $set('notes', $quote->notes);
                                     }),
                                 DatePicker::make('issue_date')
-                                    ->label('Date')
+                                    ->label('Date d’émission')
                                     ->default(now())
                                     ->required()
                                     ->live(),
                                 DatePicker::make('due_date')
-                                    ->label('Échéance (optionnelle)')
+                                    ->label('Date d’échéance (optionnelle)')
                                     ->default(now()->addDays((int) config('erp.billing.invoice_default_due_days', 30))),
                             ]),
                         Section::make('Suivi du paiement')
