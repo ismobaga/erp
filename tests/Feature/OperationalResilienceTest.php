@@ -25,6 +25,9 @@ class OperationalResilienceTest extends TestCase
         parent::setUp();
 
         $this->seed(RolesAndPermissionsSeeder::class);
+        app('currentCompany')->update([
+            'advanced_options' => ['advanced_reports' => true],
+        ]);
     }
 
     public function test_backup_and_restore_commands_preserve_financial_records(): void

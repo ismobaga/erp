@@ -11,6 +11,8 @@ class QuoteController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        abort_unless(company_feature_enabled('quotes'), 403);
+
         $perPage = min(100, max(1, (int) $request->integer('per_page', 25)));
 
         $quotes = Quote::query()
@@ -23,6 +25,8 @@ class QuoteController extends Controller
 
     public function show(Quote $quote): JsonResponse
     {
+        abort_unless(company_feature_enabled('quotes'), 403);
+
         $quote->load(['client:id,company_name,contact_name', 'items']);
 
         return response()->json([

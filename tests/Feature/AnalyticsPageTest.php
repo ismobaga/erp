@@ -22,6 +22,12 @@ class AnalyticsPageTest extends TestCase
         parent::setUp();
 
         $this->seed(RolesAndPermissionsSeeder::class);
+        app('currentCompany')->update([
+            'advanced_options' => [
+                'advanced_reports' => true,
+                'financial_periods' => true,
+            ],
+        ]);
     }
 
     public function test_finance_user_can_access_the_analytics_page(): void

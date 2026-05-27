@@ -14,8 +14,8 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -29,6 +29,8 @@ use Illuminate\Support\Carbon;
 class FinancialPeriodResource extends Resource
 {
     use HasPermissionAccess;
+
+    protected static ?string $companyFeature = 'financial_periods';
 
     protected static string $permissionScope = 'financial_periods';
 
@@ -63,7 +65,7 @@ class FinancialPeriodResource extends Resource
                                 TextInput::make('code')
                                     ->label('Code')
                                     ->placeholder('2026-04')
-                                    ->default(fn(): string => static::generatePeriodCode())
+                                    ->default(fn (): string => static::generatePeriodCode())
                                     ->helperText('Code généré automatiquement selon la date de début, modifiable si nécessaire.')
                                     ->required()
                                     ->unique(ignoreRecord: true)
@@ -111,22 +113,22 @@ class FinancialPeriodResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Période')
-                    ->description(fn(FinancialPeriod $record): string => $record->code)
+                    ->description(fn (FinancialPeriod $record): string => $record->code)
                     ->searchable(['name', 'code'])
                     ->sortable(),
                 TextColumn::make('range')
                     ->label('Plage')
-                    ->state(fn(FinancialPeriod $record): string => sprintf(
+                    ->state(fn (FinancialPeriod $record): string => sprintf(
                         '%s → %s',
-                        \Illuminate\Support\Carbon::parse($record->starts_on)->format('d/m/Y'),
-                        \Illuminate\Support\Carbon::parse($record->ends_on)->format('d/m/Y'),
+                        Carbon::parse($record->starts_on)->format('d/m/Y'),
+                        Carbon::parse($record->ends_on)->format('d/m/Y'),
                     ))
                     ->sortable(false),
                 TextColumn::make('status')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => $state === 'closed' ? 'Clôturée' : 'Ouverte')
-                    ->color(fn(string $state): string => $state === 'closed' ? 'danger' : 'success'),
+                    ->formatStateUsing(fn (string $state): string => $state === 'closed' ? 'Clôturée' : 'Ouverte')
+                    ->color(fn (string $state): string => $state === 'closed' ? 'danger' : 'success'),
                 TextColumn::make('closed_at')
                     ->label('Clôturée le')
                     ->dateTime('d/m/Y H:i')
@@ -136,7 +138,7 @@ class FinancialPeriodResource extends Resource
             ->recordActions([
                 Action::make('close')
                     ->label('Clôturer')
-                    ->visible(fn(FinancialPeriod $record): bool => $record->isOpen() && (auth()->user()?->can('financial_periods.update') ?? false))
+                    ->visible(fn (FinancialPeriod $record): bool => $record->isOpen() && (auth()->user()?->can('financial_periods.update') ?? false))
                     ->requiresConfirmation()
                     ->color('danger')
                     ->action(function (FinancialPeriod $record): void {
@@ -149,7 +151,7 @@ class FinancialPeriodResource extends Resource
                     }),
                 Action::make('reopen')
                     ->label('Rouvrir')
-                    ->visible(fn(FinancialPeriod $record): bool => $record->isClosed() && (auth()->user()?->can('financial_periods.update') ?? false))
+                    ->visible(fn (FinancialPeriod $record): bool => $record->isClosed() && (auth()->user()?->can('financial_periods.update') ?? false))
                     ->requiresConfirmation()
                     ->color('warning')
                     ->action(function (FinancialPeriod $record): void {

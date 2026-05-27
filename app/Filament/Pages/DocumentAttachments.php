@@ -22,6 +22,8 @@ class DocumentAttachments extends Page
     use HasPermissionAccess;
     use WithFileUploads;
 
+    protected static ?string $companyFeature = 'documents';
+
     protected static string $permissionScope = 'documents';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolderOpen;

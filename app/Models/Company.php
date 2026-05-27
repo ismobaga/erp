@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'bank_swift_code',
     'invoice_default_notes',
     'quote_default_notes',
+    'advanced_options',
     'is_active',
     'is_demo',
     'whatsapp_device_id',
@@ -58,6 +59,7 @@ class Company extends Model implements HasSubscription
             'is_active' => 'boolean',
             'is_demo' => 'boolean',
             'whatsapp_enabled' => 'boolean',
+            'advanced_options' => 'array',
             'bank_account_number' => 'encrypted',
             'bank_swift_code' => 'encrypted',
             'onboarded_at' => 'datetime',
@@ -67,6 +69,13 @@ class Company extends Model implements HasSubscription
 
     protected static function booted(): void
     {
+        static::creating(function (Company $company): void {
+            $company->advanced_options = array_replace(
+                config('erp.company_features.defaults', []),
+                is_array($company->advanced_options) ? $company->advanced_options : []
+            );
+        });
+
         static::deleting(function (Company $company): void {
             DemoGuard::ensureCompanyDeletionAllowed($company);
         });

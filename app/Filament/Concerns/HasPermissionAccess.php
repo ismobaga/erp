@@ -24,18 +24,22 @@ trait HasPermissionAccess
 
     protected static function isVisibleInCurrentEdition(): bool
     {
+        if (filled(static::companyFeatureKey())) {
+            return true;
+        }
+
         return ! (static::hidesInSimpleMode() && ErpEdition::isSimple());
     }
 
     protected static function canAccessPermission(string $action): bool
     {
-        if (! static::isVisibleInCurrentEdition() || ! static::isEditionFeatureEnabled()) {
+        if (! static::isVisibleInCurrentEdition() || ! static::isEditionFeatureEnabled() || ! static::isCompanyFeatureEnabled()) {
             return false;
         }
 
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -49,14 +53,44 @@ trait HasPermissionAccess
             return false;
         }
 
-        return $user->can($permissionScope . '.' . $action);
+        return $user->can($permissionScope.'.'.$action);
     }
 
     protected static function isEditionFeatureEnabled(): bool
     {
+        if (filled(static::companyFeatureKey())) {
+            return true;
+        }
+
         $permissionScope = property_exists(static::class, 'permissionScope') ? static::$permissionScope : null;
 
         return ErpEdition::isPermissionScopeEnabled($permissionScope);
+    }
+
+    protected static function isCompanyFeatureEnabled(): bool
+    {
+        $feature = static::companyFeatureKey();
+
+        if (blank($feature)) {
+            return true;
+        }
+
+        return company_feature_enabled((string) $feature);
+    }
+
+    protected static function companyFeatureKey(): ?string
+    {
+        if (! property_exists(static::class, 'companyFeature')) {
+            return null;
+        }
+
+        $property = new \ReflectionProperty(static::class, 'companyFeature');
+
+        if (! $property->isStatic()) {
+            return null;
+        }
+
+        return $property->getValue();
     }
 
     public static function canViewAny(): bool

@@ -25,6 +25,9 @@ class DocumentAttachmentsPageTest extends TestCase
         parent::setUp();
 
         $this->seed(RolesAndPermissionsSeeder::class);
+        app('currentCompany')->update([
+            'advanced_options' => ['documents' => true],
+        ]);
     }
 
     public function test_finance_user_can_access_the_documents_page(): void
@@ -166,7 +169,7 @@ class DocumentAttachmentsPageTest extends TestCase
             ->set('upload', $file)
             ->set('documentCategory', 'Factures')
             ->call('uploadDocument')
-            ->assertForbidden();
+            ->assertNotFound();
 
         // Restore company context for subsequent tests.
         $this->setUpCompany();

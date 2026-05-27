@@ -9,7 +9,6 @@ use App\Filament\Resources\CreditNotes\Pages\ListCreditNotes;
 use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\CreditNote;
 use App\Models\FinancialPeriod;
-use App\Models\Invoice;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -19,8 +18,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -35,6 +34,8 @@ use Illuminate\Support\Carbon;
 class CreditNoteResource extends Resource
 {
     use HasPermissionAccess;
+
+    protected static ?string $companyFeature = 'credit_notes';
 
     protected static string $permissionScope = 'invoices';
 
@@ -63,7 +64,7 @@ class CreditNoteResource extends Resource
                             ->schema([
                                 TextInput::make('credit_number')
                                     ->label('Numéro de l\'avoir')
-                                    ->default(fn(): string => static::generateCreditNumber())
+                                    ->default(fn (): string => static::generateCreditNumber())
                                     ->readOnly()
                                     ->dehydrated(false)
                                     ->helperText('Numéro généré automatiquement et conservé après création.'),
@@ -136,24 +137,24 @@ class CreditNoteResource extends Resource
                     ->sortable(),
                 TextColumn::make('amount')
                     ->label('Montant')
-                    ->formatStateUsing(fn($state): string => 'FCFA ' . number_format((float) $state, 2, '.', ' '))
+                    ->formatStateUsing(fn ($state): string => 'FCFA '.number_format((float) $state, 2, '.', ' '))
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn(CreditNote $record): string => static::lockStatusLabel($record))
+                    ->state(fn (CreditNote $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn(CreditNote $record): string => static::lockStatusColor($record)),
+                    ->color(fn (CreditNote $record): string => static::lockStatusColor($record)),
                 TextColumn::make('status')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'issued' => 'Émis',
                         'pending_approval' => 'En attente',
                         'approved' => 'Approuvé',
                         'void' => 'Annulé',
                         default => $state,
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'approved' => 'success',
                         'pending_approval' => 'warning',
                         'void' => 'gray',
@@ -175,7 +176,7 @@ class CreditNoteResource extends Resource
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->url(fn(CreditNote $record): string => route('credit-notes.pdf', ['creditNote' => $record, 'download' => 1])),
+                    ->url(fn (CreditNote $record): string => route('credit-notes.pdf', ['creditNote' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -189,13 +190,13 @@ class CreditNoteResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return static::canAccessPermission('update')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
         return static::canAccessPermission('delete')
-            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
@@ -205,7 +206,7 @@ class CreditNoteResource extends Resource
 
     protected static function lockStatusLabel(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'Ouverte';
         }
 
@@ -214,7 +215,7 @@ class CreditNoteResource extends Resource
 
     protected static function lockStatusColor(Model $record): string
     {
-        if (!static::isRecordLocked($record)) {
+        if (! static::isRecordLocked($record)) {
             return 'success';
         }
 
@@ -240,25 +241,25 @@ class CreditNoteResource extends Resource
     public static function generateCreditNumber(mixed $issueDate = null): string
     {
         $date = $issueDate ? Carbon::parse($issueDate) : now();
-        $prefix = 'AV-' . $date->format('Ymd') . '-';
+        $prefix = 'AV-'.$date->format('Ymd').'-';
 
         $max = CreditNote::query()
-            ->where('credit_number', 'like', $prefix . '%')
+            ->where('credit_number', 'like', $prefix.'%')
             ->pluck('credit_number')
             ->reduce(function (int $carry, ?string $creditNumber) use ($prefix): int {
-                if (!filled($creditNumber) || !str_starts_with($creditNumber, $prefix)) {
+                if (! filled($creditNumber) || ! str_starts_with($creditNumber, $prefix)) {
                     return $carry;
                 }
 
                 $suffix = substr($creditNumber, strlen($prefix));
 
-                if (!ctype_digit($suffix)) {
+                if (! ctype_digit($suffix)) {
                     return $carry;
                 }
 
                 return max($carry, (int) $suffix);
             }, 0);
 
-        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }

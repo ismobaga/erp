@@ -33,7 +33,7 @@ class RecurringInvoiceResource extends Resource
 {
     use HasPermissionAccess;
 
-    protected static bool $hideInSimpleMode = true;
+    protected static ?string $companyFeature = 'recurring_invoices';
 
     protected static string $permissionScope = 'invoices';
 

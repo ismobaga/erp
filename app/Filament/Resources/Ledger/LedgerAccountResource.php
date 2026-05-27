@@ -14,8 +14,8 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -30,6 +30,8 @@ use Filament\Tables\Table;
 class LedgerAccountResource extends Resource
 {
     use HasPermissionAccess;
+
+    protected static ?string $companyFeature = 'general_ledger';
 
     protected static string $permissionScope = 'ledger';
 
@@ -63,7 +65,7 @@ class LedgerAccountResource extends Resource
                             ->schema([
                                 TextInput::make('code')
                                     ->label(__('erp.ledger.account_code'))
-                                    ->default(fn(): string => static::generateLedgerCode())
+                                    ->default(fn (): string => static::generateLedgerCode())
                                     ->helperText('Code généré automatiquement selon le type du compte, modifiable si nécessaire.')
                                     ->required()
                                     ->unique(ignoreRecord: true)
@@ -89,7 +91,7 @@ class LedgerAccountResource extends Resource
                                 Select::make('parent_id')
                                     ->label(__('erp.ledger.parent_account'))
                                     ->relationship('parent', 'name')
-                                    ->getOptionLabelFromRecordUsing(fn(LedgerAccount $r): string => $r->code . ' – ' . $r->name)
+                                    ->getOptionLabelFromRecordUsing(fn (LedgerAccount $r): string => $r->code.' – '.$r->name)
                                     ->searchable(['code', 'name'])
                                     ->nullable()
                                     ->placeholder(__('erp.ledger.no_parent'))
@@ -126,8 +128,8 @@ class LedgerAccountResource extends Resource
                 TextColumn::make('type')
                     ->label(__('erp.ledger.account_type'))
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => (string) __('erp.ledger.account_types.' . $state, [], null) ?: $state)
-                    ->color(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => (string) __('erp.ledger.account_types.'.$state, [], null) ?: $state)
+                    ->color(fn (string $state): string => match ($state) {
                         'asset' => 'info',
                         'liability' => 'warning',
                         'equity' => 'success',
@@ -137,7 +139,7 @@ class LedgerAccountResource extends Resource
                     }),
                 TextColumn::make('normal_balance')
                     ->label(__('erp.ledger.normal_balance'))
-                    ->formatStateUsing(fn(string $state): string => (string) __('erp.ledger.normal_balances.' . $state, [], null) ?: $state),
+                    ->formatStateUsing(fn (string $state): string => (string) __('erp.ledger.normal_balances.'.$state, [], null) ?: $state),
                 TextColumn::make('parent.name')
                     ->label(__('erp.ledger.parent_account'))
                     ->placeholder(__('erp.ledger.no_parent'))
@@ -187,17 +189,17 @@ class LedgerAccountResource extends Resource
         $query = LedgerAccount::query();
 
         if ($leadingDigit !== null) {
-            $query->where('code', 'like', $leadingDigit . '%');
+            $query->where('code', 'like', $leadingDigit.'%');
         }
 
         $max = $query
             ->pluck('code')
             ->reduce(function (int $carry, ?string $code) use ($leadingDigit): int {
-                if (!filled($code) || !ctype_digit($code)) {
+                if (! filled($code) || ! ctype_digit($code)) {
                     return $carry;
                 }
 
-                if ($leadingDigit !== null && !str_starts_with($code, $leadingDigit)) {
+                if ($leadingDigit !== null && ! str_starts_with($code, $leadingDigit)) {
                     return $carry;
                 }
 
