@@ -45,12 +45,12 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         $widgets = [
-            ['class' => OnboardingChecklistWidget::class, 'module' => 'dashboard'],
-            ['class' => QuickActionsActivityWidget::class, 'module' => 'dashboard'],
-            ['class' => ArchitecturalStatsOverview::class, 'module' => 'dashboard'],
-            ['class' => AccountingPeriodsOverview::class, 'module' => 'financial_periods'],
-            ['class' => OperationalResilienceOverview::class, 'module' => 'reports'],
-            ['class' => LedgerOverview::class, 'module' => 'ledger'],
+            ['class' => OnboardingChecklistWidget::class, 'module' => 'dashboard', 'feature' => null],
+            ['class' => QuickActionsActivityWidget::class, 'module' => 'dashboard', 'feature' => null],
+            ['class' => ArchitecturalStatsOverview::class, 'module' => 'dashboard', 'feature' => null],
+            ['class' => AccountingPeriodsOverview::class, 'module' => 'financial_periods', 'feature' => 'financial_periods'],
+            ['class' => OperationalResilienceOverview::class, 'module' => 'reports', 'feature' => 'advanced_reports'],
+            ['class' => LedgerOverview::class, 'module' => 'ledger', 'feature' => 'general_ledger'],
         ];
 
         if (ErpEdition::isSimple()) {
@@ -62,6 +62,7 @@ class Dashboard extends BaseDashboard
 
         return collect($widgets)
             ->filter(fn (array $widget): bool => ErpEdition::isModuleEnabled($widget['module']))
+            ->filter(fn (array $widget): bool => blank($widget['feature']) || company_feature_enabled((string) $widget['feature']))
             ->map(fn (array $widget): string => $widget['class'])
             ->values()
             ->all();

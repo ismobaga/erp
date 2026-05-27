@@ -103,12 +103,11 @@ class SimpleEditionNavigationTest extends TestCase
 
     public function test_growing_profile_unlocks_recurring_invoices_navigation(): void
     {
-        config([
-            'erp.edition.active' => 'growing',
-        ]);
-
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Admin');
+        app('currentCompany')->update([
+            'advanced_options' => ['recurring_invoices' => true],
+        ]);
 
         $this->actingAs($user);
 

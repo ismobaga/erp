@@ -30,6 +30,8 @@ class FinancialPeriodResource extends Resource
 {
     use HasPermissionAccess;
 
+    protected static ?string $companyFeature = 'financial_periods';
+
     protected static string $permissionScope = 'financial_periods';
 
     protected static ?string $model = FinancialPeriod::class;

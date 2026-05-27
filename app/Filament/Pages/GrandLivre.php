@@ -17,6 +17,8 @@ class GrandLivre extends Page
 {
     use HasPermissionAccess;
 
+    protected static ?string $companyFeature = 'general_ledger';
+
     protected static string $permissionScope = 'ledger';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;

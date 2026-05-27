@@ -20,6 +20,10 @@ class RoleAccessControlTest extends TestCase
 
     public function test_finance_user_can_access_finance_routes_but_not_user_admin(): void
     {
+        app('currentCompany')->update([
+            'advanced_options' => ['financial_periods' => true],
+        ]);
+
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');
 
@@ -68,6 +72,9 @@ class RoleAccessControlTest extends TestCase
     {
         config()->set('erp.edition.active', 'simple');
         config()->set('erp.edition.profiles.simple.enabled_modules', ['dashboard', 'quotes', 'invoices', 'payments', 'expenses']);
+        app('currentCompany')->update([
+            'advanced_options' => ['quotes' => true],
+        ]);
 
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole('Finance');

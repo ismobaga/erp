@@ -26,6 +26,9 @@ class ReportGenerationPageTest extends TestCase
         parent::setUp();
 
         $this->seed(RolesAndPermissionsSeeder::class);
+        app('currentCompany')->update([
+            'advanced_options' => ['advanced_reports' => true],
+        ]);
     }
 
     public function test_finance_user_can_access_the_report_generation_page(): void

@@ -44,6 +44,8 @@ class QuoteResource extends Resource
     use HasPermissionAccess;
     use HasBillingFormConcerns;
 
+    protected static ?string $companyFeature = 'quotes';
+
     protected static string $permissionScope = 'quotes';
 
     protected static ?string $model = Quote::class;

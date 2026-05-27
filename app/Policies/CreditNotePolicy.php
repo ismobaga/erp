@@ -11,7 +11,8 @@ class CreditNotePolicy
     {
         $company = currentCompany();
 
-        return $user->canAny(['credit_notes.view', 'reports.view'])
+        return company_feature_enabled('credit_notes', $company)
+            && $user->canAny(['credit_notes.view', 'reports.view'])
             && $company !== null
             && (int) $creditNote->company_id === (int) $company->id;
     }

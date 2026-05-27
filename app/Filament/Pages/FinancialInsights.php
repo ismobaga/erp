@@ -24,6 +24,8 @@ class FinancialInsights extends Page
 {
     use HasPermissionAccess;
 
+    protected static ?string $companyFeature = 'advanced_reports';
+
     protected static string $permissionScope = 'reports';
 
     protected static bool $hideInSimpleMode = true;

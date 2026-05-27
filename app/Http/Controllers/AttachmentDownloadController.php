@@ -19,6 +19,7 @@ class AttachmentDownloadController
         abort_unless($request->hasValidSignature(), 403);
 
         $user = auth()->user();
+        abort_unless(company_feature_enabled('documents', currentCompany()), 403);
 
         // ── Company Scoping: Ensure attachment belongs to user's company ──
         $userCompany = currentCompany();

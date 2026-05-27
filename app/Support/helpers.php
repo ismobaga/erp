@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Company;
+use App\Support\CompanyFeatureManager;
 
 if (! function_exists('currentCompany')) {
     /**
@@ -17,6 +18,16 @@ if (! function_exists('currentCompany')) {
         }
 
         return null;
+    }
+}
+
+if (! function_exists('company_feature_enabled')) {
+    /**
+     * Determine whether a company feature is enabled for the active company.
+     */
+    function company_feature_enabled(string $key, ?Company $company = null): bool
+    {
+        return app(CompanyFeatureManager::class)->enabled($key, $company);
     }
 }
 

@@ -37,6 +37,42 @@ return [
         ],
     ],
 
+    'company_features' => [
+        'core' => [
+            'dashboard',
+            'clients',
+            'services',
+            'projects',
+            'invoices',
+            'payments',
+            'expenses',
+            'reports',
+            'settings',
+        ],
+        'advanced' => [
+            'quotes',
+            'credit_notes',
+            'recurring_invoices',
+            'general_ledger',
+            'financial_periods',
+            'documents',
+            'advanced_reports',
+            'advanced_tax_settings',
+            'multi_currency',
+        ],
+        'defaults' => [
+            'quotes' => false,
+            'credit_notes' => false,
+            'recurring_invoices' => false,
+            'general_ledger' => false,
+            'financial_periods' => false,
+            'documents' => false,
+            'advanced_reports' => false,
+            'advanced_tax_settings' => false,
+            'multi_currency' => false,
+        ],
+    ],
+
     'billing' => [
         'invoice_default_due_days' => max(0, (int) env('ERP_INVOICE_DEFAULT_DUE_DAYS', 30)),
         'overdue_grace_days' => max(0, (int) env('ERP_INVOICE_OVERDUE_GRACE_DAYS', 0)),

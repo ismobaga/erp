@@ -11,7 +11,8 @@ class QuotePolicy
     {
         $company = currentCompany();
 
-        return $user->canAny(['quotes.view', 'reports.view'])
+        return company_feature_enabled('quotes', $company)
+            && $user->canAny(['quotes.view', 'reports.view'])
             && $company !== null
             && (int) $quote->company_id === (int) $company->id;
     }

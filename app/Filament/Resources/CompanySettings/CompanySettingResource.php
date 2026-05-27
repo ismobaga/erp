@@ -21,6 +21,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class CompanySettingResource extends Resource
 {
@@ -156,6 +158,46 @@ class CompanySettingResource extends Resource
                                     ->label('WhatsApp Device ID')
                                     ->helperText('Device ID utilisé par GoWA'),
                             ]),
+                        Section::make('Modules avancés')
+                            ->description('Activez uniquement les options avancées utiles pour la société actuellement sélectionnée.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
+                            ->columnSpanFull()
+                            ->columns(['lg' => 2])
+                            ->schema([
+                                Placeholder::make('basic_mode')
+                                    ->label('Mode standard')
+                                    ->content('Toujours disponibles : Tableau de bord, clients, services, projets, factures, paiements, dépenses, rapports de base et paramètres.'),
+                                Placeholder::make('advanced_mode_note')
+                                    ->label('Visibilité')
+                                    ->content('Les modules désactivés sont retirés de la navigation et bloqués en accès direct pour cette société.'),
+                                Toggle::make('advanced_options.quotes')
+                                    ->label('Devis')
+                                    ->default(false),
+                                Toggle::make('advanced_options.credit_notes')
+                                    ->label('Avoirs')
+                                    ->default(false),
+                                Toggle::make('advanced_options.recurring_invoices')
+                                    ->label('Factures récurrentes')
+                                    ->default(false),
+                                Toggle::make('advanced_options.general_ledger')
+                                    ->label('Grand livre / comptabilité')
+                                    ->default(false),
+                                Toggle::make('advanced_options.financial_periods')
+                                    ->label('Périodes comptables')
+                                    ->default(false),
+                                Toggle::make('advanced_options.documents')
+                                    ->label('Gestion documentaire')
+                                    ->default(false),
+                                Toggle::make('advanced_options.advanced_reports')
+                                    ->label('Rapports avancés')
+                                    ->default(false),
+                                Toggle::make('advanced_options.advanced_tax_settings')
+                                    ->label('Paramètres fiscaux avancés')
+                                    ->default(false),
+                                Toggle::make('advanced_options.multi_currency')
+                                    ->label('Multi-devise')
+                                    ->default(false),
+                            ]),
                     ]),
             ])
             ->columns(1);
@@ -185,6 +227,36 @@ class CompanySettingResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $company = currentCompany();
+
+        if ($company === null) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereKey($company->getKey());
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $company = currentCompany();
+
+        return parent::canView($record)
+            && $company !== null
+            && (int) $record->getKey() === (int) $company->getKey();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $company = currentCompany();
+
+        return parent::canEdit($record)
+            && $company !== null
+            && (int) $record->getKey() === (int) $company->getKey();
     }
 
     public static function getPages(): array

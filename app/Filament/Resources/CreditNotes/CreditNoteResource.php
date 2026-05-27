@@ -36,6 +36,8 @@ class CreditNoteResource extends Resource
 {
     use HasPermissionAccess;
 
+    protected static ?string $companyFeature = 'credit_notes';
+
     protected static string $permissionScope = 'invoices';
 
     protected static ?string $model = CreditNote::class;
