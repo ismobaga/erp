@@ -33,6 +33,8 @@ class RecurringInvoiceResource extends Resource
 {
     use HasPermissionAccess;
 
+    protected static bool $hideInSimpleMode = true;
+
     protected static string $permissionScope = 'invoices';
 
     protected static ?string $model = RecurringInvoice::class;
