@@ -23,7 +23,10 @@ class AnalyticsPageTest extends TestCase
 
         $this->seed(RolesAndPermissionsSeeder::class);
         app('currentCompany')->update([
-            'advanced_options' => ['advanced_reports' => true],
+            'advanced_options' => [
+                'advanced_reports' => true,
+                'financial_periods' => true,
+            ],
         ]);
     }
 

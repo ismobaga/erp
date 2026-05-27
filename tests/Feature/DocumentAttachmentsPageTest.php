@@ -169,7 +169,7 @@ class DocumentAttachmentsPageTest extends TestCase
             ->set('upload', $file)
             ->set('documentCategory', 'Factures')
             ->call('uploadDocument')
-            ->assertForbidden();
+            ->assertNotFound();
 
         // Restore company context for subsequent tests.
         $this->setUpCompany();

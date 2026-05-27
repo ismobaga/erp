@@ -31,7 +31,7 @@ class CompanyFeatureManager
         }
 
         $options = $this->optionsFor($company);
-        $cacheKey = ($company->getKey() ?? 'none') . ':' . md5(json_encode($options) ?: $feature) . ':' . $feature;
+        $cacheKey = ($company->getKey() ?? 'none').':'.md5(json_encode($options) ?: $feature).':'.$feature;
 
         return self::$cache[$cacheKey] ??= (bool) ($options[$feature] ?? false);
     }

@@ -201,7 +201,7 @@ class FinancialInsights extends Page
 
     protected function buildKpis(array $context): array
     {
-        if (!Schema::hasTable('invoices') || !Schema::hasTable('payments') || !Schema::hasTable('expenses')) {
+        if (! Schema::hasTable('invoices') || ! Schema::hasTable('payments') || ! Schema::hasTable('expenses')) {
             return $this->placeholderData($context['label'])['kpis'];
         }
 
@@ -228,7 +228,7 @@ class FinancialInsights extends Page
             ],
             'margin' => [
                 'label' => 'Marge brute',
-                'value' => number_format($margin, 1) . '%',
+                'value' => number_format($margin, 1).'%',
                 'trend' => $this->deltaLabel($margin, $previousMargin),
                 'trendTone' => $margin >= 55 ? 'positive' : 'warning',
                 'note' => 'Objectif actuel : 60,0 %',
@@ -247,7 +247,7 @@ class FinancialInsights extends Page
                 'value' => $this->shortMoney($cashFlow),
                 'trend' => $this->deltaLabel($cashFlow, $previousCashFlow),
                 'trendTone' => $cashFlow >= $previousCashFlow ? 'positive' : 'negative',
-                'note' => 'Ratio de liquidité : ' . number_format($liquidity, 1),
+                'note' => 'Ratio de liquidité : '.number_format($liquidity, 1),
                 'icon' => 'heroicon-o-arrows-right-left',
             ],
         ];
@@ -255,7 +255,7 @@ class FinancialInsights extends Page
 
     protected function buildMonthlySeries(array $context): array
     {
-        if (!Schema::hasTable('invoices') || !Schema::hasTable('expenses')) {
+        if (! Schema::hasTable('invoices') || ! Schema::hasTable('expenses')) {
             return $this->placeholderData($context['label'])['monthly'];
         }
 
@@ -264,7 +264,7 @@ class FinancialInsights extends Page
         $expenseTotals = $this->sumExpensesByBuckets($bucketRanges);
 
         $rows = $bucketRanges->map(function (array $bucket) use ($invoiceTotals, $expenseTotals) {
-            $bucketKey = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $bucketKey = $bucket['start']->toDateString().'|'.$bucket['end']->toDateString();
             $revenue = (float) ($invoiceTotals[$bucketKey] ?? 0.0);
             $expenses = (float) ($expenseTotals[$bucketKey] ?? 0.0);
 
@@ -275,7 +275,7 @@ class FinancialInsights extends Page
             ];
         });
 
-        $max = max(1.0, (float) $rows->max(fn(array $row) => max($row['revenue'], $row['expenses'])));
+        $max = max(1.0, (float) $rows->max(fn (array $row) => max($row['revenue'], $row['expenses'])));
 
         return $rows->values()->map(function (array $row, int $index) use ($max, $rows): array {
             return [
@@ -289,7 +289,7 @@ class FinancialInsights extends Page
 
     protected function buildRevenueBreakdown(array $context): array
     {
-        if (!Schema::hasTable('invoice_items') || !Schema::hasTable('invoices')) {
+        if (! Schema::hasTable('invoice_items') || ! Schema::hasTable('invoices')) {
             return $this->placeholderData($context['label'])['breakdown'];
         }
 
@@ -316,7 +316,7 @@ class FinancialInsights extends Page
         return $rows->values()->map(function ($row, int $index) use ($palette, $grandTotal): array {
             return [
                 'label' => (string) $row->label,
-                'share' => number_format((((float) $row->total) / $grandTotal) * 100, 0) . '%',
+                'share' => number_format((((float) $row->total) / $grandTotal) * 100, 0).'%',
                 'color' => $palette[$index] ?? '#1A365D',
             ];
         })->all();
@@ -324,7 +324,7 @@ class FinancialInsights extends Page
 
     protected function buildAgingBuckets(array $context): array
     {
-        if (!Schema::hasTable('invoices')) {
+        if (! Schema::hasTable('invoices')) {
             return $this->placeholderData($context['label'])['aging'];
         }
 
@@ -367,7 +367,7 @@ class FinancialInsights extends Page
                     ->latest('payment_date')
                     ->take(6)
                     ->get()
-                    ->map(fn(Payment $payment): array => [
+                    ->map(fn (Payment $payment): array => [
                         'date' => $payment->payment_date ? Carbon::parse($payment->payment_date)->locale('fr')->translatedFormat('d M Y') : 'Récent',
                         'entity' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Client',
                         'type' => 'Encaissement',
@@ -386,7 +386,7 @@ class FinancialInsights extends Page
                     ->latest('expense_date')
                     ->take(6)
                     ->get()
-                    ->map(fn(Expense $expense): array => [
+                    ->map(fn (Expense $expense): array => [
                         'date' => $expense->expense_date ? Carbon::parse($expense->expense_date)->locale('fr')->translatedFormat('d M Y') : 'Récent',
                         'entity' => $expense->vendor ?: $expense->title,
                         'type' => 'Dépense',
@@ -418,13 +418,13 @@ class FinancialInsights extends Page
                 'status' => 'Surveillance',
                 'badge' => 'pending',
                 'initials' => 'NA',
-            ]
+            ],
         ];
     }
 
     protected function buildInsight(array $context): string
     {
-        if (!Schema::hasTable('invoices')) {
+        if (! Schema::hasTable('invoices')) {
             return $this->placeholderData($context['label'])['insight'];
         }
 
@@ -438,12 +438,12 @@ class FinancialInsights extends Page
         }
 
         if ($previousRevenue <= 0) {
-            return 'Une nouvelle activité de facturation progresse sur cette période, avec ' . number_format($collectionRate, 0) . '% déjà encaissés.';
+            return 'Une nouvelle activité de facturation progresse sur cette période, avec '.number_format($collectionRate, 0).'% déjà encaissés.';
         }
 
         $delta = (($currentRevenue - $previousRevenue) / $previousRevenue) * 100;
 
-        return 'Le chiffre d’affaires est ' . ($delta >= 0 ? 'en hausse de ' : 'en baisse de ') . number_format(abs($delta), 0) . '% par rapport à la période précédente, avec ' . number_format($collectionRate, 0) . '% déjà encaissés.';
+        return 'Le chiffre d’affaires est '.($delta >= 0 ? 'en hausse de ' : 'en baisse de ').number_format(abs($delta), 0).'% par rapport à la période précédente, avec '.number_format($collectionRate, 0).'% déjà encaissés.';
     }
 
     protected function makeTimeBuckets(array $context): Collection
@@ -499,7 +499,7 @@ class FinancialInsights extends Page
 
     protected function sumInvoiceRevenue(Carbon $start, Carbon $end): float
     {
-        if (!Schema::hasTable('invoices')) {
+        if (! Schema::hasTable('invoices')) {
             return 0.0;
         }
 
@@ -507,7 +507,7 @@ class FinancialInsights extends Page
             ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
             ->sum('total');
 
-        if (!Schema::hasTable('invoice_items')) {
+        if (! Schema::hasTable('invoice_items')) {
             return $invoiceTotal;
         }
 
@@ -522,7 +522,7 @@ class FinancialInsights extends Page
 
     protected function sumPayments(Carbon $start, Carbon $end): float
     {
-        if (!Schema::hasTable('payments')) {
+        if (! Schema::hasTable('payments')) {
             return 0.0;
         }
 
@@ -533,7 +533,7 @@ class FinancialInsights extends Page
 
     protected function sumExpenses(Carbon $start, Carbon $end): float
     {
-        if (!Schema::hasTable('expenses')) {
+        if (! Schema::hasTable('expenses')) {
             return 0.0;
         }
 
@@ -547,7 +547,7 @@ class FinancialInsights extends Page
         $totals = [];
 
         foreach ($buckets as $bucket) {
-            $key = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $key = $bucket['start']->toDateString().'|'.$bucket['end']->toDateString();
             $totals[$key] = $this->sumInvoiceRevenue($bucket['start'], $bucket['end']);
         }
 
@@ -559,7 +559,7 @@ class FinancialInsights extends Page
         $totals = [];
 
         foreach ($buckets as $bucket) {
-            $key = $bucket['start']->toDateString() . '|' . $bucket['end']->toDateString();
+            $key = $bucket['start']->toDateString().'|'.$bucket['end']->toDateString();
             $totals[$key] = $this->sumExpenses($bucket['start'], $bucket['end']);
         }
 
@@ -568,7 +568,7 @@ class FinancialInsights extends Page
 
     protected function money(float $amount): string
     {
-        return 'FCFA ' . number_format($amount, 0, '.', ' ');
+        return 'FCFA '.number_format($amount, 0, '.', ' ');
     }
 
     protected function shortMoney(float $amount): string
@@ -576,15 +576,15 @@ class FinancialInsights extends Page
         $absolute = abs($amount);
 
         if ($absolute >= 1000000000) {
-            return 'FCFA ' . number_format($amount / 1000000000, 1) . 'B';
+            return 'FCFA '.number_format($amount / 1000000000, 1).'B';
         }
 
         if ($absolute >= 1000000) {
-            return 'FCFA ' . number_format($amount / 1000000, 1) . 'M';
+            return 'FCFA '.number_format($amount / 1000000, 1).'M';
         }
 
         if ($absolute >= 1000) {
-            return 'FCFA ' . number_format($amount / 1000, 1) . 'K';
+            return 'FCFA '.number_format($amount / 1000, 1).'K';
         }
 
         return $this->money($amount);
@@ -599,7 +599,7 @@ class FinancialInsights extends Page
         $delta = (($current - $baseline) / abs($baseline)) * 100;
         $prefix = $delta >= 0 ? '+' : '';
 
-        return $prefix . number_format($delta, 0) . '%';
+        return $prefix.number_format($delta, 0).'%';
     }
 
     protected function initials(string $value): string
@@ -610,7 +610,7 @@ class FinancialInsights extends Page
             return 'NA';
         }
 
-        return $parts->map(fn(string $part): string => strtoupper(substr($part, 0, 1)))->implode('');
+        return $parts->map(fn (string $part): string => strtoupper(substr($part, 0, 1)))->implode('');
     }
 
     protected function placeholderData(?string $periodLabel = null): array

@@ -39,7 +39,7 @@ trait HasPermissionAccess
 
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -53,7 +53,7 @@ trait HasPermissionAccess
             return false;
         }
 
-        return $user->can($permissionScope . '.' . $action);
+        return $user->can($permissionScope.'.'.$action);
     }
 
     protected static function isEditionFeatureEnabled(): bool

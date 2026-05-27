@@ -44,6 +44,7 @@ class ApiExpansionTest extends TestCase
             'name' => 'Expansion Corp',
             'currency' => 'FCFA',
             'is_active' => true,
+            'advanced_options' => ['quotes' => true],
         ]);
         $this->setUpCompany($this->company);
 

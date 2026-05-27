@@ -60,6 +60,7 @@ class QuotePdfTemplateTest extends TestCase
             'name' => 'CROMMIX MALI S.A.',
             'currency' => 'FCFA',
             'is_active' => true,
+            'advanced_options' => ['quotes' => true],
         ]));
 
         $user = User::factory()->create(['status' => 'active']);

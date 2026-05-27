@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Quotes;
 
 use App\Filament\Concerns\HasBillingFormConcerns;
 use App\Filament\Concerns\HasPermissionAccess;
+use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Quotes\Pages\CreateQuote;
 use App\Filament\Resources\Quotes\Pages\EditQuote;
 use App\Filament\Resources\Quotes\Pages\ListQuotes;
@@ -12,23 +13,22 @@ use App\Filament\Resources\RelationManagers\NotesRelationManager;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Service;
-use App\Services\AuditTrailService;
 use App\Services\SequenceService;
+use App\Services\Whatsapp\WhatsappSendService;
 use BackedEnum;
-use App\Filament\Resources\Invoices\InvoiceResource;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -38,11 +38,12 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class QuoteResource extends Resource
 {
-    use HasPermissionAccess;
     use HasBillingFormConcerns;
+    use HasPermissionAccess;
 
     protected static ?string $companyFeature = 'quotes';
 
@@ -74,13 +75,13 @@ class QuoteResource extends Resource
                             ->schema([
                                 TextInput::make('quote_number')
                                     ->label('Numéro du devis')
-                                    ->default(fn(): string => static::generateQuoteNumber())
+                                    ->default(fn (): string => static::generateQuoteNumber())
                                     ->readOnly()
                                     ->required(),
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
-                                    ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
+                                    ->getOptionLabelFromRecordUsing(fn (Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email'])
                                     ->required(),
                                 DatePicker::make('issue_date')
@@ -131,7 +132,7 @@ class QuoteResource extends Resource
 
                                                 $service = Service::find($state);
 
-                                                if (!$service) {
+                                                if (! $service) {
                                                     return;
                                                 }
 
@@ -156,7 +157,7 @@ class QuoteResource extends Resource
                                             ->live(),
                                         Placeholder::make('line_total_preview')
                                             ->label('Total')
-                                            ->content(fn(Get $get): string => static::formatMoney(((float) ($get('quantity') ?? 0)) * ((float) ($get('unit_price') ?? 0)))),
+                                            ->content(fn (Get $get): string => static::formatMoney(((float) ($get('quantity') ?? 0)) * ((float) ($get('unit_price') ?? 0)))),
                                     ])
                                     ->columns(6)
                                     ->columnSpanFull(),
@@ -188,10 +189,10 @@ class QuoteResource extends Resource
                                     ->live(),
                                 Placeholder::make('subtotal_preview')
                                     ->label('Sous-total')
-                                    ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
+                                    ->content(fn (Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['subtotal'])),
                                 Placeholder::make('total_preview')
                                     ->label('Total général')
-                                    ->content(fn(Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
+                                    ->content(fn (Get $get): string => static::formatMoney(static::calculateTotals((array) ($get('items') ?? []), (float) ($get('discount_total') ?? 0), (float) ($get('tax_total') ?? 0))['total'])),
                             ]),
                     ]),
             ])
@@ -202,13 +203,13 @@ class QuoteResource extends Resource
     {
         return $table
             ->defaultSort('issue_date', 'desc')
-            ->recordUrl(fn(Quote $record): string => static::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (Quote $record): string => static::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('quote_number')
                     ->searchable(),
                 TextColumn::make('client_name')
                     ->label('Client')
-                    ->state(fn(Quote $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
+                    ->state(fn (Quote $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: 'Compte client')
                     ->searchable(),
                 TextColumn::make('issue_date')
                     ->date()
@@ -219,7 +220,7 @@ class QuoteResource extends Resource
                 TextColumn::make('status')
                     ->badge(),
                 TextColumn::make('total')
-                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->formatStateUsing(fn ($state): string => static::formatMoney((float) $state))
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->since()
@@ -230,9 +231,8 @@ class QuoteResource extends Resource
                     ->label('Convertir en facture')
                     ->icon('heroicon-o-document-check')
                     ->color('success')
-                    ->visible(fn(Quote $record): bool =>
-                        in_array($record->status, ['draft', 'sent', 'accepted', 'expired'], true)
-                        && !$record->invoice()->exists()
+                    ->visible(fn (Quote $record): bool => in_array($record->status, ['draft', 'sent', 'accepted', 'expired'], true)
+                        && ! $record->invoice()->exists()
                         && (auth()->user()?->can('invoices.create') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Convertir le devis en facture')
@@ -242,7 +242,7 @@ class QuoteResource extends Resource
 
                         Notification::make()
                             ->title('Facture créée')
-                            ->body('La facture ' . $invoice->invoice_number . ' a été créée à partir du devis ' . $record->quote_number . '.')
+                            ->body('La facture '.$invoice->invoice_number.' a été créée à partir du devis '.$record->quote_number.'.')
                             ->success()
                             ->send();
 
@@ -252,11 +252,11 @@ class QuoteResource extends Resource
                     ->label('Envoyer via WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->color('success')
-                    ->visible(fn(Quote $record): bool => filled($record->client?->phone) && (auth()->user()?->can('quotes.view') ?? false))
+                    ->visible(fn (Quote $record): bool => filled($record->client?->phone) && (auth()->user()?->can('quotes.view') ?? false))
                     ->requiresConfirmation()
                     ->modalHeading('Envoyer le devis via WhatsApp')
                     ->modalDescription('Le devis sera envoyé en PDF via WhatsApp au numéro du client.')
-                    ->action(function (Quote $record, \App\Services\Whatsapp\WhatsappSendService $service): void {
+                    ->action(function (Quote $record, WhatsappSendService $service): void {
                         $log = $service->sendQuote($record);
                         if ($log->status === 'sent') {
                             Notification::make()->title('Devis envoyé via WhatsApp')->success()->send();
@@ -268,7 +268,7 @@ class QuoteResource extends Resource
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->url(fn(Quote $record): string => route('quotes.pdf', ['quote' => $record, 'download' => 1])),
+                    ->url(fn (Quote $record): string => route('quotes.pdf', ['quote' => $record, 'download' => 1])),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
@@ -280,7 +280,7 @@ class QuoteResource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['client']);
     }
@@ -305,12 +305,12 @@ class QuoteResource extends Resource
     /**
      * Generate a quote number for Filament forms.
      *
-     * @param int|null $companyId Company to scope the sequence to
+     * @param  int|null  $companyId  Company to scope the sequence to
      */
     public static function generateQuoteNumber(?int $companyId = null): string
     {
         // If company_id not provided, try to resolve from current context
-        if (!$companyId) {
+        if (! $companyId) {
             if (app()->bound('currentCompany')) {
                 $companyId = app('currentCompany')->id;
             } elseif (auth()->check()) {
@@ -320,10 +320,10 @@ class QuoteResource extends Resource
         }
 
         $year = now()->format('Y');
-        $prefix = 'QT-' . $year;
+        $prefix = 'QT-'.$year;
         $sep = '-';
         $seq = app(SequenceService::class)->next('quote', $year, $companyId);
 
-        return $prefix . $sep . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.$sep.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

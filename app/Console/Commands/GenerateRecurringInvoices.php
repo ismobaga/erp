@@ -37,6 +37,10 @@ class GenerateRecurringInvoices extends Command
         // Iterate over each active company so that HasCompanyScope is correctly
         // applied and sequence numbers are generated in the right tenant context.
         Company::query()->where('is_active', true)->each(function (Company $company) use ($targetDate, $isDry, $audit, &$totalGenerated): void {
+            if (! company_feature_enabled('recurring_invoices', $company)) {
+                return;
+            }
+
             app()->instance('currentCompany', $company);
 
             $templates = RecurringInvoice::query()
@@ -53,7 +57,7 @@ class GenerateRecurringInvoices extends Command
 
             foreach ($templates as $template) {
                 /** @var RecurringInvoice $template */
-                if (!$isDry) {
+                if (! $isDry) {
                     DB::transaction(function () use ($template, $audit): void {
                         // Optimistic lock: atomically claim this template for the
                         // expected next_due_date. If another worker already advanced
@@ -66,7 +70,7 @@ class GenerateRecurringInvoices extends Command
                             ->lockForUpdate()
                             ->exists();
 
-                        if (!$claimed) {
+                        if (! $claimed) {
                             return;
                         }
 
@@ -92,7 +96,7 @@ class GenerateRecurringInvoices extends Command
                             'notes' => $template->notes,
                         ]);
 
-                        if (!empty($template->items)) {
+                        if (! empty($template->items)) {
                             foreach ((array) $template->items as $item) {
                                 InvoiceItem::create([
                                     'invoice_id' => $invoice->id,
@@ -139,12 +143,12 @@ class GenerateRecurringInvoices extends Command
         });
 
         if ($totalGenerated === 0) {
-            $this->info('No recurring invoices are due on ' . $targetDate->toDateString() . '.');
+            $this->info('No recurring invoices are due on '.$targetDate->toDateString().'.');
         } else {
             $this->info(
                 $isDry
-                ? $totalGenerated . ' recurring invoice(s) would be generated.'
-                : $totalGenerated . ' recurring invoice(s) generated successfully.'
+                ? $totalGenerated.' recurring invoice(s) would be generated.'
+                : $totalGenerated.' recurring invoice(s) generated successfully.'
             );
         }
 

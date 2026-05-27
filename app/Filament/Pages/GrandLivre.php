@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\HasPermissionAccess;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
-use App\Models\LedgerAccount;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -49,19 +48,19 @@ class GrandLivre extends Page
     {
         try {
             return [
-                'kpis'           => $this->getKpis(),
-                'entries'        => $this->getEntries(),
+                'kpis' => $this->getKpis(),
+                'entries' => $this->getEntries(),
                 'accountSummary' => $this->getAccountSummary(),
-                'periodOptions'  => $this->periodOptions(),
-                'statusOptions'  => $this->statusOptions(),
+                'periodOptions' => $this->periodOptions(),
+                'statusOptions' => $this->statusOptions(),
             ];
         } catch (Throwable) {
             return [
-                'kpis'           => $this->placeholderKpis(),
-                'entries'        => [],
+                'kpis' => $this->placeholderKpis(),
+                'entries' => [],
                 'accountSummary' => [],
-                'periodOptions'  => $this->periodOptions(),
-                'statusOptions'  => $this->statusOptions(),
+                'periodOptions' => $this->periodOptions(),
+                'statusOptions' => $this->statusOptions(),
             ];
         }
     }
@@ -70,7 +69,7 @@ class GrandLivre extends Page
 
     protected function getKpis(): array
     {
-        if (!Schema::hasTable('journal_entries')) {
+        if (! Schema::hasTable('journal_entries')) {
             return $this->placeholderKpis();
         }
 
@@ -78,10 +77,10 @@ class GrandLivre extends Page
         $this->applyPeriod($query);
         $this->applyStatus($query);
 
-        $total   = $query->count();
-        $posted  = (clone $query)->where('status', 'posted')->count();
-        $draft   = (clone $query)->where('status', 'draft')->count();
-        $voided  = (clone $query)->where('status', 'voided')->count();
+        $total = $query->count();
+        $posted = (clone $query)->where('status', 'posted')->count();
+        $draft = (clone $query)->where('status', 'draft')->count();
+        $voided = (clone $query)->where('status', 'voided')->count();
 
         $lineQuery = JournalEntryLine::query()
             ->whereHas('entry', function ($q): void {
@@ -89,41 +88,41 @@ class GrandLivre extends Page
                 $this->applyStatus($q);
             });
 
-        $totalDebit  = (float) $lineQuery->sum('debit');
+        $totalDebit = (float) $lineQuery->sum('debit');
         $totalCredit = (float) (clone $lineQuery)->sum('credit');
 
         return [
             [
-                'label'     => 'Total écritures',
-                'value'     => $total,
-                'note'      => $posted . ' validées · ' . $draft . ' brouillons · ' . $voided . ' annulées',
-                'icon'      => 'heroicon-o-document-chart-bar',
-                'color'     => '#002045',
-                'bg'        => '#eff4ff',
+                'label' => 'Total écritures',
+                'value' => $total,
+                'note' => $posted.' validées · '.$draft.' brouillons · '.$voided.' annulées',
+                'icon' => 'heroicon-o-document-chart-bar',
+                'color' => '#002045',
+                'bg' => '#eff4ff',
             ],
             [
-                'label'     => 'Total débit',
-                'value'     => $this->money($totalDebit),
-                'note'      => 'Cumul des mouvements débiteurs',
-                'icon'      => 'heroicon-o-arrow-trending-up',
-                'color'     => '#005048',
-                'bg'        => '#dff7f0',
+                'label' => 'Total débit',
+                'value' => $this->money($totalDebit),
+                'note' => 'Cumul des mouvements débiteurs',
+                'icon' => 'heroicon-o-arrow-trending-up',
+                'color' => '#005048',
+                'bg' => '#dff7f0',
             ],
             [
-                'label'     => 'Total crédit',
-                'value'     => $this->money($totalCredit),
-                'note'      => 'Cumul des mouvements créditeurs',
-                'icon'      => 'heroicon-o-arrow-trending-down',
-                'color'     => '#7c2d12',
-                'bg'        => '#fde8d8',
+                'label' => 'Total crédit',
+                'value' => $this->money($totalCredit),
+                'note' => 'Cumul des mouvements créditeurs',
+                'icon' => 'heroicon-o-arrow-trending-down',
+                'color' => '#7c2d12',
+                'bg' => '#fde8d8',
             ],
             [
-                'label'     => 'Écritures validées',
-                'value'     => $posted,
-                'note'      => round($total > 0 ? ($posted / $total) * 100 : 0, 1) . '% du total',
-                'icon'      => 'heroicon-o-check-circle',
-                'color'     => '#1a365d',
-                'bg'        => '#d6e3ff',
+                'label' => 'Écritures validées',
+                'value' => $posted,
+                'note' => round($total > 0 ? ($posted / $total) * 100 : 0, 1).'% du total',
+                'icon' => 'heroicon-o-check-circle',
+                'color' => '#1a365d',
+                'bg' => '#d6e3ff',
             ],
         ];
     }
@@ -142,7 +141,7 @@ class GrandLivre extends Page
 
     protected function getEntries(): array
     {
-        if (!Schema::hasTable('journal_entries')) {
+        if (! Schema::hasTable('journal_entries')) {
             return [];
         }
 
@@ -155,18 +154,18 @@ class GrandLivre extends Page
             ->orderByDesc('id')
             ->take(50)
             ->get()
-            ->map(fn(JournalEntry $e): array => [
+            ->map(fn (JournalEntry $e): array => [
                 'entry_number' => $e->entry_number ?? '—',
-                'entry_date'   => $e->entry_date?->format('d/m/Y') ?? '—',
-                'description'  => $e->description ?? '—',
-                'status'       => $e->status,
+                'entry_date' => $e->entry_date?->format('d/m/Y') ?? '—',
+                'description' => $e->description ?? '—',
+                'status' => $e->status,
                 'status_label' => $e->statusLabel(),
-                'source_type'  => $e->source_type,
+                'source_type' => $e->source_type,
                 'source_label' => $this->sourceLabel($e->source_type),
-                'total_debit'  => $this->money($e->totalDebit()),
+                'total_debit' => $this->money($e->totalDebit()),
                 'total_credit' => $this->money($e->totalCredit()),
-                'balanced'     => $e->isBalanced(),
-                'creator'      => $e->creator?->name ?? '—',
+                'balanced' => $e->isBalanced(),
+                'creator' => $e->creator?->name ?? '—',
             ])
             ->toArray();
     }
@@ -175,7 +174,7 @@ class GrandLivre extends Page
 
     protected function getAccountSummary(): array
     {
-        if (!Schema::hasTable('ledger_accounts') || !Schema::hasTable('journal_entry_lines')) {
+        if (! Schema::hasTable('ledger_accounts') || ! Schema::hasTable('journal_entry_lines')) {
             return [];
         }
 
@@ -192,31 +191,31 @@ class GrandLivre extends Page
             ->keyBy('type');
 
         $typeColors = [
-            'asset'     => ['bg' => '#dff7f0', 'fg' => '#005048', 'label' => 'Actif'],
+            'asset' => ['bg' => '#dff7f0', 'fg' => '#005048', 'label' => 'Actif'],
             'liability' => ['bg' => '#fde8d8', 'fg' => '#7c2d12', 'label' => 'Passif'],
-            'equity'    => ['bg' => '#d6e3ff', 'fg' => '#002045', 'label' => 'Capitaux propres'],
-            'revenue'   => ['bg' => '#dff7f0', 'fg' => '#005048', 'label' => 'Produits'],
-            'expense'   => ['bg' => '#fde8d8', 'fg' => '#7c2d12', 'label' => 'Charges'],
+            'equity' => ['bg' => '#d6e3ff', 'fg' => '#002045', 'label' => 'Capitaux propres'],
+            'revenue' => ['bg' => '#dff7f0', 'fg' => '#005048', 'label' => 'Produits'],
+            'expense' => ['bg' => '#fde8d8', 'fg' => '#7c2d12', 'label' => 'Charges'],
         ];
 
         $result = [];
         foreach ($types as $type) {
             $row = $rows->get($type);
-            $debit  = $row ? (float) $row->total_debit  : 0.0;
+            $debit = $row ? (float) $row->total_debit : 0.0;
             $credit = $row ? (float) $row->total_credit : 0.0;
             // Assets and expenses normally carry debit balances (net = debit − credit);
             // liabilities, equity and revenue carry credit balances (net = credit − debit).
-            $net    = ($type === 'asset' || $type === 'expense') ? $debit - $credit : $credit - $debit;
+            $net = ($type === 'asset' || $type === 'expense') ? $debit - $credit : $credit - $debit;
 
             $result[] = [
-                'type'         => $type,
-                'label'        => $typeColors[$type]['label'],
-                'total_debit'  => $this->money($debit),
+                'type' => $type,
+                'label' => $typeColors[$type]['label'],
+                'total_debit' => $this->money($debit),
                 'total_credit' => $this->money($credit),
-                'net_balance'  => $this->money($net),
+                'net_balance' => $this->money($net),
                 'net_positive' => $net >= 0,
-                'bg'           => $typeColors[$type]['bg'],
-                'fg'           => $typeColors[$type]['fg'],
+                'bg' => $typeColors[$type]['bg'],
+                'fg' => $typeColors[$type]['fg'],
             ];
         }
 
@@ -227,16 +226,16 @@ class GrandLivre extends Page
 
     protected function applyPeriod(mixed $query): void
     {
-        $now       = now();
+        $now = now();
         $lastMonth = $now->copy()->subMonth();
-        $lastYear  = $now->copy()->subYear();
+        $lastYear = $now->copy()->subYear();
 
         match ($this->period) {
             'current_month' => $query->whereMonth('entry_date', $now->month)->whereYear('entry_date', $now->year),
-            'last_month'    => $query->whereMonth('entry_date', $lastMonth->month)->whereYear('entry_date', $lastMonth->year),
-            'current_year'  => $query->whereYear('entry_date', $now->year),
-            'last_year'     => $query->whereYear('entry_date', $lastYear->year),
-            default         => null,
+            'last_month' => $query->whereMonth('entry_date', $lastMonth->month)->whereYear('entry_date', $lastMonth->year),
+            'current_year' => $query->whereYear('entry_date', $now->year),
+            'last_year' => $query->whereYear('entry_date', $lastYear->year),
+            default => null,
         };
     }
 
@@ -246,7 +245,7 @@ class GrandLivre extends Page
             return '—';
         }
 
-        $translated = (string) __('erp.ledger.source_types.' . $sourceType, []);
+        $translated = (string) __('erp.ledger.source_types.'.$sourceType, []);
 
         return $translated !== '' ? $translated : $sourceType;
     }
@@ -261,19 +260,19 @@ class GrandLivre extends Page
     protected function periodOptions(): array
     {
         return [
-            'all'           => 'Toutes les périodes',
+            'all' => 'Toutes les périodes',
             'current_month' => 'Mois en cours',
-            'last_month'    => 'Mois précédent',
-            'current_year'  => 'Année en cours',
-            'last_year'     => 'Année précédente',
+            'last_month' => 'Mois précédent',
+            'current_year' => 'Année en cours',
+            'last_year' => 'Année précédente',
         ];
     }
 
     protected function statusOptions(): array
     {
         return [
-            'all'    => 'Tous les statuts',
-            'draft'  => 'Brouillon',
+            'all' => 'Tous les statuts',
+            'draft' => 'Brouillon',
             'posted' => 'Validée',
             'voided' => 'Annulée',
         ];
@@ -281,6 +280,6 @@ class GrandLivre extends Page
 
     protected function money(float $amount): string
     {
-        return number_format($amount, 2, ',', ' ') . ' FCFA';
+        return number_format($amount, 2, ',', ' ').' FCFA';
     }
 }

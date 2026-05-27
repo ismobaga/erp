@@ -49,7 +49,7 @@ class ApprovalCenter extends Page
         return [
             Action::make('approveLowRisk')
                 ->label('Valider les cas simples')
-                ->visible(fn(): bool => auth()->user()?->canAny(['expenses.update', 'projects.update', 'invoices.update', 'payments.update']) ?? false)
+                ->visible(fn (): bool => auth()->user()?->canAny(['expenses.update', 'projects.update', 'invoices.update', 'payments.update']) ?? false)
                 ->action(function (): void {
                     $user = auth()->user();
                     $approved = 0;
@@ -57,7 +57,7 @@ class ApprovalCenter extends Page
                     $bulkLimit = max(1, (int) config('erp.approvals.bulk_approval_limit', 10));
                     $projectStatuses = config('erp.approvals.project_auto_approve_statuses', ['planned', 'on_hold']);
 
-                    if (!$user) {
+                    if (! $user) {
                         Notification::make()->title('Aucun utilisateur authentifié pour valider les éléments.')->danger()->send();
 
                         return;
@@ -90,7 +90,7 @@ class ApprovalCenter extends Page
                     }
 
                     $notification = Notification::make()
-                        ->title($approved > 0 ? $approved . ' élément(s) ont été approuvés.' : 'Aucun élément à faible risque n’a été trouvé.');
+                        ->title($approved > 0 ? $approved.' élément(s) ont été approuvés.' : 'Aucun élément à faible risque n’a été trouvé.');
 
                     ($approved > 0 ? $notification->success() : $notification->warning())->send();
                 }),
@@ -100,7 +100,7 @@ class ApprovalCenter extends Page
                     $handle = fopen('php://temp', 'r+');
 
                     // Header row
-                    fputcsv($handle, ['File de validation – Exporté le ' . now()->format('d/m/Y H:i')], ';');
+                    fputcsv($handle, ['File de validation – Exporté le '.now()->format('d/m/Y H:i')], ';');
                     fputcsv($handle, []);
                     fputcsv($handle, ['Type', 'Référence', 'Sujet', 'Catégorie', 'Montant / Client', 'Statut', 'Note'], ';');
 
@@ -117,7 +117,7 @@ class ApprovalCenter extends Page
                                     $invoice->invoice_number,
                                     $invoice->client?->company_name ?: $invoice->client?->contact_name ?: '—',
                                     'Révision facture',
-                                    'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' '),
+                                    'FCFA '.number_format((float) $invoice->balance_due, 0, '.', ' '),
                                     $invoice->status,
                                     $invoice->status === 'overdue' ? 'Relance recouvrement requise' : 'Prêt pour validation',
                                 ], ';');
@@ -133,10 +133,10 @@ class ApprovalCenter extends Page
                             ->each(function (Expense $expense) use ($handle): void {
                                 fputcsv($handle, [
                                     'Dépense',
-                                    $expense->reference ?: ('EXP-' . str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
+                                    $expense->reference ?: ('EXP-'.str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
                                     $expense->title,
                                     $expense->category,
-                                    'FCFA ' . number_format((float) $expense->amount, 0, '.', ' '),
+                                    'FCFA '.number_format((float) $expense->amount, 0, '.', ' '),
                                     $expense->approval_status,
                                     $expense->approval_status === 'review' ? 'Contrôle requis' : 'En attente de validation',
                                 ], ';');
@@ -153,7 +153,7 @@ class ApprovalCenter extends Page
                             ->each(function (Project $project) use ($handle): void {
                                 fputcsv($handle, [
                                     'Projet',
-                                    'PRJ-' . str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
+                                    'PRJ-'.str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
                                     $project->name,
                                     'Feu vert projet',
                                     $project->client?->company_name ?: 'Projet interne',
@@ -166,17 +166,17 @@ class ApprovalCenter extends Page
                     if (Schema::hasTable('payments')) {
                         Payment::query()
                             ->with(['client', 'invoice'])
-                            ->where(fn($q) => $q->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
+                            ->where(fn ($q) => $q->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
                             ->latest()
                             ->take(50)
                             ->get()
                             ->each(function (Payment $payment) use ($handle): void {
                                 fputcsv($handle, [
                                     'Paiement',
-                                    $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
+                                    $payment->reference ?: ('PAY-'.str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
                                     $payment->client?->company_name ?: $payment->client?->contact_name ?: '—',
                                     'Exception paiement',
-                                    'FCFA ' . number_format((float) $payment->amount, 0, '.', ' '),
+                                    'FCFA '.number_format((float) $payment->amount, 0, '.', ' '),
                                     'flagged',
                                     'Référence ou facture à rapprocher',
                                 ], ';');
@@ -187,9 +187,9 @@ class ApprovalCenter extends Page
                     $csv = stream_get_contents($handle);
                     fclose($handle);
 
-                    $folder = 'approvals/' . now()->format('Y/m');
-                    $fileName = 'file-validation-' . now()->format('Ymd-His') . '-' . (auth()->id() ?? 'system') . '.csv';
-                    $path = $folder . '/' . $fileName;
+                    $folder = 'approvals/'.now()->format('Y/m');
+                    $fileName = 'file-validation-'.now()->format('Ymd-His').'-'.(auth()->id() ?? 'system').'.csv';
+                    $path = $folder.'/'.$fileName;
                     Storage::disk('local')->put($path, $csv);
 
                     app(AuditTrailService::class)->log('approval_queue_exported', null, [
@@ -227,7 +227,7 @@ class ApprovalCenter extends Page
 
     protected function getSummary(): array
     {
-        if (!Schema::hasTable('invoices')) {
+        if (! Schema::hasTable('invoices')) {
             return $this->placeholderSummary();
         }
 
@@ -236,7 +236,7 @@ class ApprovalCenter extends Page
             ->sum('balance_due');
 
         $flagged = Schema::hasTable('payments')
-            ? Payment::query()->where(fn($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))->count()
+            ? Payment::query()->where(fn ($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))->count()
             : 0;
 
         $pendingExpenses = Schema::hasTable('expenses')
@@ -287,7 +287,7 @@ class ApprovalCenter extends Page
                 ->latest()
                 ->take(4)
                 ->get()
-                ->map(fn(Invoice $invoice): array => [
+                ->map(fn (Invoice $invoice): array => [
                     'tone' => $invoice->status === 'overdue' ? 'danger' : ($invoice->status === 'draft' ? 'info' : 'success'),
                     'icon' => $invoice->status === 'overdue' ? 'warning' : 'description',
                     'subject' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Compte client',
@@ -309,11 +309,11 @@ class ApprovalCenter extends Page
                 ->latest()
                 ->take(2)
                 ->get()
-                ->map(fn(Expense $expense): array => [
+                ->map(fn (Expense $expense): array => [
                     'tone' => $expense->approval_status === 'review' ? 'danger' : 'info',
                     'icon' => 'receipt_long',
                     'subject' => $expense->title,
-                    'reference' => $expense->reference ?: ('EXP-' . str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
+                    'reference' => $expense->reference ?: ('EXP-'.str_pad((string) $expense->getKey(), 4, '0', STR_PAD_LEFT)),
                     'category' => 'Validation dépense',
                     'amount' => $this->money((float) $expense->amount),
                     'note' => $expense->approval_status === 'review' ? 'Contrôle complémentaire requis' : 'En attente de validation managériale',
@@ -332,11 +332,11 @@ class ApprovalCenter extends Page
                 ->latest()
                 ->take(2)
                 ->get()
-                ->map(fn(Project $project): array => [
+                ->map(fn (Project $project): array => [
                     'tone' => $project->approval_status === 'review' ? 'danger' : 'success',
                     'icon' => 'folder_managed',
                     'subject' => $project->name,
-                    'reference' => 'PRJ-' . str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
+                    'reference' => 'PRJ-'.str_pad((string) $project->getKey(), 4, '0', STR_PAD_LEFT),
                     'category' => 'Feu vert projet',
                     'amount' => $project->client?->company_name ?: 'Projet interne',
                     'note' => $project->approval_status === 'review' ? 'Le cadrage doit être révisé' : 'Projet prêt pour lancement',
@@ -351,15 +351,15 @@ class ApprovalCenter extends Page
         if (Schema::hasTable('payments')) {
             $paymentItems = Payment::query()
                 ->with(['client', 'invoice'])
-                ->where(fn($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
+                ->where(fn ($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
                 ->latest()
                 ->take(2)
                 ->get()
-                ->map(fn(Payment $payment): array => [
+                ->map(fn (Payment $payment): array => [
                     'tone' => 'danger',
                     'icon' => 'payments',
                     'subject' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Transfert grand livre',
-                    'reference' => $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
+                    'reference' => $payment->reference ?: ('PAY-'.str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
                     'category' => 'Exception paiement',
                     'amount' => $this->money((float) $payment->amount),
                     'note' => 'Référence ou facture à rapprocher',
@@ -374,8 +374,10 @@ class ApprovalCenter extends Page
         if (count($items) > 0) {
             usort($items, function (array $a, array $b): int {
                 $priority = ['danger' => 0, 'info' => 1, 'success' => 2];
+
                 return ($priority[$a['tone']] ?? 1) <=> ($priority[$b['tone']] ?? 1);
             });
+
             return array_slice($items, 0, 6);
         }
 
@@ -384,7 +386,7 @@ class ApprovalCenter extends Page
 
     protected function getDepartmentBreakdown(): array
     {
-        if (!Schema::hasTable('expenses')) {
+        if (! Schema::hasTable('expenses')) {
             return $this->placeholderDepartments();
         }
 
@@ -394,7 +396,7 @@ class ApprovalCenter extends Page
             ->orderByDesc('aggregate')
             ->take(3)
             ->get()
-            ->map(fn($row): array => [
+            ->map(fn ($row): array => [
                 'name' => $row->category ?: 'Opérations générales',
                 'count' => (int) $row->aggregate,
             ])
@@ -462,6 +464,6 @@ class ApprovalCenter extends Page
 
     protected function money(float $amount): string
     {
-        return 'FCFA ' . number_format($amount, 0, '.', ' ');
+        return 'FCFA '.number_format($amount, 0, '.', ' ');
     }
 }
