@@ -17,6 +17,7 @@ use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Ledger\LedgerAccountResource;
 use App\Filament\Resources\Payments\PaymentResource;
 use App\Filament\Resources\Projects\ProjectResource;
+use App\Filament\Resources\RecurringInvoices\RecurringInvoiceResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\ArchitecturalStatsOverview;
 use App\Filament\Widgets\OnboardingChecklistWidget;
@@ -100,6 +101,20 @@ class SimpleEditionNavigationTest extends TestCase
         ], ErpEdition::enabledModules());
     }
 
+    public function test_growing_profile_unlocks_recurring_invoices_navigation(): void
+    {
+        config([
+            'erp.edition.active' => 'growing',
+        ]);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->assignRole('Admin');
+
+        $this->actingAs($user);
+
+        $this->assertTrue(RecurringInvoiceResource::shouldRegisterNavigation());
+    }
+
     public function test_simple_edition_navigation_hides_advanced_modules_by_default(): void
     {
         $user = User::factory()->create(['status' => 'active']);
@@ -117,6 +132,7 @@ class SimpleEditionNavigationTest extends TestCase
 
         $this->assertFalse(UserResource::shouldRegisterNavigation());
         $this->assertFalse(LedgerAccountResource::shouldRegisterNavigation());
+        $this->assertFalse(RecurringInvoiceResource::shouldRegisterNavigation());
         $this->assertFalse(FinancialPeriodResource::shouldRegisterNavigation());
         $this->assertFalse(ApprovalCenter::shouldRegisterNavigation());
         $this->assertFalse(NotificationHub::shouldRegisterNavigation());
