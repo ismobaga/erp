@@ -176,6 +176,86 @@ class ClientPortalExpansionTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_portal_hides_cross_tenant_records_across_quotes_projects_tickets_and_conversations(): void
+    {
+        $otherCompany = Company::create([
+            'name' => 'Foreign Tenant',
+            'is_active' => true,
+        ]);
+
+        $foreignQuoteId = DB::table('quotes')->insertGetId([
+            'company_id' => $otherCompany->id,
+            'client_id' => $this->client->id,
+            'quote_number' => 'QT-FOREIGN-001',
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'subtotal' => 1200,
+            'total' => 1200,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('projects')->insert([
+            'company_id' => $otherCompany->id,
+            'client_id' => $this->client->id,
+            'name' => 'Foreign Project',
+            'status' => 'in_progress',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('portal_tickets')->insert([
+            'company_id' => $otherCompany->id,
+            'client_id' => $this->client->id,
+            'subject' => 'Foreign Ticket',
+            'body' => 'Foreign body',
+            'status' => 'open',
+            'priority' => 'normal',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $foreignConversationId = DB::table('whatsapp_conversations')->insertGetId([
+            'company_id' => $otherCompany->id,
+            'client_id' => $this->client->id,
+            'chat_id' => 'foreign-chat@c.us',
+            'contact_name' => 'Foreign Contact',
+            'status' => 'open',
+            'last_message_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('whatsapp_messages')->insert([
+            'conversation_id' => $foreignConversationId,
+            'direction' => 'inbound',
+            'type' => 'text',
+            'body' => 'Foreign message',
+            'sent_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('portal.quotes', ['token' => $this->token]))
+            ->assertOk()
+            ->assertDontSeeText('QT-FOREIGN-001');
+
+        $this->get(route('portal.quote', ['token' => $this->token, 'quote' => $foreignQuoteId]))
+            ->assertNotFound();
+
+        $this->get(route('portal.projects', ['token' => $this->token]))
+            ->assertOk()
+            ->assertDontSeeText('Foreign Project');
+
+        $this->get(route('portal.tickets', ['token' => $this->token]))
+            ->assertOk()
+            ->assertDontSeeText('Foreign Ticket');
+
+        $this->get(route('portal.conversations', ['token' => $this->token]))
+            ->assertOk()
+            ->assertDontSeeText('Foreign message');
+    }
+
     // ── Quotes ─────────────────────────────────────────────────────────────────
 
     public function test_portal_quotes_page_lists_client_quotes(): void
