@@ -49,7 +49,7 @@ class ClientDetailsPageTest extends TestCase
         $response->assertSeeText('Client prioritaire.');
     }
 
-    public function test_filament_clients_resource_keeps_tenant_records_isolated(): void
+    public function test_filament_clients_resource_enforces_tenant_isolation(): void
     {
         $companyA = app('currentCompany');
         $companyB = Company::create([

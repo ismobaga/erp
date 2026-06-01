@@ -176,7 +176,7 @@ class ClientPortalExpansionTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_portal_hides_cross_tenant_records_across_quotes_projects_tickets_and_conversations(): void
+    public function test_portal_enforces_tenant_boundaries_on_cross_tenant_records(): void
     {
         $otherCompany = Company::create([
             'name' => 'Foreign Tenant',

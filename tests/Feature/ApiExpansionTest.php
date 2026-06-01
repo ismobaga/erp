@@ -262,7 +262,7 @@ class ApiExpansionTest extends TestCase
             ->assertJsonPath('data.name', 'ERP Integration');
     }
 
-    public function test_private_endpoints_are_isolated_per_tenant_for_index_and_show_routes(): void
+    public function test_private_endpoints_enforce_tenant_isolation(): void
     {
         $clientA = Client::create([
             'type' => 'company',
