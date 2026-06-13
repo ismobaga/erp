@@ -34,6 +34,8 @@ class JournalEntryResource extends Resource
 {
     use HasPermissionAccess;
 
+    protected static ?string $companyFeature = 'general_ledger';
+
     protected static string $permissionScope = 'ledger';
 
     protected static ?string $model = JournalEntry::class;

@@ -147,6 +147,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'documents.view',
         ])->get());
 
-        $readOnly->syncPermissions(Permission::where('name', 'like', '%.view')->orWhere('name', 'reports.view')->get());
+        $readOnly->syncPermissions(Permission::where('name', 'like', '%.view')->get());
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ContactRequests;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\ContactRequests\Pages\ListContactRequests;
 use App\Filament\Resources\ContactRequests\Pages\ViewContactRequest;
 use App\Models\ContactRequest;
@@ -19,6 +20,10 @@ use Filament\Tables\Table;
 
 class ContactRequestResource extends Resource
 {
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'contact_requests';
+
     protected static ?string $model = ContactRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
