@@ -45,6 +45,21 @@ class DemoCompanySeeder extends Seeder
                 'currency' => 'FCFA',
                 'is_active' => true,
                 'is_demo' => true,
+                // The Company::booted() creating hook only fires on insert. On re-seed
+                // (updateOrCreate hits an existing row) advanced_options would stay null,
+                // disabling all features. Set them explicitly so re-seeding is idempotent.
+                'advanced_options' => array_replace(
+                    (array) config('erp.company_features.defaults', []),
+                    [
+                        'quotes' => true,
+                        'credit_notes' => true,
+                        'recurring_invoices' => true,
+                        'general_ledger' => true,
+                        'financial_periods' => true,
+                        'documents' => true,
+                        'advanced_reports' => true,
+                    ]
+                ),
             ],
         );
 

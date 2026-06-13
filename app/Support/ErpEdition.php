@@ -11,6 +11,12 @@ class ErpEdition
 
     public static function current(): string
     {
+        $company = currentCompany();
+
+        if ($company !== null && filled($company->edition)) {
+            return (string) $company->edition;
+        }
+
         return (string) config('erp.edition.active', 'full');
     }
 

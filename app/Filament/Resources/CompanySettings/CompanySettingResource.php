@@ -6,6 +6,7 @@ use App\Filament\Concerns\HasPermissionAccess;
 use App\Filament\Resources\CompanySettings\Pages\EditCompanySetting;
 use App\Filament\Resources\CompanySettings\Pages\ListCompanySettings;
 use App\Models\Company;
+use App\Support\ErpEdition;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
@@ -21,6 +22,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -158,11 +160,37 @@ class CompanySettingResource extends Resource
                                     ->label('WhatsApp Device ID')
                                     ->helperText('Device ID utilisé par GoWA'),
                             ]),
+                        Section::make('Édition de l\'application')
+                            ->description('Sélectionnez l\'édition ERP pour cette société. Laissez vide pour hériter de la valeur serveur.')
+                            ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
+                            ->columnSpanFull()
+                            ->schema([
+                                Select::make('edition')
+                                    ->label('Édition ERP')
+                                    ->options([
+                                        'simple'  => 'Simple — Modules de base uniquement',
+                                        'growing' => 'Growing — Modules intermédiaires',
+                                        'full'    => 'Full — Tous les modules',
+                                    ])
+                                    ->placeholder('Défaut serveur ('.config('erp.edition.active', 'full').')')
+                                    ->native(false)
+                                    ->nullable()
+                                    ->live()
+                                    ->helperText('Le changement d\'édition prend effet après sauvegarde et rechargement de la page.'),
+                            ]),
                         Section::make('Modules avancés')
                             ->description('Activez uniquement les options avancées utiles pour la société actuellement sélectionnée.')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-tertiary'])
                             ->columnSpanFull()
                             ->columns(['lg' => 2])
+                            ->hidden(function (Get $get): bool {
+                                $selected = $get('edition');
+                                if (blank($selected)) {
+                                    return ErpEdition::isSimple();
+                                }
+
+                                return $selected === 'simple';
+                            })
                             ->schema([
                                 Placeholder::make('basic_mode')
                                     ->label('Mode standard')

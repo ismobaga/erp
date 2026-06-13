@@ -38,6 +38,8 @@ class GenerateRecurringInvoices extends Command
         // applied and sequence numbers are generated in the right tenant context.
         Company::query()->where('is_active', true)->each(function (Company $company) use ($targetDate, $isDry, $audit, &$totalGenerated): void {
             if (! company_feature_enabled('recurring_invoices', $company)) {
+                $this->line('  [SKIP] '.$company->name.' — recurring_invoices feature not enabled.');
+
                 return;
             }
 
@@ -58,7 +60,7 @@ class GenerateRecurringInvoices extends Command
             foreach ($templates as $template) {
                 /** @var RecurringInvoice $template */
                 if (! $isDry) {
-                    DB::transaction(function () use ($template, $audit): void {
+                    $created = DB::transaction(function () use ($template, $audit): bool {
                         // Optimistic lock: atomically claim this template for the
                         // expected next_due_date. If another worker already advanced
                         // it (next_due_date changed), the update returns 0 rows and
@@ -71,7 +73,7 @@ class GenerateRecurringInvoices extends Command
                             ->exists();
 
                         if (! $claimed) {
-                            return;
+                            return false;
                         }
 
                         $issueDate = $template->next_due_date;
@@ -84,7 +86,7 @@ class GenerateRecurringInvoices extends Command
                             ->exists();
 
                         if ($alreadyGenerated) {
-                            return;
+                            return false;
                         }
 
                         $invoice = Invoice::create([
@@ -125,7 +127,13 @@ class GenerateRecurringInvoices extends Command
                         ]);
 
                         $template->advanceNextDueDate();
+
+                        return true;
                     });
+
+                    if ($created) {
+                        $generated++;
+                    }
                 } else {
                     $this->line(sprintf(
                         '  [DRY] Would generate invoice for client #%d (%s) — amount: FCFA %s — next: %s',
@@ -134,9 +142,8 @@ class GenerateRecurringInvoices extends Command
                         number_format((float) $template->amount, 0, '.', ' '),
                         $template->next_due_date->toDateString(),
                     ));
+                    $generated++;
                 }
-
-                $generated++;
             }
 
             $totalGenerated += $generated;

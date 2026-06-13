@@ -38,6 +38,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PaymentResource extends Resource
 {
@@ -395,24 +396,15 @@ class PaymentResource extends Resource
     {
         $date = $paymentDate ? Carbon::parse($paymentDate) : now();
         $prefix = 'PAY-'.$date->format('Ymd').'-';
+        $prefixLen = strlen($prefix);
 
-        $max = Payment::query()
+        // Use a single MAX() aggregate in SQL instead of loading all matching
+        // references into PHP. A unique constraint on (company_id, reference)
+        // ensures the DB rejects duplicate references from concurrent inserts.
+        $max = (int) Payment::query()
             ->whereNotNull('reference')
             ->where('reference', 'like', $prefix.'%')
-            ->pluck('reference')
-            ->reduce(function (int $carry, ?string $reference) use ($prefix): int {
-                if (! filled($reference) || ! str_starts_with($reference, $prefix)) {
-                    return $carry;
-                }
-
-                $suffix = substr($reference, strlen($prefix));
-
-                if (! ctype_digit($suffix)) {
-                    return $carry;
-                }
-
-                return max($carry, (int) $suffix);
-            }, 0);
+            ->max(DB::raw('CAST(SUBSTR(reference, '.($prefixLen + 1).') AS UNSIGNED)'));
 
         return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }

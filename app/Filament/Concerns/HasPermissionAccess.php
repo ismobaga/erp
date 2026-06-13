@@ -24,11 +24,17 @@ trait HasPermissionAccess
 
     protected static function isVisibleInCurrentEdition(): bool
     {
+        // hideInSimpleMode is a hard edition gate — it always takes precedence
+        // over the company-feature toggle so these pages stay off in Simple Edition.
+        if (static::hidesInSimpleMode() && ErpEdition::isSimple()) {
+            return false;
+        }
+
         if (filled(static::companyFeatureKey())) {
             return true;
         }
 
-        return ! (static::hidesInSimpleMode() && ErpEdition::isSimple());
+        return true;
     }
 
     protected static function canAccessPermission(string $action): bool
@@ -80,17 +86,21 @@ trait HasPermissionAccess
 
     protected static function companyFeatureKey(): ?string
     {
-        if (! property_exists(static::class, 'companyFeature')) {
-            return null;
-        }
+        static $cache = [];
 
-        $property = new \ReflectionProperty(static::class, 'companyFeature');
+        return $cache[static::class] ??= (function (): ?string {
+            if (! property_exists(static::class, 'companyFeature')) {
+                return null;
+            }
 
-        if (! $property->isStatic()) {
-            return null;
-        }
+            $property = new \ReflectionProperty(static::class, 'companyFeature');
 
-        return $property->getValue();
+            if (! $property->isStatic()) {
+                return null;
+            }
+
+            return $property->getValue();
+        })();
     }
 
     public static function canViewAny(): bool

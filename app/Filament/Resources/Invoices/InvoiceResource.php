@@ -398,46 +398,8 @@ class InvoiceResource extends Resource
 
     protected static function isRecordLocked(Model $record): bool
     {
-        $date = $record instanceof Invoice
-            ? $record->issue_date?->toDateString()
-            : null;
-
-        if ($date === null) {
-            return false;
-        }
-
-        foreach (static::closedPeriodRanges() as [$start, $end]) {
-            if ($date >= $start && $date <= $end) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function closedPeriodRanges(): array
-    {
-        static $cache = [];
-
-        $requestKey = app()->bound('request')
-            ? (string) spl_object_id(app('request'))
-            : 'no-request';
-        $companyKey = app()->bound('currentCompany')
-            ? (string) app('currentCompany')->id
-            : 'no-company';
-        $cacheKey = "{$requestKey}:{$companyKey}";
-
-        return $cache[$cacheKey] ??= FinancialPeriod::query()
-            ->closed()
-            ->select('starts_on', 'ends_on')
-            ->get()
-            ->map(fn (FinancialPeriod $period): array => [
-                $period->starts_on?->toDateString(),
-                $period->ends_on?->toDateString(),
-            ])
-            ->filter(fn (array $range): bool => filled($range[0]) && filled($range[1]))
-            ->values()
-            ->all();
+        return $record instanceof Invoice
+            && FinancialPeriod::isDateLocked($record->issue_date);
     }
 
     protected static function lockStatusLabel(Model $record): string

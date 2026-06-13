@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'invoice_default_notes',
     'quote_default_notes',
     'advanced_options',
+    'edition',
     'is_active',
     'is_demo',
     'whatsapp_device_id',

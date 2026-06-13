@@ -15,6 +15,7 @@ use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 
 class ListPayments extends ListRecords
@@ -56,10 +57,11 @@ class ListPayments extends ListRecords
                             Invoice::query()
                                 ->whereKey($invoiceIds)
                                 ->whereNotIn('status', ['paid', 'cancelled'])
-                                ->get()
-                                ->each(function (Invoice $invoice) use (&$synced): void {
-                                    $invoice->refreshFinancials();
-                                    $synced++;
+                                ->chunkById(100, function (Collection $chunk) use (&$synced): void {
+                                    foreach ($chunk as $invoice) {
+                                        $invoice->refreshFinancials();
+                                        $synced++;
+                                    }
                                 });
                         }
 
@@ -83,10 +85,11 @@ class ListPayments extends ListRecords
 
                         Payment::query()
                             ->whereNull('invoice_id')
-                            ->get()
-                            ->each(function (Payment $payment) use (&$matched): void {
-                                if ($payment->reconcileAgainstOpenInvoice()) {
-                                    $matched++;
+                            ->chunkById(200, function (Collection $chunk) use (&$matched): void {
+                                foreach ($chunk as $payment) {
+                                    if ($payment->reconcileAgainstOpenInvoice()) {
+                                        $matched++;
+                                    }
                                 }
                             });
 
