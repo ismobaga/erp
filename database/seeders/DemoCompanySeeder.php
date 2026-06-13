@@ -72,12 +72,12 @@ class DemoCompanySeeder extends Seeder
             $this->call(LedgerAccountsSeeder::class);
 
             $users = $this->seedUsers($company);
-            $clients = $this->seedClients();
-            $services = $this->seedServices();
-            $this->seedProjects($clients, $services, $users);
-            $this->seedInvoicesAndPayments($clients, $services, $users);
-            $this->seedExpenses($users);
-            $this->seedActivity($users);
+            $clients = $this->seedClients($company);
+            $services = $this->seedServices($company);
+            $this->seedProjects($company, $clients, $services, $users);
+            $this->seedInvoicesAndPayments($company, $clients, $services, $users);
+            $this->seedExpenses($company, $users);
+            $this->seedActivity($company, $users);
         } finally {
             if ($hadCurrentCompany) {
                 app()->instance('currentCompany', $previousCompany);
@@ -156,7 +156,7 @@ class DemoCompanySeeder extends Seeder
     /**
      * @return Collection<int, Client>
      */
-    private function seedClients(): Collection
+    private function seedClients(Company $company): Collection
     {
         $namedClients = [
             ['company_name' => 'Mali Telecom', 'contact_name' => 'Aminata Traoré'],
@@ -165,9 +165,9 @@ class DemoCompanySeeder extends Seeder
             ['company_name' => 'SOTRAMA Express', 'contact_name' => 'Mariama Koné'],
         ];
 
-        $clients = collect($namedClients)->map(function (array $client): Client {
+        $clients = collect($namedClients)->map(function (array $client) use ($company): Client {
             return Client::updateOrCreate(
-                ['company_name' => $client['company_name']],
+                ['company_id' => $company->id, 'company_name' => $client['company_name']],
                 [
                     'type' => 'company',
                     'contact_name' => $client['contact_name'],
@@ -182,7 +182,7 @@ class DemoCompanySeeder extends Seeder
 
         $additionalClients = ClientFactory::new()
             ->count(20)
-            ->state(['status' => 'active', 'country' => 'Mali'])
+            ->state(['company_id' => $company->id, 'status' => 'active', 'country' => 'Mali'])
             ->create();
 
         return $clients->merge($additionalClients);
@@ -191,7 +191,7 @@ class DemoCompanySeeder extends Seeder
     /**
      * @return Collection<int, Service>
      */
-    private function seedServices(): Collection
+    private function seedServices(Company $company): Collection
     {
         $serviceDefinitions = [
             ['code' => 'SVC-2001', 'name' => 'Fleet Tracking Installation', 'category' => 'logistics', 'default_price' => 165000],
@@ -200,9 +200,9 @@ class DemoCompanySeeder extends Seeder
             ['code' => 'SVC-2004', 'name' => 'Web Hosting', 'category' => 'technology', 'default_price' => 90000],
         ];
 
-        $services = collect($serviceDefinitions)->map(function (array $service): Service {
+        $services = collect($serviceDefinitions)->map(function (array $service) use ($company): Service {
             return Service::updateOrCreate(
-                ['code' => $service['code']],
+                ['company_id' => $company->id, 'code' => $service['code']],
                 [
                     'name' => $service['name'],
                     'category' => $service['category'],
@@ -213,12 +213,12 @@ class DemoCompanySeeder extends Seeder
             );
         });
 
-        $extraServices = ServiceFactory::new()->count(8)->create();
+        $extraServices = ServiceFactory::new()->count(8)->state(['company_id' => $company->id])->create();
 
         return $services->merge($extraServices);
     }
 
-    private function seedProjects(Collection $clients, Collection $services, Collection $users): void
+    private function seedProjects(Company $company, Collection $clients, Collection $services, Collection $users): void
     {
         $projectNames = [
             'GPS rollout',
@@ -231,6 +231,7 @@ class DemoCompanySeeder extends Seeder
 
         foreach ($projectNames as $name) {
             ProjectFactory::new()->state([
+                'company_id' => $company->id,
                 'name' => $name,
                 'client_id' => $clients->random()->id,
                 'service_id' => $services->random()->id,
@@ -243,7 +244,7 @@ class DemoCompanySeeder extends Seeder
         }
     }
 
-    private function seedInvoicesAndPayments(Collection $clients, Collection $services, Collection $users): void
+    private function seedInvoicesAndPayments(Company $company, Collection $clients, Collection $services, Collection $users): void
     {
         $profiles = [
             'draft',
@@ -269,6 +270,7 @@ class DemoCompanySeeder extends Seeder
             }
 
             $invoice = InvoiceFactory::new()->state([
+                'company_id' => $company->id,
                 'client_id' => $clients->random()->id,
                 'issue_date' => $issueDate,
                 'due_date' => $dueDate,
@@ -337,6 +339,7 @@ class DemoCompanySeeder extends Seeder
             }
 
             PaymentFactory::new()->state([
+                'company_id' => $invoice->company_id,
                 'invoice_id' => $invoice->id,
                 'client_id' => $invoice->client_id,
                 'payment_date' => fake()->dateTimeBetween((string) $invoice->issue_date, 'now'),
@@ -349,7 +352,7 @@ class DemoCompanySeeder extends Seeder
         }
     }
 
-    private function seedExpenses(Collection $users): void
+    private function seedExpenses(Company $company, Collection $users): void
     {
         $titles = [
             'Fuel refill',
@@ -361,6 +364,7 @@ class DemoCompanySeeder extends Seeder
 
         for ($index = 0; $index < 60; $index++) {
             ExpenseFactory::new()->state([
+                'company_id' => $company->id,
                 'title' => $titles[array_rand($titles)],
                 'recorded_by' => $users->random()->id,
                 'approval_status' => fake()->randomElement(['pending', 'approved', 'review']),
@@ -369,7 +373,7 @@ class DemoCompanySeeder extends Seeder
         }
     }
 
-    private function seedActivity(Collection $users): void
+    private function seedActivity(Company $company, Collection $users): void
     {
         $actions = [
             'invoice_created',
@@ -381,6 +385,7 @@ class DemoCompanySeeder extends Seeder
 
         for ($index = 0; $index < 40; $index++) {
             ActivityLog::create([
+                'company_id' => $company->id,
                 'user_id' => $users->random()->id,
                 'action' => $actions[array_rand($actions)],
                 'meta_json' => [
