@@ -25,9 +25,12 @@
     <!-- Header / Navigation -->
     <header class="sticky top-0 z-50 border-b border-[#c4c6cf]/20 bg-[#f8f9ff]/90 backdrop-blur-xl">
         <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
-            <a href="{{ route('company.presentation') }}"
-                class="text-2xl font-black tracking-tight text-[#002045] uppercase">
-                {{ $companyName }}
+            <a href="{{ route('company.presentation') }}" class="flex items-center">
+                @if($companyLogoUrl ?? null)
+                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="h-10 w-auto object-contain">
+                @else
+                    <span class="text-2xl font-black tracking-tight text-[#002045] uppercase">{{ $companyName }}</span>
+                @endif
             </a>
 
             <div class="hidden items-center gap-8 md:flex">
@@ -60,7 +63,13 @@
     <!-- Footer -->
     <footer class="border-t border-[#c4c6cf]/10 bg-[#eff4ff] pb-10 pt-20">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-6 md:flex-row lg:px-8">
-            <div class="text-xl font-black text-[#002045] uppercase">{{ $companyName }}</div>
+            <div>
+                @if($companyLogoUrl ?? null)
+                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="h-8 w-auto object-contain">
+                @else
+                    <span class="text-xl font-black text-[#002045] uppercase">{{ $companyName }}</span>
+                @endif
+            </div>
             <div
                 class="flex flex-wrap justify-center gap-6 text-xs font-semibold uppercase tracking-widest text-[#43474e]">
                 <a href="{{ route('company.confidentialite') }}"

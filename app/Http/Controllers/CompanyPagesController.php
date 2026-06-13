@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 /**
@@ -95,14 +96,14 @@ class CompanyPagesController extends Controller
         ]);
 
         $redirectTarget = match ($source) {
-            'dms' => route('dms.presentation').'/#contact',
+            'dms' => route('dms.presentation') . '/#contact',
             'contact' => route('company.contact'),
-            default => route('company.presentation').'/#contact',
+            default => route('company.presentation') . '/#contact',
         };
 
         return redirect()->to($redirectTarget)->with(
             'status',
-            'Merci '.e($validated['name']).' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
+            'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
         );
     }
 
@@ -122,10 +123,12 @@ class CompanyPagesController extends Controller
     protected function viewData(): array
     {
         $company = $this->company();
+        $company->logo_path = "images/cm-logo.svg";
 
         return [
             'company' => $company,
             'companyName' => $company?->name ?: 'CROMMIX MALI S.A.',
+            'companyLogoUrl' => "images/cm-logo.svg", //$company?->logo_path ? Storage::disk('public')->url($company->logo_path) : null,
             'companyEmail' => $company?->email ?: 'contact@crommix.com',
             'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),
