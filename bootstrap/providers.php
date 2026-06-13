@@ -2,6 +2,7 @@
 
 use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
+use App\Providers\Filament\SuperAdminPanelProvider;
 use Crommix\Blog\BlogServiceProvider;
 use Crommix\Core\CoreServiceProvider;
 use Crommix\HR\HRServiceProvider;
@@ -16,6 +17,7 @@ use Crommix\Support\SupportServiceProvider;
 return [
     AppServiceProvider::class,
     AdminPanelProvider::class,
+    SuperAdminPanelProvider::class,
     BlogServiceProvider::class,
     CoreServiceProvider::class,
     HRServiceProvider::class,

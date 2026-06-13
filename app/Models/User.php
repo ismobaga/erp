@@ -43,6 +43,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             return false;
         }
 
+        if ($panel->getId() === 'superadmin') {
+            return $this->hasRole('Super Admin');
+        }
+
         if ($this->hasRole('Super Admin')) {
             return true;
         }
