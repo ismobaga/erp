@@ -168,11 +168,11 @@ class CompanySettingResource extends Resource
                                 Select::make('edition')
                                     ->label('Édition ERP')
                                     ->options([
-                                        'simple'  => 'Simple — Modules de base uniquement',
+                                        'simple' => 'Simple — Modules de base uniquement',
                                         'growing' => 'Growing — Modules intermédiaires',
-                                        'full'    => 'Full — Tous les modules',
+                                        'full' => 'Full — Tous les modules',
                                     ])
-                                    ->placeholder('Défaut serveur ('.config('erp.edition.active', 'full').')')
+                                    ->placeholder('Défaut serveur (' . config('erp.edition.active', 'full') . ')')
                                     ->native(false)
                                     ->nullable()
                                     ->live()

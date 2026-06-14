@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\Company;
@@ -9,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Service;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Factories\ClientFactory;
 use Database\Factories\ExpenseFactory;
 use Database\Factories\InvoiceFactory;
@@ -23,13 +25,13 @@ class DemoCompanySeeder extends Seeder
 {
     public function run(): void
     {
-        if (! config('demo.enabled')) {
+        if (!config('demo.enabled')) {
             return;
         }
 
         $allowedEnvironments = config('demo.allowed_environments', ['local', 'development', 'staging', 'testing']);
 
-        if (! app()->environment($allowedEnvironments)) {
+        if (!app()->environment($allowedEnvironments)) {
             return;
         }
 
@@ -171,7 +173,7 @@ class DemoCompanySeeder extends Seeder
                 [
                     'type' => 'company',
                     'contact_name' => $client['contact_name'],
-                    'email' => strtolower(str_replace(' ', '', $client['company_name'])).'@example.test',
+                    'email' => strtolower(str_replace(' ', '', $client['company_name'])) . '@example.test',
                     'phone' => fake()->e164PhoneNumber(),
                     'city' => 'Bamako',
                     'country' => 'Mali',
@@ -206,7 +208,7 @@ class DemoCompanySeeder extends Seeder
                 [
                     'name' => $service['name'],
                     'category' => $service['category'],
-                    'description' => $service['name'].' service package',
+                    'description' => $service['name'] . ' service package',
                     'default_price' => $service['default_price'],
                     'is_active' => true,
                 ],
@@ -269,7 +271,14 @@ class DemoCompanySeeder extends Seeder
                 $dueDate = fake()->dateTimeBetween('+1 day', '+45 days');
             }
 
+
+            $invoiceNumber = InvoiceResource::generateInvoiceNumber(
+                new Carbon($issueDate),
+                $company->id,
+            );
+
             $invoice = InvoiceFactory::new()->state([
+                'invoice_number' => $invoiceNumber,
                 'company_id' => $company->id,
                 'client_id' => $clients->random()->id,
                 'issue_date' => $issueDate,
@@ -285,6 +294,7 @@ class DemoCompanySeeder extends Seeder
                 $service = $services->random();
 
                 InvoiceItem::create([
+                    'company_id' => $company->id,
                     'invoice_id' => $invoice->id,
                     'service_id' => $service->id,
                     'description' => $service->name,
