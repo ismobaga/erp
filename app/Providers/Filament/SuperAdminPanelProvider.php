@@ -46,6 +46,10 @@ class SuperAdminPanelProvider extends PanelProvider
                 in: app_path('Filament/SuperAdmin/Resources'),
                 for: 'App\Filament\SuperAdmin\Resources',
             )
+            ->discoverResources(
+                in: base_path('packages/Crommix/SaaS/src/Filament/Resources'),
+                for: 'Crommix\SaaS\Filament\Resources',
+            )
             ->discoverPages(
                 in: app_path('Filament/SuperAdmin/Pages'),
                 for: 'App\Filament\SuperAdmin\Pages',

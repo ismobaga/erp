@@ -38,7 +38,9 @@ class TenantPlanResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('saas.plans.view') ?? false;
+        $user = auth()->user();
+
+        return $user?->hasRole('Super Admin') || $user?->can('saas.plans.view') ?? false;
     }
 
     public static function form(Schema $schema): Schema

@@ -271,19 +271,25 @@ class CompanySettingResource extends Resource
 
     public static function canView(Model $record): bool
     {
+        if (! static::canAccessPermission('view')) {
+            return false;
+        }
+
         $company = currentCompany();
 
-        return parent::canView($record)
-            && $company !== null
+        return $company !== null
             && (int) $record->getKey() === (int) $company->getKey();
     }
 
     public static function canEdit(Model $record): bool
     {
+        if (! static::canAccessPermission('update')) {
+            return false;
+        }
+
         $company = currentCompany();
 
-        return parent::canEdit($record)
-            && $company !== null
+        return $company !== null
             && (int) $record->getKey() === (int) $company->getKey();
     }
 
