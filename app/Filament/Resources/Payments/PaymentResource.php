@@ -171,7 +171,7 @@ class PaymentResource extends Resource
                                         if (blank($invoiceId)) {
                                             return '—';
                                         }
-                                        $invoice = Invoice::find($invoiceId);
+                                        $invoice = Invoice::query()->whereKey($invoiceId)->first();
                                         if (! $invoice) {
                                             return '—';
                                         }
