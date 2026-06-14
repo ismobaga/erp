@@ -115,9 +115,7 @@ class CompanyPagesController extends Controller
      */
     protected function company(): ?Company
     {
-        return Cache::remember('public_company', now()->addMinutes(10), function (): ?Company {
-            return Company::query()->where('is_active', true)->first();
-        });
+        return Company::query()->where('is_active', true)->first();
     }
 
     /**
