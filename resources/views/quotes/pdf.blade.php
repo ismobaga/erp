@@ -780,8 +780,14 @@
                 {{ $notes ?: 'Merci de nous contacter pour toute question relative à ce devis.' }}<br>
                 <br>
                 © {{ now()->year }} {{ $companyName }}
-                @if($company?->tax_number)
-                    | NIF : {{ $company->tax_number }}
+                @if($company?->rccm)
+                    | RCCM : {{ $company->rccm }}
+                @endif
+                @if($company?->nif)
+                    | NIF : {{ $company->nif }}
+                @endif
+                 @if($company?->nina)
+                    | NINA : {{ $company->nina }}
                 @endif
             </div>
         </div>

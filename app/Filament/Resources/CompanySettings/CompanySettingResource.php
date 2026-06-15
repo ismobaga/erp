@@ -66,8 +66,14 @@ class CompanySettingResource extends Resource
                                     ->required(),
                                 TextInput::make('legal_name')
                                     ->label('Raison sociale'),
-                                TextInput::make('tax_number')
+                                TextInput::make('nif')
                                     ->label('NIF / Identifiant fiscal'),
+                                TextInput::make('rccm')
+                                    ->label('RCCM (Registre du Commerce et du Crédit Mobilier)')
+                                    ->maxLength(100),
+                                TextInput::make('nina')
+                                    ->label('NINA (Numéro d’Identification Nationale)')
+                                    ->maxLength(50),
                                 TextInput::make('website')
                                     ->label('Site web'),
                                 Textarea::make('address')
@@ -271,7 +277,7 @@ class CompanySettingResource extends Resource
 
     public static function canView(Model $record): bool
     {
-        if (! static::canAccessPermission('view')) {
+        if (!static::canAccessPermission('view')) {
             return false;
         }
 
@@ -283,7 +289,7 @@ class CompanySettingResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        if (! static::canAccessPermission('update')) {
+        if (!static::canAccessPermission('update')) {
             return false;
         }
 

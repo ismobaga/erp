@@ -23,7 +23,7 @@ class Supplier extends Model implements HasTenantScope
         'email',
         'phone',
         'address',
-        'tax_number',
+        'nif',
         'currency',
         'payment_terms',
         'is_active',

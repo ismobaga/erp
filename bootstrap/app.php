@@ -3,18 +3,20 @@
 use App\Http\Middleware\AuthenticateApiToken;
 use App\Http\Middleware\EnsureApiScope;
 use App\Http\Middleware\LogApiRequest;
+use App\Http\Middleware\SetCurrentCompany;
 use App\Http\Middleware\SetSecurityHeaders;
 use App\Http\Middleware\TrackApiQuota;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -23,12 +25,20 @@ return Application::configure(basePath: dirname(__DIR__))
         // ── Security Middleware ────────────────────────────────────────────
         $middleware->appendToGroup('web', VerifyCsrfToken::class);
         $middleware->appendToGroup('web', SetSecurityHeaders::class);
+        $middleware->web(append: [
+            SetCurrentCompany::class,
+        ]);
         $middleware->alias([
-            'auth.api'  => AuthenticateApiToken::class,
+            'auth.api' => AuthenticateApiToken::class,
             'api.scope' => EnsureApiScope::class,
             'api.audit' => LogApiRequest::class,
             'api.quota' => TrackApiQuota::class,
         ]);
+
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: SetCurrentCompany::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

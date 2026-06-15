@@ -602,8 +602,14 @@
 
             <div class="legal">
                 © {{ now()->year }} {{ $companyName }}
-                @if($company?->tax_number)
-                    | NIF : {{ $company->tax_number }}
+                @if($company?->rccm)
+                    | RCCM : {{ $company->rccm }}
+                @endif
+                @if($company?->nif)
+                    | NIF : {{ $company->nif }}
+                @endif
+                 @if($company?->nina)
+                    | NINA : {{ $company->nina }}
                 @endif
             </div>
         </div>

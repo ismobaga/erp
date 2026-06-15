@@ -580,6 +580,7 @@
         $formatMoney = fn($amount) => number_format((float) $amount, 0, ',', ' ') . ' ' . $currency;
         $clientName = $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Client';
         $companyName = $company?->company_name ?: config('app.name');
+        $companySlogan = $company?->slogan ?: "Gestion financière & ERP";
         $companyAddress = array_filter([$company?->address, $company?->city, $company?->country]);
         $clientAddress = array_filter([$invoice->client?->address, $invoice->client?->city, $invoice->client?->country]);
         $notes = $invoice->notes ?: $company?->invoice_default_notes;
@@ -621,7 +622,7 @@
                         @endif
                         <div>
                             <h1 class="brand-title">{{ $companyName }}</h1>
-                            <div class="brand-subtitle">Gestion financière &amp; ERP</div>
+                            <div class="brand-subtitle">{{ $companySlogan }}</div>
                         </div>
                     </div>
                     <div class="muted" style="font-size: 14px; line-height: 1.7; margin-top: 16px;">
@@ -817,8 +818,14 @@
 
             <div class="legal">
                 © {{ now()->year }} {{ $companyName }}
-                @if($company?->tax_number)
-                    | NIF : {{ $company->tax_number }}
+                @if($company?->rccm)
+                    | RCCM : {{ $company->rccm }}
+                @endif
+                @if($company?->nif)
+                    | NIF : {{ $company->nif }}
+                @endif
+                 @if($company?->nina)
+                    | NINA : {{ $company->nina }}
                 @endif
             </div>
         </div>

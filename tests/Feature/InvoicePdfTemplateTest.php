@@ -32,7 +32,9 @@ class InvoicePdfTemplateTest extends TestCase
             'city' => 'Bamako',
             'country' => 'Mali',
             'currency' => 'FCFA',
-            'tax_number' => '1234567890',
+            'nif' => '1234567890',
+            'rccm' => 'Ma.Bko.12323',
+            'nina' => '0987654321N',
             'invoice_default_notes' => 'Paiement dû sous 30 jours.',
             'is_active' => true,
         ]));
@@ -164,7 +166,7 @@ class InvoicePdfTemplateTest extends TestCase
         for ($i = 1; $i <= 7; $i++) {
             InvoiceItem::create([
                 'invoice_id' => $longInvoice->id,
-                'description' => 'Long line '.$i,
+                'description' => 'Long line ' . $i,
                 'quantity' => 1,
                 'unit_price' => 2000,
             ]);
@@ -191,7 +193,9 @@ class InvoicePdfTemplateTest extends TestCase
             'city' => 'Bamako',
             'country' => 'Mali',
             'currency' => 'FCFA',
-            'tax_number' => '1234567890',
+            'nif' => '1234567890',
+            'rccm' => 'Ma.Bko.12323',
+            'nina' => '0987654321N',
             'is_active' => true,
         ]));
 

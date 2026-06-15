@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -36,6 +35,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('portal_token_hash');
+            $table->index(['company_id', 'updated_at'], 'clients_company_updated_at_index');
+
         });
 
         Schema::create('services', function (Blueprint $table) {
@@ -151,6 +152,7 @@ return new class extends Migration
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
+            $table->unique(['company_id', 'reference'], 'payments_company_reference_unique');
             $table->index(['company_id', 'payment_date'], 'payments_company_payment_date_index');
             $table->index('invoice_id', 'payments_invoice_id_index');
 
@@ -198,6 +200,9 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index(['company_id', 'status'], 'projects_company_status_index');
+            $table->index(['company_id', 'status', 'due_date'], 'projects_company_status_due_date_index');
         });
         Schema::create('notes', function (Blueprint $table) {
             $table->id();

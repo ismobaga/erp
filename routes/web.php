@@ -12,12 +12,13 @@ use App\Http\Controllers\PaymentPdfController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\ReportExportDownloadController;
 use App\Http\Controllers\WhatsappWebhookController;
+use App\Http\Middleware\SetCurrentCompany;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
 // ── Public company / marketing pages ─────────────────────────────────────────
 Route::get('/', [CompanyPagesController::class, 'presentation'])->name('company.presentation');
-Route::get('/presentation', fn () => redirect()->route('company.presentation'));
+Route::get('/presentation', fn() => redirect()->route('company.presentation'));
 Route::get('/about', [CompanyPagesController::class, 'about'])->name('company.about');
 Route::get('/services', [CompanyPagesController::class, 'services'])->name('company.services');
 Route::get('/solutions', [CompanyPagesController::class, 'solutions'])->name('company.solutions');
@@ -47,9 +48,10 @@ Route::get('/health/diagnostics', [HealthCheckController::class, 'diagnostics'])
 Route::middleware('auth')->group(function (): void {
     Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)
         ->middleware(['signed', 'throttle:30,1'])
+        ->withoutScopedBindings()
         ->name('attachments.download');
 
-    Route::get('/invoices/{invoice}/pdf', InvoicePdfController::class)
+    Route::get('/invoices/{invoice:invoice_number}/pdf', InvoicePdfController::class)
         ->middleware('throttle:pdf')
         ->name('invoices.pdf');
 

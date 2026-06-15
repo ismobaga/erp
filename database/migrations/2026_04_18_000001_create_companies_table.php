@@ -19,18 +19,26 @@ return new class extends Migration {
             $table->string('city')->nullable();
             $table->string('country')->nullable();
             $table->string('currency')->default('FCFA');
-            $table->string('tax_number')->nullable();
+            $table->string('nif')->nullable();
+            $table->string('nina')->nullable();
+            $table->string('rccm')->nullable();
+            $table->string('share_capital')->nullable();
             $table->string('logo_path')->nullable();
             $table->string('slogan')->nullable();
             $table->string('bank_name')->nullable();
             $table->string('bank_account_name')->nullable();
             $table->string('bank_account_number')->nullable();
-            $table->string('bank_swift_code')->nullable();
+            $table->text('bank_swift_code')->nullable();
             $table->text('invoice_default_notes')->nullable();
             $table->text('quote_default_notes')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('whatsapp_device_id')->nullable();
             $table->boolean('whatsapp_enabled')->default(false);
+            $table->string('edition', 20)->nullable();
+            $table->json('advanced_options')->nullable();
+            $table->boolean('is_demo')->default(false)->index();
+
+
             $table->timestamps();
         });
     }

@@ -58,14 +58,20 @@ class CompanyResource extends Resource
                                 TextInput::make('phone')
                                     ->label('Téléphone')
                                     ->tel(),
-                                TextInput::make('tax_number')
+                                TextInput::make('nif')
                                     ->label('NIF / Identifiant fiscal'),
+                                TextInput::make('rccm')
+                                    ->label('RCCM (Registre du Commerce et du Crédit Mobilier)')
+                                    ->maxLength(100),
+                                TextInput::make('nina')
+                                    ->label('NINA (Numéro d’Identification Nationale)')
+                                    ->maxLength(50),
                                 Select::make('currency')
                                     ->label('Devise')
                                     ->options([
                                         'FCFA' => 'West African CFA franc (XOF)',
-                                        'EUR'  => 'Euro (EUR)',
-                                        'USD'  => 'US Dollar (USD)',
+                                        'EUR' => 'Euro (EUR)',
+                                        'USD' => 'US Dollar (USD)',
                                     ])
                                     ->default('FCFA')
                                     ->native(false)
@@ -91,18 +97,18 @@ class CompanyResource extends Resource
                             ]),
 
                         Section::make('Édition de l\'application')
-                            ->description('Sélectionnez l\'édition ERP pour cette société. Laissez vide pour hériter de la valeur serveur ('.config('erp.edition.active', 'full').').')
+                            ->description('Sélectionnez l\'édition ERP pour cette société. Laissez vide pour hériter de la valeur serveur (' . config('erp.edition.active', 'full') . ').')
                             ->extraAttributes(['class' => 'ledger-pillar ledger-pillar-primary'])
                             ->columnSpanFull()
                             ->schema([
                                 Select::make('edition')
                                     ->label('Édition ERP')
                                     ->options([
-                                        'simple'  => 'Simple — Modules de base uniquement',
+                                        'simple' => 'Simple — Modules de base uniquement',
                                         'growing' => 'Growing — Modules intermédiaires',
-                                        'full'    => 'Full — Tous les modules',
+                                        'full' => 'Full — Tous les modules',
                                     ])
-                                    ->placeholder('Défaut serveur ('.config('erp.edition.active', 'full').')')
+                                    ->placeholder('Défaut serveur (' . config('erp.edition.active', 'full') . ')')
                                     ->native(false)
                                     ->nullable()
                                     ->live()
@@ -179,17 +185,17 @@ class CompanyResource extends Resource
                 TextColumn::make('edition')
                     ->label('Édition')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        'simple'  => 'gray',
+                    ->color(fn(?string $state): string => match ($state) {
+                        'simple' => 'gray',
                         'growing' => 'warning',
-                        'full'    => 'success',
-                        default   => 'info',
+                        'full' => 'success',
+                        default => 'info',
                     })
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'simple'  => 'Simple',
+                    ->formatStateUsing(fn(?string $state): string => match ($state) {
+                        'simple' => 'Simple',
                         'growing' => 'Growing',
-                        'full'    => 'Full',
-                        default   => 'Serveur',
+                        'full' => 'Full',
+                        default => 'Serveur',
                     }),
                 TextColumn::make('updated_at')
                     ->label('Mis à jour')
@@ -210,9 +216,9 @@ class CompanyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListCompanies::route('/'),
+            'index' => ListCompanies::route('/'),
             'create' => CreateCompany::route('/create'),
-            'edit'   => EditCompany::route('/{record}/edit'),
+            'edit' => EditCompany::route('/{record}/edit'),
         ];
     }
 }

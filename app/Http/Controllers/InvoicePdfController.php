@@ -15,6 +15,7 @@ class InvoicePdfController extends Controller
 
     public function __invoke(Request $request, Invoice $invoice): Response
     {
+        // dd($invoice);
         $this->authorize('view', $invoice);
 
         $invoice->loadMissing(['client', 'items.service', 'quote']);
@@ -45,7 +46,7 @@ class InvoicePdfController extends Controller
         if ($request->boolean('download')) {
             return $pdf
                 ->make('invoices.pdf', $viewData)
-                ->download($invoice->invoice_number.'.pdf');
+                ->download($invoice->invoice_number . '.pdf');
         }
 
         return response()->view('invoices.pdf', $viewData);
