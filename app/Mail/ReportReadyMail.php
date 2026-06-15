@@ -25,8 +25,14 @@ class ReportReadyMail extends Mailable
         public readonly Company $company,
     ) {
         // $company = currentCompany();
+        app()->instance('currentCompany', $company);
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
+    }
+
+    public function __wakeup(): void
+    {
+        app()->instance('currentCompany', $this->company);
     }
 
     public function envelope(): Envelope

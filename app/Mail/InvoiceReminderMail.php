@@ -22,10 +22,16 @@ class InvoiceReminderMail extends Mailable
     public function __construct(public readonly Invoice $invoice, public readonly Company $company)
     {
         // $company = currentCompany();
+        app()->instance('currentCompany', $company);
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedAmount = 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
         $this->formattedDueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
+    }
+
+    public function __wakeup(): void
+    {
+        app()->instance('currentCompany', $this->company);
     }
 
     public function envelope(): Envelope

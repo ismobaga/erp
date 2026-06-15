@@ -27,13 +27,23 @@ class InvoiceSentMail extends Mailable
     public function __construct(public readonly Invoice $invoice, public readonly Company $company)
     {
         // $company = currentCompany();
+        app()->instance('currentCompany', $company);
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedTotal = 'FCFA ' . number_format((float) $invoice->total, 0, '.', ' ');
         $this->formattedDueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
-        $this->portalUrl = $invoice->client
-            ? route('portal.invoice', ['token' => $invoice->client->ensurePlainPortalToken(), 'invoice' => $invoice])
+
+
+        $client = $invoice->client()
+            ->withoutGlobalScopes()
+            ->first();
+        $this->portalUrl = $client
+            ? route('portal.invoice', ['token' => $client->ensurePlainPortalToken(), 'invoice' => $invoice])
             : null;
+    }
+    public function __wakeup(): void
+    {
+        app()->instance('currentCompany', $this->company);
     }
 
     public function envelope(): Envelope

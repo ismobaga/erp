@@ -25,9 +25,14 @@ class StaffInviteMail extends Mailable
         public readonly string $roleLabel,
     ) {
         // $company = currentCompany();
+        app()->instance('currentCompany', $company);
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->loginUrl = url('/admin/login');
+    }
+    public function __wakeup(): void
+    {
+        app()->instance('currentCompany', $this->company);
     }
 
     public function envelope(): Envelope
