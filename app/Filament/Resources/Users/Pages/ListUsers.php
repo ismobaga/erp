@@ -132,6 +132,7 @@ class ListUsers extends ListRecords
 
                     Mail::to($user->email)->queue(new StaffInviteMail(
                         $user,
+                        currentCompany(),
                         $temporaryPassword,
                         $roleLabels[$data['role']] ?? $spatieRoleName,
                     ));

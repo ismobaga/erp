@@ -50,7 +50,7 @@ class NotificationHub extends Page
                     /** @var User|null $user */
                     $user = auth()->user();
 
-                    if (! $user) {
+                    if (!$user) {
                         return;
                     }
 
@@ -65,7 +65,7 @@ class NotificationHub extends Page
                     Notification::make()
                         ->title('Alertes marquées comme lues')
                         ->body($count > 0
-                            ? $count.' notification(s) ont été marquées comme lues.'
+                            ? $count . ' notification(s) ont été marquées comme lues.'
                             : 'Aucune notification non lue à marquer.')
                         ->success()
                         ->send();
@@ -116,7 +116,7 @@ class NotificationHub extends Page
 
     protected function getOverdueInvoices(): array
     {
-        if (! Schema::hasTable('invoices')) {
+        if (!Schema::hasTable('invoices')) {
             return $this->placeholderOverdueInvoices();
         }
 
@@ -133,12 +133,12 @@ class NotificationHub extends Page
             ->orderBy('due_date')
             ->take(3)
             ->get()
-            ->map(fn (Invoice $invoice): array => [
+            ->map(fn(Invoice $invoice): array => [
                 'reference' => $invoice->invoice_number,
                 'client' => $invoice->client?->company_name ?: $invoice->client?->contact_name ?: 'Client account',
                 'note' => 'Outstanding receivable requires collection follow-up.',
                 'amount' => $this->money((float) $invoice->balance_due),
-                'age' => $invoice->due_date ? now()->diffInDays($invoice->due_date).' days overdue' : 'Overdue',
+                'age' => $invoice->due_date ? now()->diffInDays($invoice->due_date) . ' days overdue' : 'Overdue',
             ])
             ->all();
 
@@ -152,7 +152,7 @@ class NotificationHub extends Page
             ->where('invoice_number', $reference)
             ->first();
 
-        if (! $invoice) {
+        if (!$invoice) {
             Notification::make()->title('Facture introuvable.')->danger()->send();
 
             return;
@@ -160,7 +160,7 @@ class NotificationHub extends Page
 
         $client = $invoice->client;
 
-        if (! $client || blank($client->email)) {
+        if (!$client || blank($client->email)) {
             Notification::make()
                 ->title('Aucun e-mail client')
                 ->body('Ce client n\'a pas d\'adresse e-mail enregistrée. Vérifiez sa fiche.')
@@ -170,7 +170,7 @@ class NotificationHub extends Page
             return;
         }
 
-        Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+        Mail::to($client->email)->queue(new InvoiceReminderMail($invoice, currentCompany()));
 
         app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
             'reference' => $reference,
@@ -182,25 +182,25 @@ class NotificationHub extends Page
 
         Notification::make()
             ->title('Rappel de paiement envoyé')
-            ->body('Un rappel a été envoyé à '.$client->email.' pour la facture '.$reference.'.')
+            ->body('Un rappel a été envoyé à ' . $client->email . ' pour la facture ' . $reference . '.')
             ->success()
             ->send();
     }
 
     protected function getFlaggedPayments(): array
     {
-        if (! Schema::hasTable('payments')) {
+        if (!Schema::hasTable('payments')) {
             return $this->placeholderFlaggedPayments();
         }
 
         $items = Payment::query()
             ->with('client')
-            ->where(fn ($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
+            ->where(fn($query) => $query->whereNull('invoice_id')->orWhereNull('reference')->orWhere('reference', ''))
             ->latest()
             ->take(3)
             ->get()
-            ->map(fn (Payment $payment): array => [
-                'title' => $payment->reference ?: ('PAY-'.str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
+            ->map(fn(Payment $payment): array => [
+                'title' => $payment->reference ?: ('PAY-' . str_pad((string) $payment->getKey(), 4, '0', STR_PAD_LEFT)),
                 'client' => $payment->client?->company_name ?: $payment->client?->contact_name ?: 'Ledger transfer',
                 'note' => $payment->invoice_id === null ? 'Pending invoice reconciliation.' : 'Reference mismatch requires review.',
             ])
@@ -211,7 +211,7 @@ class NotificationHub extends Page
 
     protected function getFeed(): array
     {
-        if (! Schema::hasTable('activity_logs')) {
+        if (!Schema::hasTable('activity_logs')) {
             return $this->placeholderFeed();
         }
 
@@ -219,7 +219,7 @@ class NotificationHub extends Page
             ->latest()
             ->take(6)
             ->get()
-            ->map(fn (ActivityLog $log): array => [
+            ->map(fn(ActivityLog $log): array => [
                 'label' => ucfirst(str_replace('_', ' ', $log->action ?: 'activity logged')),
                 'meta' => class_basename((string) $log->subject_type) ?: 'System',
                 'time' => $log->created_at?->diffForHumans() ?? 'recently',
@@ -248,7 +248,7 @@ class NotificationHub extends Page
             'open_alerts' => number_format($openAlerts),
             'exposure' => $this->money($exposure),
             'resolved' => number_format($resolved),
-            'efficiency' => $efficiency.'%',
+            'efficiency' => $efficiency . '%',
         ];
     }
 
@@ -285,6 +285,6 @@ class NotificationHub extends Page
 
     protected function money(float $amount): string
     {
-        return 'FCFA '.number_format($amount, 0, '.', ' ');
+        return 'FCFA ' . number_format($amount, 0, '.', ' ');
     }
 }

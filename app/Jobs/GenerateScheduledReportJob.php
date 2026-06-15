@@ -76,7 +76,7 @@ class GenerateScheduledReportJob implements ShouldQueue
 
         if (filled($schedule->schedule_email)) {
             Mail::to($schedule->schedule_email)
-                ->queue(new ReportReadyMail($result['path'], $result['generatedAt']));
+                ->queue(new ReportReadyMail($result['path'], $result['generatedAt'], $company));
         }
 
         $auditTrail->log('scheduled_report_generated', null, [

@@ -22,7 +22,7 @@ Artisan::command('reports:run-scheduled-exports', function (ReportExportService 
 
     $this->info(
         $processed > 0
-        ? $processed.' scheduled report export(s) processed successfully.'
+        ? $processed . ' scheduled report export(s) processed successfully.'
         : 'No scheduled report exports were due.'
     );
 })->purpose('Generate due scheduled financial report exports');
@@ -32,7 +32,7 @@ Artisan::command('reports:cleanup-exports', function (ReportExportService $repor
 
     $this->info(
         $deleted > 0
-        ? $deleted.' expired report export(s) deleted.'
+        ? $deleted . ' expired report export(s) deleted.'
         : 'No expired report exports to clean up.'
     );
 })->purpose('Delete expired generated financial report exports');
@@ -57,7 +57,7 @@ Artisan::command('erp:prune-audit-logs', function () {
 
     $this->info(
         $totalDeleted > 0
-        ? $totalDeleted.' audit log record(s) pruned.'
+        ? $totalDeleted . ' audit log record(s) pruned.'
         : 'No audit log records required pruning.'
     );
 })->purpose('Prune old enterprise audit log records');
@@ -65,19 +65,19 @@ Artisan::command('erp:prune-audit-logs', function () {
 Artisan::command('erp:backup-run', function (OperationalResilienceService $service) {
     $backup = $service->createBackup();
 
-    $this->info('Backup created at '.($backup['path'] ?? 'unknown path').'.');
+    $this->info('Backup created at ' . ($backup['path'] ?? 'unknown path') . '.');
 })->purpose('Create an operational resilience backup archive');
 
 Artisan::command('erp:restore-backup {path?} {--force : Confirm destructive restore}', function (OperationalResilienceService $service, ?string $path = null) {
     $forced = (bool) $this->option('force');
 
-    if (! $forced && $this->input->isInteractive()) {
+    if (!$forced && $this->input->isInteractive()) {
         $forced = (bool) $this->confirm('This will delete current data and restore from backup. Continue?', false);
     }
 
     $result = $service->restoreBackup($path, null, $forced);
 
-    $this->info('Backup restored from '.($result['path'] ?? 'unknown path').'.');
+    $this->info('Backup restored from ' . ($result['path'] ?? 'unknown path') . '.');
 })->purpose('Restore the latest or specified resilience backup archive');
 
 Artisan::command('erp:monitor-health', function (OperationalResilienceService $service) {
@@ -86,11 +86,11 @@ Artisan::command('erp:monitor-health', function (OperationalResilienceService $s
 
     $this->info(
         'Health check complete. '
-        .'Status: '.$healthStatus['status']
-        .'; Failed jobs: '.data_get($healthStatus, 'checks.queue.failed_jobs', 0)
-        .'; Backup verified: '.((bool) data_get($backup, 'verified', false) ? 'yes' : 'no')
-        .'; Open alerts: '.data_get($healthStatus, 'checks.alerts.open_alerts', 0)
-        .'.'
+        . 'Status: ' . $healthStatus['status']
+        . '; Failed jobs: ' . data_get($healthStatus, 'checks.queue.failed_jobs', 0)
+        . '; Backup verified: ' . ((bool) data_get($backup, 'verified', false) ? 'yes' : 'no')
+        . '; Open alerts: ' . data_get($healthStatus, 'checks.alerts.open_alerts', 0)
+        . '.'
     );
 })->purpose('Evaluate operational resilience thresholds and raise alerts');
 
@@ -115,14 +115,14 @@ Artisan::command('invoices:send-due-reminders', function () {
                     $invoices->each(function (Invoice $invoice) use (&$sent, &$skipped, $targetDate): void {
                         $client = $invoice->client;
 
-                        if (! $client || blank($client->email)) {
+                        if (!$client || blank($client->email)) {
                             $skipped++;
 
                             return;
                         }
 
                         Mail::to($client->email)
-                            ->queue(new InvoiceReminderMail($invoice));
+                            ->queue(new InvoiceReminderMail($invoice, currentCompany()));
 
                         app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
                             'reference' => $invoice->invoice_number,
@@ -144,7 +144,7 @@ Artisan::command('invoices:send-due-reminders', function () {
         }
     });
 
-    $this->info($sent.' reminder(s) queued for invoices due tomorrow. '.$skipped.' skipped (no client email).');
+    $this->info($sent . ' reminder(s) queued for invoices due tomorrow. ' . $skipped . ' skipped (no client email).');
 })->purpose('Queue payment reminder emails for invoices due tomorrow');
 
 Artisan::command('quotes:expire-due', function () {
@@ -168,7 +168,7 @@ Artisan::command('quotes:expire-due', function () {
 
     $this->info(
         $totalExpired > 0
-        ? $totalExpired.' quote(s) marked as expired.'
+        ? $totalExpired . ' quote(s) marked as expired.'
         : 'No quotes required expiry update.'
     );
 })->purpose('Mark due quotes as expired based on valid_until date');

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Company;
 use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -23,12 +24,12 @@ class InvoiceSentMail extends Mailable
 
     public ?string $portalUrl;
 
-    public function __construct(public readonly Invoice $invoice)
+    public function __construct(public readonly Invoice $invoice, public readonly Company $company)
     {
-        $company = currentCompany();
+        // $company = currentCompany();
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
-        $this->formattedTotal = 'FCFA '.number_format((float) $invoice->total, 0, '.', ' ');
+        $this->formattedTotal = 'FCFA ' . number_format((float) $invoice->total, 0, '.', ' ');
         $this->formattedDueDate = $invoice->due_date?->format('d/m/Y') ?? '—';
         $this->portalUrl = $invoice->client
             ? route('portal.invoice', ['token' => $invoice->client->ensurePlainPortalToken(), 'invoice' => $invoice])
@@ -39,7 +40,7 @@ class InvoiceSentMail extends Mailable
     {
         return new Envelope(
             from: $this->companyEmail,
-            subject: 'Facture '.$this->invoice->invoice_number.' – '.$this->formattedTotal,
+            subject: 'Facture ' . $this->invoice->invoice_number . ' – ' . $this->formattedTotal,
         );
     }
 

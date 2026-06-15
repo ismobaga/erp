@@ -29,7 +29,7 @@ class SendInvoiceRemindersAction extends Action
 
         $this
             ->label('Envoyer les rappels')
-            ->visible(fn (): bool => auth()->user()?->can('invoices.update') ?? false)
+            ->visible(fn(): bool => auth()->user()?->can('invoices.update') ?? false)
             ->action(function (): void {
                 $sent = $this->dispatchReminders();
 
@@ -68,14 +68,14 @@ class SendInvoiceRemindersAction extends Action
                 continue;
             }
 
-            Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+            Mail::to($client->email)->queue(new InvoiceReminderMail($invoice, currentCompany()));
 
             app(AuditTrailService::class)->log('invoice_reminder_sent', $invoice, [
-                'reference'    => $invoice->invoice_number,
+                'reference' => $invoice->invoice_number,
                 'client_email' => $client->email,
-                'balance_due'  => (float) $invoice->balance_due,
-                'due_date'     => optional($invoice->due_date)->format('Y-m-d'),
-                'sent_by'      => auth()->id(),
+                'balance_due' => (float) $invoice->balance_due,
+                'due_date' => optional($invoice->due_date)->format('Y-m-d'),
+                'sent_by' => auth()->id(),
             ]);
 
             $sent++;

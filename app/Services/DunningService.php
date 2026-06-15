@@ -38,7 +38,7 @@ class DunningService
      */
     public function resolveStage(Invoice $invoice): ?string
     {
-        if (! $invoice->due_date) {
+        if (!$invoice->due_date) {
             return null;
         }
 
@@ -152,7 +152,7 @@ class DunningService
                 ->first();
         }
 
-        if (! $lastForStage) {
+        if (!$lastForStage) {
             return true;
         }
 
@@ -211,7 +211,7 @@ class DunningService
             ->with('client')
             ->chunkById(100, function (Collection $chunk) use (&$count, $systemUserId): void {
                 $chunk->each(function (Invoice $invoice) use (&$count, $systemUserId): void {
-                    if (! $this->dispatchAutomatedEmailReminder($invoice)) {
+                    if (!$this->dispatchAutomatedEmailReminder($invoice)) {
                         return;
                     }
 
@@ -237,7 +237,7 @@ class DunningService
         }
 
         try {
-            Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+            Mail::to($client->email)->queue(new InvoiceReminderMail($invoice, currentCompany()));
 
             return true;
         } catch (\Throwable $e) {
@@ -258,7 +258,7 @@ class DunningService
     {
         $company = currentCompany();
 
-        if (! $company || ! $company->whatsapp_enabled || blank($company->whatsapp_device_id)) {
+        if (!$company || !$company->whatsapp_enabled || blank($company->whatsapp_device_id)) {
             return;
         }
 
@@ -281,7 +281,7 @@ class DunningService
 
     public function daysOverdue(Invoice $invoice): int
     {
-        if (! $invoice->due_date) {
+        if (!$invoice->due_date) {
             return 0;
         }
 

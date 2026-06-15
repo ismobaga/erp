@@ -61,7 +61,7 @@ class ViewInvoice extends ViewRecord
                         return;
                     }
 
-                    \Mail::to($client->email)->queue(new InvoiceSentMail($record));
+                    \Mail::to($client->email)->queue(new InvoiceSentMail($record, currentCompany()));
 
                     DunningLog::create([
                         'invoice_id' => $record->id,

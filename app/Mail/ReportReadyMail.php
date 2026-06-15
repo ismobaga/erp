@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Company;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -21,8 +22,9 @@ class ReportReadyMail extends Mailable
     public function __construct(
         public readonly string $reportPath,
         public readonly string $generatedAt,
+        public readonly Company $company,
     ) {
-        $company = currentCompany();
+        // $company = currentCompany();
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
     }

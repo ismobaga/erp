@@ -17,7 +17,8 @@ class SendInvoiceReminderAction
 
     public function __construct(
         private readonly AuditTrailService $auditTrailService,
-    ) {}
+    ) {
+    }
 
     public function execute(Invoice $invoice): void
     {
@@ -33,7 +34,7 @@ class SendInvoiceReminderAction
             return;
         }
 
-        Mail::to($client->email)->queue(new InvoiceReminderMail($invoice));
+        Mail::to($client->email)->queue(new InvoiceReminderMail($invoice, currentCompany()));
 
         $this->auditTrailService->log('invoice_reminder_sent', $invoice, [
             'reference' => $invoice->invoice_number,

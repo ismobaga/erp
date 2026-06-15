@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Company;
 use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -18,9 +19,9 @@ class InvoiceReminderMail extends Mailable
     public string $formattedAmount;
     public string $formattedDueDate;
 
-    public function __construct(public readonly Invoice $invoice)
+    public function __construct(public readonly Invoice $invoice, public readonly Company $company)
     {
-        $company = currentCompany();
+        // $company = currentCompany();
         $this->companyName = $company?->name ?? config('app.name', 'ERP');
         $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
         $this->formattedAmount = 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');

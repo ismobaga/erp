@@ -9,11 +9,13 @@ use App\Models\Quote;
 use App\Models\WhatsappMessageLog;
 use App\Services\Pdf\BusinessDocumentPdf;
 use App\Support\PhoneFormatter;
+use App\Support\ResolvesLogoDataUri;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class WhatsappSendService
 {
+    use ResolvesLogoDataUri;
     public function sendInvoice(Invoice $invoice): WhatsappMessageLog
     {
         $company = $this->resolveCompanyForInvoice($invoice);
@@ -250,7 +252,8 @@ class WhatsappSendService
                 'account_number' => $company?->bank_account_number,
                 'swift_code' => $company?->bank_swift_code,
             ],
-            'logoDataUri' => null,
+            'logoDataUri' => $this->resolveLogoDataUri($company?->logo_path),
+
             'isDownload' => true,
         ];
 
