@@ -65,15 +65,15 @@ class UserResource extends Resource
                                     ->unique(ignoreRecord: true)
                                     ->live(onBlur: true)
                                     ->required(fn (Get $get): bool => blank($get('phone')))
-                                    ->rule('required_without:phone')
-                                    ->validationMessages(['required_without' => 'Veuillez saisir un e-mail ou un numéro de téléphone.']),
+                                    ->rules(fn (Get $get): array => blank($get('phone')) ? ['required'] : [])
+                                    ->validationMessages(['required' => 'Veuillez saisir un e-mail ou un numéro de téléphone.']),
                                 TextInput::make('phone')
                                     ->label('Téléphone')
                                     ->tel()
                                     ->live(onBlur: true)
                                     ->required(fn (Get $get): bool => blank($get('email')))
-                                    ->rule('required_without:email')
-                                    ->validationMessages(['required_without' => 'Veuillez saisir un e-mail ou un numéro de téléphone.'])
+                                    ->rules(fn (Get $get): array => blank($get('email')) ? ['required'] : [])
+                                    ->validationMessages(['required' => 'Veuillez saisir un e-mail ou un numéro de téléphone.'])
                                     ->dehydrateStateUsing(fn ($state): ?string => filled($state) ? PhoneFormatter::normalize((string) $state) : null),
                                 Select::make('status')
                                     ->options([
@@ -115,7 +115,7 @@ class UserResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Collaborateur')
-                    ->description(fn(User $record): string => $record->email)
+                    ->description(fn(User $record): ?string => $record->email ?? $record->phone)
                     ->searchable(['name', 'email'])
                     ->sortable(),
                 TextColumn::make('access_tier')

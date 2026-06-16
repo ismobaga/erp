@@ -37,7 +37,7 @@ class PhoneOrEmailUserProvider extends EloquentUserProvider
         $countryCode = PhoneFormatter::DEFAULT_COUNTRY_CODE;
 
         if ($normalized !== '' && str_starts_with($normalized, $countryCode)) {
-            $localPart = substr($normalized, strlen($countryCode));
+            $localPart = substr($normalized, \strlen($countryCode));
 
             if ($localPart !== '') {
                 $variants[] = $localPart;
@@ -72,10 +72,8 @@ class PhoneOrEmailUserProvider extends EloquentUserProvider
      */
     private function stripNonDigitsSql(): ?string
     {
-        return match ($this->createModel()->getConnection()->getDriverName()) {
-            'pgsql'           => "regexp_replace(coalesce(phone, ''), '\\D+', '', 'g')",
-            'mysql', 'mariadb' => "REGEXP_REPLACE(COALESCE(phone, ''), '[^0-9]', '')",
-            default           => null,
-        };
+        return PhoneFormatter::stripNonDigitsSql(
+            $this->createModel()->getConnection()->getDriverName()
+        );
     }
 }

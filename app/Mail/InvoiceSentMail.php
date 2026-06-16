@@ -54,6 +54,10 @@ class InvoiceSentMail extends Mailable
             $values['company'] = Company::find($values['company']->id);
         }
 
+        if (! ($values['company'] instanceof Company)) {
+            throw new \RuntimeException('Company no longer exists; mail job discarded.');
+        }
+
         app()->instance('currentCompany', $values['company']);
 
         // Restore remaining ModelIdentifiers (Invoice) with company context in place.

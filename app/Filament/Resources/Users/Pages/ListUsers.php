@@ -100,9 +100,16 @@ class ListUsers extends ListRecords
                         return;
                     }
 
+                    $driver = User::withoutGlobalScopes()->getModel()->getConnection()->getDriverName();
+                    $stripSql = PhoneFormatter::stripNonDigitsSql($driver);
+
                     $phoneExists = User::query()
-                        ->where('phone', $phone)
-                        ->orWhereRaw("regexp_replace(coalesce(phone, ''), '\\D+', '', 'g') = ?", [$phone])
+                        ->where(function ($query) use ($phone, $stripSql): void {
+                            $query->where('phone', $phone);
+                            if ($stripSql !== null) {
+                                $query->orWhereRaw("{$stripSql} = ?", [$phone]);
+                            }
+                        })
                         ->exists();
 
                     if ($phoneExists) {
@@ -117,7 +124,7 @@ class ListUsers extends ListRecords
 
                     $temporaryPassword = Str::password(12, symbols: false);
 
-                    /** @var \App\Models\User $user */
+                    /** @var User $user */
                     $user = User::create([
                         'name' => $data['name'],
                         'email' => $data['email'],

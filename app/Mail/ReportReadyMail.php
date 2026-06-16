@@ -38,6 +38,10 @@ class ReportReadyMail extends Mailable
             $values['company'] = Company::find($values['company']->id);
         }
 
+        if (! ($values['company'] instanceof Company)) {
+            throw new \RuntimeException('Company no longer exists; mail job discarded.');
+        }
+
         app()->instance('currentCompany', $values['company']);
 
         $this->restoreModels($values);

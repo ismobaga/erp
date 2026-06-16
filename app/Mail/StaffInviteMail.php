@@ -20,7 +20,7 @@ class StaffInviteMail extends Mailable
     public string $companyName;
     public string $companyEmail;
     public string $userName;
-    public string $userEmail;
+    public ?string $userEmail;
     public string $loginUrl;
 
     public function __construct(
@@ -44,6 +44,10 @@ class StaffInviteMail extends Mailable
         // then restore User via the trait.
         if (isset($values['company']) && ! ($values['company'] instanceof Company)) {
             $values['company'] = Company::find($values['company']->id);
+        }
+
+        if (! ($values['company'] instanceof Company)) {
+            throw new \RuntimeException('Company no longer exists; mail job discarded.');
         }
 
         app()->instance('currentCompany', $values['company']);
