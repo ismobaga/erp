@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facture {{ $invoice->invoice_number }}</title>
+    <title>Facture {{ $invoiceNumber }}</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -110,17 +110,17 @@
         </div>
         <div class="body">
             <p style="font-size:15px; margin-bottom:24px;">
-                Bonjour {{ e($invoice->client?->contact_name ?? $invoice->client?->company_name ?? 'Client') }},
+                Bonjour {{ e($clientName) }},
             </p>
             <p style="font-size:14px; color:#374151; margin-bottom:24px; line-height:1.7;">
-                Veuillez trouver ci-joint votre facture <strong>{{ e($invoice->invoice_number) }}</strong>.
+                Veuillez trouver ci-joint votre facture <strong>{{ e($invoiceNumber) }}</strong>.
                 Nous vous remercions de votre confiance et restons disponibles pour toute question.
             </p>
 
             <div class="meta-grid">
                 <div class="meta-item">
                     <label>Numéro de facture</label>
-                    <span>{{ e($invoice->invoice_number) }}</span>
+                    <span>{{ e($invoiceNumber) }}</span>
                 </div>
                 <div class="meta-item">
                     <label>Date d'échéance</label>

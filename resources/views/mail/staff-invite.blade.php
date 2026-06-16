@@ -130,7 +130,7 @@
         </div>
         <div class="body">
             <p style="font-size:15px; margin-bottom:16px;">
-                Bonjour <strong>{{ e($user->name) }}</strong>,
+                Bonjour <strong>{{ e($userName) }}</strong>,
             </p>
             <p style="font-size:14px; color:#374151; line-height:1.7; margin-bottom:24px;">
                 Vous avez été invité(e) à rejoindre la plateforme ERP de <strong>{{ e($companyName) }}</strong>
@@ -140,7 +140,7 @@
 
             <div class="credentials">
                 <label>Adresse e-mail</label>
-                <span>{{ e($user->email) }}</span>
+                <span>{{ e($userEmail) }}</span>
 
                 <label>Mot de passe provisoire</label>
                 <code>{{ e($temporaryPassword) }}</code>

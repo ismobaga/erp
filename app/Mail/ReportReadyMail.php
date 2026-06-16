@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportReadyMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels {
+        __wakeup as restoreModels;
+    }
 
     public string $companyName;
-
     public string $companyEmail;
 
     public function __construct(
@@ -24,15 +26,22 @@ class ReportReadyMail extends Mailable
         public readonly string $generatedAt,
         public readonly Company $company,
     ) {
-        // $company = currentCompany();
         app()->instance('currentCompany', $company);
-        $this->companyName = $company?->name ?? config('app.name', 'ERP');
-        $this->companyEmail = $company?->email ?? config('mail.from.address', 'noreply@erp.local');
+
+        $this->companyName = $company->name ?? config('app.name', 'ERP');
+        $this->companyEmail = $company->email ?? config('mail.from.address', 'noreply@erp.local');
     }
 
     public function __wakeup(): void
     {
+        // Company has no tenant scope — restore it, then set context.
+        if (! $this->company instanceof Company) {
+            $this->company = Company::find($this->company->id);
+        }
+
         app()->instance('currentCompany', $this->company);
+
+        $this->restoreModels();
     }
 
     public function envelope(): Envelope
@@ -45,14 +54,12 @@ class ReportReadyMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(
-            view: 'mail.report-ready',
-        );
+        return new Content(view: 'mail.report-ready');
     }
 
     public function attachments(): array
     {
-        if (!Storage::exists($this->reportPath)) {
+        if (! Storage::exists($this->reportPath)) {
             return [];
         }
 

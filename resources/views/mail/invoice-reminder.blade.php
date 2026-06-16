@@ -125,7 +125,7 @@
         </div>
         <div class="body">
             <p style="font-size:15px; margin-bottom:24px;">
-                Bonjour {{ e($invoice->client?->contact_name ?? $invoice->client?->company_name ?? 'Client') }},
+                Bonjour {{ e($clientName) }},
             </p>
             <p style="font-size:14px; color:#374151; margin-bottom:24px; line-height:1.7;">
                 Nous vous contactons au sujet de la facture ci-dessous qui demeure en attente de règlement.
@@ -140,7 +140,7 @@
             <div class="meta-grid">
                 <div class="meta-item">
                     <label>Numéro de facture</label>
-                    <span>{{ e($invoice->invoice_number) }}</span>
+                    <span>{{ e($invoiceNumber) }}</span>
                 </div>
                 <div class="meta-item">
                     <label>Date d'échéance</label>
@@ -156,9 +156,9 @@
                 </div>
             </div>
 
-            @if($invoice->notes)
+            @if($invoiceNotes)
                 <p style="font-size:13px;color:#57657a;margin-bottom:24px;">
-                    <strong>Note :</strong> {{ e($invoice->notes) }}
+                    <strong>Note :</strong> {{ e($invoiceNotes) }}
                 </p>
             @endif
 
