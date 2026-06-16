@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class PaymentResource extends Resource
 {
@@ -84,12 +85,12 @@ class PaymentResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
-                                    ->options(fn (): array => Invoice::query()
+                                    ->options(fn(): array => Invoice::query()
                                         ->whereIn('status', ['sent', 'overdue', 'partially_paid'])
                                         ->orderByDesc('issue_date')
                                         ->limit(50)
                                         ->get()
-                                        ->mapWithKeys(fn (Invoice $invoice): array => [$invoice->getKey() => $invoice->invoice_number.' · '.static::formatMoney((float) $invoice->balance_due)])
+                                        ->mapWithKeys(fn(Invoice $invoice): array => [$invoice->getKey() => $invoice->invoice_number . ' · ' . static::formatMoney((float) $invoice->balance_due)])
                                         ->all())
                                     ->helperText('Optionnel à la saisie. Utilisez le rapprochement intelligent si le paiement est saisi avant son affectation.')
                                     ->live()
@@ -101,7 +102,7 @@ class PaymentResource extends Resource
                                         // Use query builder to respect company scope instead of ::find()
                                         $invoice = Invoice::query()->whereKey($state)->first();
 
-                                        if (! $invoice) {
+                                        if (!$invoice) {
                                             return;
                                         }
 
@@ -110,24 +111,24 @@ class PaymentResource extends Resource
                                 Select::make('client_id')
                                     ->label('Client')
                                     ->relationship('client', 'company_name')
-                                    ->getOptionLabelFromRecordUsing(fn (Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))
+                                    ->getOptionLabelFromRecordUsing(fn(Client $record): string => $record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))
                                     ->searchable(['company_name', 'contact_name', 'email', 'phone'])
                                     ->preload()
                                     ->helperText('Recherchez par nom, contact, e-mail ou téléphone.')
                                     ->required(),
                                 Select::make('recent_client_id')
                                     ->label('Clients récents')
-                                    ->options(fn (): array => Client::query()
+                                    ->options(fn(): array => Client::query()
                                         ->orderByDesc('updated_at')
                                         ->limit(6)
                                         ->get()
-                                        ->mapWithKeys(fn (Client $record): array => [$record->getKey() => ($record->company_name ?: $record->contact_name ?: ('Client #'.$record->getKey()))])
+                                        ->mapWithKeys(fn(Client $record): array => [$record->getKey() => ($record->company_name ?: $record->contact_name ?: ('Client #' . $record->getKey()))])
                                         ->all())
                                     ->native(false)
                                     ->searchable()
                                     ->dehydrated(false)
                                     ->live()
-                                    ->afterStateUpdated(fn ($state, callable $set): mixed => $set('client_id', $state)),
+                                    ->afterStateUpdated(fn($state, callable $set): mixed => $set('client_id', $state)),
                                 Select::make('payment_method')
                                     ->label('Mode')
                                     ->options(trans('erp.payment_methods'))
@@ -144,12 +145,12 @@ class PaymentResource extends Resource
                                         'MTN MoMo' => 'MTN MoMo',
                                     ])
                                     ->native(false)
-                                    ->visible(fn (Get $get): bool => $get('payment_method') === 'mobile_money')
-                                    ->required(fn (Get $get): bool => $get('payment_method') === 'mobile_money'),
+                                    ->visible(fn(Get $get): bool => $get('payment_method') === 'mobile_money')
+                                    ->required(fn(Get $get): bool => $get('payment_method') === 'mobile_money'),
                                 TextInput::make('reference')
                                     ->label('Référence')
                                     ->placeholder('PAY-20260424-0001')
-                                    ->default(fn (): string => static::generatePaymentReference())
+                                    ->default(fn(): string => static::generatePaymentReference())
                                     ->helperText('Référence générée automatiquement, modifiable si nécessaire.')
                                     ->columnSpanFull(),
                                 TextInput::make('amount')
@@ -172,11 +173,11 @@ class PaymentResource extends Resource
                                             return '—';
                                         }
                                         $invoice = Invoice::query()->whereKey($invoiceId)->first();
-                                        if (! $invoice) {
+                                        if (!$invoice) {
                                             return '—';
                                         }
 
-                                        return 'FCFA '.number_format((float) $invoice->balance_due, 0, '.', ' ');
+                                        return 'FCFA ' . number_format((float) $invoice->balance_due, 0, '.', ' ');
                                     }),
                                 Toggle::make('allow_overpayment')
                                     ->label('Autoriser le trop-perçu')
@@ -206,43 +207,43 @@ class PaymentResource extends Resource
             ->columns([
                 TextColumn::make('reference')
                     ->label(__('erp.common.transaction'))
-                    ->state(fn (Payment $record): string => $record->reference ?: ('PAY-'.str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
-                    ->description(fn (Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? __('erp.common.none')).' • '.__('erp.payment_methods.'.$record->payment_method))
+                    ->state(fn(Payment $record): string => $record->reference ?: ('PAY-' . str_pad((string) $record->getKey(), 4, '0', STR_PAD_LEFT)))
+                    ->description(fn(Payment $record): string => (optional($record->payment_date)->format('M d, Y') ?? __('erp.common.none')) . ' • ' . __('erp.payment_methods.' . $record->payment_method))
                     ->searchable(['reference'])
                     ->sortable(),
                 TextColumn::make('client_name')
                     ->label(__('erp.common.client'))
-                    ->state(fn (Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
-                    ->description(fn (Payment $record): string => $record->invoice?->invoice_number
+                    ->state(fn(Payment $record): string => $record->client?->company_name ?: $record->client?->contact_name ?: __('erp.common.account_client'))
+                    ->description(fn(Payment $record): string => $record->invoice?->invoice_number
                         ? __('erp.resources.payment.linked_to_invoice', ['invoice' => $record->invoice->invoice_number])
                         : __('erp.resources.payment.awaiting_reconciliation'))
                     ->searchable(['reference']),
                 TextColumn::make('amount')
                     ->label(__('erp.common.amount'))
-                    ->formatStateUsing(fn ($state): string => static::formatMoney((float) $state))
-                    ->description(fn (Payment $record): string => $record->allow_overpayment ? __('erp.resources.payment.overpayment_allowed') : __('erp.resources.payment.standard_settlement'))
+                    ->formatStateUsing(fn($state): string => static::formatMoney((float) $state))
+                    ->description(fn(Payment $record): string => $record->allow_overpayment ? __('erp.resources.payment.overpayment_allowed') : __('erp.resources.payment.standard_settlement'))
                     ->sortable(),
                 TextColumn::make('period_lock_status')
                     ->label('Période')
-                    ->state(fn (Payment $record): string => static::lockStatusLabel($record))
+                    ->state(fn(Payment $record): string => static::lockStatusLabel($record))
                     ->badge()
-                    ->color(fn (Payment $record): string => static::lockStatusColor($record)),
+                    ->color(fn(Payment $record): string => static::lockStatusColor($record)),
                 TextColumn::make('invoice_due_date')
                     ->label(__('erp.common.due_date'))
-                    ->state(fn (Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? __('erp.resources.payment.not_scheduled'))
-                    ->description(fn (Payment $record): string => $record->invoice?->due_date?->isPast() ? __('erp.resources.payment.invoice_overdue') : __('erp.resources.payment.finance_calendar')),
+                    ->state(fn(Payment $record): string => optional($record->invoice?->due_date)->format('M d, Y') ?? __('erp.resources.payment.not_scheduled'))
+                    ->description(fn(Payment $record): string => $record->invoice?->due_date?->isPast() ? __('erp.resources.payment.invoice_overdue') : __('erp.resources.payment.finance_calendar')),
                 TextColumn::make('payment_method')
                     ->label('Mode')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => __('erp.payment_methods.'.$state))
-                    ->description(fn (Payment $record): ?string => $record->payment_method === 'mobile_money' && $record->mobile_money_operator
+                    ->formatStateUsing(fn(string $state): string => __('erp.payment_methods.' . $state))
+                    ->description(fn(Payment $record): ?string => $record->payment_method === 'mobile_money' && $record->mobile_money_operator
                         ? $record->mobile_money_operator
                         : null),
                 TextColumn::make('reconciliation_state')
                     ->label(__('erp.common.reconciliation'))
-                    ->state(fn (Payment $record): string => __('erp.resources.payment.reconciliation.'.$record->reconciliationState()))
+                    ->state(fn(Payment $record): string => __('erp.resources.payment.reconciliation.' . $record->reconciliationState()))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         __('erp.resources.payment.reconciliation.completed') => 'success',
                         __('erp.resources.payment.reconciliation.flagged') => 'danger',
                         default => 'warning',
@@ -267,7 +268,7 @@ class PaymentResource extends Resource
             ->recordActions([
                 Action::make('reconcile')
                     ->label(__('erp.actions.reconcile'))
-                    ->visible(fn (Payment $record): bool => $record->invoice_id === null && (auth()->user()?->can('payments.update') ?? false))
+                    ->visible(fn(Payment $record): bool => $record->invoice_id === null && (auth()->user()?->can('payments.update') ?? false))
                     ->action(function (Payment $record): void {
                         $matched = $record->reconcileAgainstOpenInvoice();
 
@@ -283,18 +284,18 @@ class PaymentResource extends Resource
                         $notification->send();
                     }),
                 Action::make('flag')
-                    ->label(fn (Payment $record): string => $record->is_flagged ? 'Retirer le signalement' : __('erp.actions.flag'))
-                    ->color(fn (Payment $record): string => $record->is_flagged ? 'warning' : 'danger')
-                    ->visible(fn (): bool => auth()->user()?->can('payments.update') ?? false)
-                    ->form(fn (Payment $record): array => $record->is_flagged ? [] : [
+                    ->label(fn(Payment $record): string => $record->is_flagged ? 'Retirer le signalement' : __('erp.actions.flag'))
+                    ->color(fn(Payment $record): string => $record->is_flagged ? 'warning' : 'danger')
+                    ->visible(fn(): bool => auth()->user()?->can('payments.update') ?? false)
+                    ->form(fn(Payment $record): array => $record->is_flagged ? [] : [
                         Textarea::make('reason')
                             ->label('Motif du signalement')
                             ->placeholder('Ex: paiement en double, montant suspect...')
                             ->required()
                             ->maxLength(500),
                     ])
-                    ->requiresConfirmation(fn (Payment $record): bool => $record->is_flagged)
-                    ->modalHeading(fn (Payment $record): string => $record->is_flagged ? 'Retirer le signalement ?' : 'Signaler ce paiement')
+                    ->requiresConfirmation(fn(Payment $record): bool => $record->is_flagged)
+                    ->modalHeading(fn(Payment $record): string => $record->is_flagged ? 'Retirer le signalement ?' : 'Signaler ce paiement')
                     ->action(function (Payment $record, array $data): void {
                         $userId = (int) auth()->id();
 
@@ -302,14 +303,14 @@ class PaymentResource extends Resource
                             $record->unflag($userId);
                             Notification::make()
                                 ->title('Signalement retiré')
-                                ->body('Le paiement '.($record->reference ?: __('erp.common.transaction')).' n\'est plus signalé.')
+                                ->body('Le paiement ' . ($record->reference ?: __('erp.common.transaction')) . ' n\'est plus signalé.')
                                 ->success()
                                 ->send();
                         } else {
                             $record->flag($data['reason'] ?? '', $userId);
                             Notification::make()
                                 ->title(__('erp.resources.payment.flagged_notification', ['reference' => $record->reference ?: __('erp.common.transaction')]))
-                                ->body('Motif : '.($data['reason'] ?? ''))
+                                ->body('Motif : ' . ($data['reason'] ?? ''))
                                 ->warning()
                                 ->send();
                         }
@@ -318,7 +319,7 @@ class PaymentResource extends Resource
                     ->label('Reçu PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
-                    ->url(fn (Payment $record): string => route('payments.pdf', ['payment' => $record, 'download' => 1])),
+                    ->url(fn(Payment $record): string => route('payments.pdf', ['payment' => $record, 'download' => 1])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -332,13 +333,13 @@ class PaymentResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return static::canAccessPermission('update')
-            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     public static function canDelete(Model $record): bool
     {
         return static::canAccessPermission('delete')
-            && (! static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
+            && (!static::isRecordLocked($record) || FinancialPeriod::currentUserCanOverrideLock());
     }
 
     protected static function isRecordLocked(Model $record): bool
@@ -348,7 +349,7 @@ class PaymentResource extends Resource
 
     protected static function lockStatusLabel(Model $record): string
     {
-        if (! static::isRecordLocked($record)) {
+        if (!static::isRecordLocked($record)) {
             return 'Ouverte';
         }
 
@@ -357,7 +358,7 @@ class PaymentResource extends Resource
 
     protected static function lockStatusColor(Model $record): string
     {
-        if (! static::isRecordLocked($record)) {
+        if (!static::isRecordLocked($record)) {
             return 'success';
         }
 
@@ -366,7 +367,7 @@ class PaymentResource extends Resource
 
     protected static function formatMoney(float $amount): string
     {
-        return 'FCFA '.number_format($amount, 2, '.', ' ');
+        return 'FCFA ' . number_format($amount, 2, '.', ' ');
     }
 
     public static function getEloquentQuery(): Builder
@@ -395,17 +396,41 @@ class PaymentResource extends Resource
     public static function generatePaymentReference(mixed $paymentDate = null): string
     {
         $date = $paymentDate ? Carbon::parse($paymentDate) : now();
-        $prefix = 'PAY-'.$date->format('Ymd').'-';
+        $prefix = 'PAY-' . $date->format('Ymd') . '-';
         $prefixLen = strlen($prefix);
 
         // Use a single MAX() aggregate in SQL instead of loading all matching
         // references into PHP. A unique constraint on (company_id, reference)
         // ensures the DB rejects duplicate references from concurrent inserts.
+
+        $driver = DB::getDriverName();
+
+        $expression = match ($driver) {
+            'pgsql' => sprintf(
+                'CAST(SUBSTRING(reference FROM %d) AS INTEGER)',
+                $prefixLen + 1
+            ),
+
+            'mysql' => sprintf(
+                'CAST(SUBSTR(reference, %d) AS UNSIGNED)',
+                $prefixLen + 1
+            ),
+
+            'sqlite' => sprintf(
+                'CAST(SUBSTR(reference, %d) AS INTEGER)',
+                $prefixLen + 1
+            ),
+
+            default => throw new RuntimeException(
+                "Unsupported database driver [$driver]"
+            ),
+        };
+
         $max = (int) Payment::query()
             ->whereNotNull('reference')
-            ->where('reference', 'like', $prefix.'%')
-            ->max(DB::raw('CAST(SUBSTR(reference, '.($prefixLen + 1).') AS UNSIGNED)'));
+            ->where('reference', 'like', $prefix . '%')
+            ->max(DB::raw($expression));
 
-        return $prefix.str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) ($max + 1), 4, '0', STR_PAD_LEFT);
     }
 }
