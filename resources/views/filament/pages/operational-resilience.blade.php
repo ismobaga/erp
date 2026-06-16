@@ -55,10 +55,10 @@
                 <h3 class="text-lg font-black text-[#002045]">Alertes système</h3>
                 <div class="mt-4 space-y-3">
                     @forelse ($alerts as $item)
-                        <div class="rounded-xl bg-rose-50 p-3">
-                            <p class="text-sm font-bold text-rose-800">{{ $item['label'] }}</p>
-                            <p class="text-xs text-rose-600">{{ $item['details'] }}</p>
-                            <p class="text-[10px] uppercase tracking-widest text-rose-400">{{ $item['time'] }}</p>
+                        <div class="rounded-xl bg-[#fff0ee] p-3">
+                            <p class="text-sm font-bold text-[#ba1a1a]">{{ $item['label'] }}</p>
+                            <p class="text-xs text-[#ba1a1a]/80">{{ $item['details'] }}</p>
+                            <p class="text-[10px] uppercase tracking-widest text-[#e87070]">{{ $item['time'] }}</p>
                         </div>
                     @empty
                         <p class="text-sm text-[#57657a]">Aucune alerte critique récente.</p>
@@ -70,10 +70,10 @@
                 <h3 class="text-lg font-black text-[#002045]">Audit administrateur</h3>
                 <div class="mt-4 space-y-3">
                     @forelse ($audits as $item)
-                        <div class="rounded-xl bg-emerald-50 p-3">
-                            <p class="text-sm font-bold text-emerald-800">{{ $item['label'] }}</p>
-                            <p class="text-xs text-[#005048]">{{ $item['subject'] }}</p>
-                            <p class="text-[10px] uppercase tracking-widest text-emerald-500">{{ $item['time'] }}</p>
+                        <div class="rounded-xl bg-[#dff7f0] p-3">
+                            <p class="text-sm font-bold text-[#005048]">{{ $item['label'] }}</p>
+                            <p class="text-xs text-[#005048]/80">{{ $item['subject'] }}</p>
+                            <p class="text-[10px] uppercase tracking-widest text-[#43af9f]">{{ $item['time'] }}</p>
                         </div>
                     @empty
                         <p class="text-sm text-[#57657a]">Aucune trace d'audit récente.</p>
@@ -83,29 +83,29 @@
         </section>
 
         @if (!empty($failedJobs))
-            <section class="rounded-[1.25rem] border border-rose-200 bg-white p-6 shadow-sm">
+            <section class="rounded-[1.25rem] border border-[#fde8d8] bg-white p-6 shadow-sm">
                 <div class="mb-4 flex items-center justify-between">
                     <h3 class="text-lg font-black text-[#002045]">Surveillance de la file — Jobs échoués</h3>
-                    <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">
+                    <span class="rounded-full bg-[#fde8d8] px-3 py-1 text-xs font-bold text-[#ba1a1a]">
                         {{ count($failedJobs) }} job(s)
                     </span>
                 </div>
                 <div class="space-y-3">
                     @foreach ($failedJobs as $job)
-                        <div class="rounded-xl border border-rose-100 bg-rose-50 p-4">
+                        <div class="rounded-xl border border-[#fde8d8] bg-[#fff0ee] p-4">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-bold text-rose-800">{{ $job['job'] }}</p>
-                                    <p class="text-xs text-rose-600">File: {{ $job['queue'] }}</p>
+                                    <p class="text-sm font-bold text-[#ba1a1a]">{{ $job['job'] }}</p>
+                                    <p class="text-xs text-[#ba1a1a]/80">File: {{ $job['queue'] }}</p>
                                     <p class="mt-1 truncate text-xs text-[#57657a]" title="{{ $job['exception'] }}">
                                         {{ $job['exception'] }}
                                     </p>
-                                    <p class="mt-1 text-[10px] uppercase tracking-widest text-rose-400">{{ $job['failed_at'] }}</p>
+                                    <p class="mt-1 text-[10px] uppercase tracking-widest text-[#e87070]">{{ $job['failed_at'] }}</p>
                                 </div>
                                 @if (auth()->user()?->can('reports.delete'))
                                     <button
                                         wire:click="retryJob('{{ $job['uuid'] }}')"
-                                        class="shrink-0 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                        class="shrink-0 rounded-lg bg-[#fde8d8] px-3 py-1.5 text-xs font-semibold text-[#ba1a1a] transition hover:bg-[#f9c7c0] focus:outline-none focus:ring-2 focus:ring-[#ba1a1a]/30"
                                         title="Remettre en file d'attente"
                                     >
                                         Relancer

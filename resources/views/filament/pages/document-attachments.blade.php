@@ -2,10 +2,9 @@
     <div class="space-y-8 text-[#0b1c30] dark:text-white">
         <section class="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-                <h2 class="mb-1 text-3xl font-extrabold tracking-tight text-[#002045] dark:text-white">Gestion des
-                    Documents</h2>
-                <p class="font-medium text-[#43474e] dark:text-slate-400">Répertoire centralisé des actifs financiers et
-                    juridiques.</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Répertoire centralisé</p>
+                <h2 class="mt-2 text-3xl font-black tracking-[-0.03em] text-[#002045] dark:text-white">Gestion des documents</h2>
+                <p class="mt-1 text-sm font-medium text-[#57657a] dark:text-slate-400">Actifs financiers et juridiques de l'entreprise.</p>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -23,8 +22,7 @@
         <div class="rounded-xl bg-[#eff4ff] p-4 shadow-sm ring-1 ring-[#dce9ff] dark:bg-slate-900 dark:ring-white/10">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div class="relative w-full lg:max-w-md">
-                    <span
-                        class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">🔎</span>
+                    <x-filament::icon icon="heroicon-o-magnifying-glass" class="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-[#57657a]" />
                     <input type="text" wire:model.live.debounce.300ms="search" placeholder="Rechercher un document..."
                         class="w-full rounded-xl border border-[#c4c6cf]/20 bg-white py-2 pl-10 pr-4 text-sm text-[#0b1c30] outline-none ring-0 focus:border-[#002045] dark:border-white/10 dark:bg-slate-800 dark:text-white" />
                 </div>
@@ -43,7 +41,7 @@
         </div>
 
         <div class="grid grid-cols-12 gap-8">
-            <div class="col-span-12 lg:col-span-8">
+            <div class="col-span-12 xl:col-span-8">
                 <div
                     class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-[#dce9ff] dark:bg-gray-900 dark:ring-white/10">
                     <div
@@ -123,7 +121,7 @@
                 </div>
             </div>
 
-            <div class="col-span-12 space-y-8 lg:col-span-4">
+            <div class="col-span-12 space-y-8 xl:col-span-4">
                 <div
                     class="relative overflow-hidden rounded-xl bg-[#002045] p-8 text-white shadow-xl shadow-[#002045]/20">
                     <div class="relative z-10">
@@ -196,8 +194,9 @@
         </div>
 
         <section>
-            <div class="mb-8 flex items-center justify-between">
-                <h3 class="text-2xl font-extrabold text-[#002045] dark:text-white">Exploration par type</h3>
+            <div class="mb-6">
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Catégorisation</p>
+                <h3 class="mt-1 text-2xl font-black tracking-[-0.02em] text-[#002045] dark:text-white">Exploration par type</h3>
             </div>
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
                 @foreach ($exploration as $item)

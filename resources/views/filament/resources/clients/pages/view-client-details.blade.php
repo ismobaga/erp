@@ -11,69 +11,98 @@
         $taxProfile = $client->taxProfile();
         $taxLabel = $taxProfile['label'] ?? 'Profil standard';
         $taxRate = number_format((float) ($taxProfile['rate'] ?? 0), 2, ',', ' ') . ' %';
+
+        $infoRows = [
+            ['icon' => 'heroicon-o-user',       'label' => 'Contact principal', 'value' => $contactName],
+            ['icon' => 'heroicon-o-envelope',    'label' => 'Email',             'value' => $email],
+            ['icon' => 'heroicon-o-phone',       'label' => 'Téléphone',         'value' => $phone],
+            ['icon' => 'heroicon-o-map-pin',     'label' => 'Localisation',      'value' => $location],
+            ['icon' => 'heroicon-o-home-modern', 'label' => 'Adresse',           'value' => $address],
+        ];
     @endphp
 
     <div class="space-y-6">
-        <section class="rounded-xl bg-[#eff4ff] p-8 text-[#0b1c30] shadow-sm ring-1 ring-[#dce9ff] dark:bg-slate-900 dark:text-white dark:ring-white/10">
+
+        {{-- ── Hero header ──────────────────────────────────────────────────── --}}
+        <section class="rounded-[1.25rem] bg-[#eff4ff] p-8 ring-1 ring-[#dce9ff] shadow-sm">
             <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div class="space-y-2">
+                <div class="space-y-3">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-[#dce9ff] text-[#002045]">
+                        <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-[#dce9ff] text-[#002045]">
                             {{ $this->getClientTypeLabel() }}
                         </span>
-                        <span class="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-[#8df5e4] text-[#005048]">
+                        <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-[#8df5e4] text-[#005048]">
                             {{ $this->getClientStatusLabel() }}
                         </span>
+                        <span class="rounded-full px-3 py-1 text-[10px] font-medium text-[#57657a]">
+                            Réf #CLT-{{ str_pad((string) $client->id, 4, '0', STR_PAD_LEFT) }}
+                        </span>
                     </div>
-                    <h1 class="text-3xl font-extrabold tracking-tight text-[#002045] dark:text-white">{{ $displayName }}</h1>
-                    <p class="text-sm text-[#43474e] dark:text-slate-300">Référence #CLT-{{ str_pad((string) $client->id, 4, '0', STR_PAD_LEFT) }}</p>
+                    <h1 class="text-3xl font-black tracking-[-0.03em] text-[#002045]">{{ $displayName }}</h1>
                 </div>
 
                 <a href="{{ \App\Filament\Resources\Clients\ClientResource::getUrl('edit', ['record' => $client]) }}"
-                    class="inline-flex items-center justify-center rounded-xl bg-[#002045] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#002045]/20 transition hover:opacity-90">
+                    class="inline-flex items-center justify-center rounded-xl bg-[#002045] px-6 py-2.5 text-sm font-black text-white shadow-sm transition hover:opacity-90">
                     Modifier la fiche
                 </a>
             </div>
         </section>
 
-        <div class="grid grid-cols-12 gap-6">
-            <section class="col-span-12 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 lg:col-span-8">
-                <h3 class="mb-4 text-lg font-bold text-[#002045] dark:text-white">Détails du client</h3>
+        <div class="grid gap-6 xl:grid-cols-12">
 
-                <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {{-- ── Contact details ──────────────────────────────────────────── --}}
+            <section class="xl:col-span-8 rounded-[1.25rem] border border-[#c4c6cf]/30 bg-white p-8 shadow-sm">
+                <div class="mb-6 flex items-center justify-between">
                     <div>
-                        <dt class="text-xs font-bold uppercase tracking-wider text-[#43474e] dark:text-slate-400">Contact principal</dt>
-                        <dd class="text-sm font-medium text-[#002045] dark:text-white">{{ $contactName }}</dd>
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Fiche client</p>
+                        <h3 class="mt-1 text-lg font-black text-[#002045]">Coordonnées</h3>
                     </div>
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-wider text-[#43474e] dark:text-slate-400">Email</dt>
-                        <dd class="text-sm font-medium text-[#002045] dark:text-white">{{ $email }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-wider text-[#43474e] dark:text-slate-400">Téléphone</dt>
-                        <dd class="text-sm font-medium text-[#002045] dark:text-white">{{ $phone }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-wider text-[#43474e] dark:text-slate-400">Localisation</dt>
-                        <dd class="text-sm font-medium text-[#002045] dark:text-white">{{ $location }}</dd>
-                    </div>
-                    <div class="md:col-span-2">
-                        <dt class="text-xs font-bold uppercase tracking-wider text-[#43474e] dark:text-slate-400">Adresse</dt>
-                        <dd class="text-sm font-medium text-[#002045] dark:text-white">{{ $address }}</dd>
-                    </div>
-                </dl>
+                </div>
+
+                <div class="space-y-3">
+                    @foreach ($infoRows as $row)
+                        <div class="flex items-start gap-4 rounded-xl bg-[#f8faff] px-4 py-3.5">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eff4ff] text-[#002045]">
+                                <x-dynamic-component :component="$row['icon']" class="h-4 w-4" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#43474e]">{{ $row['label'] }}</p>
+                                <p class="mt-0.5 text-sm font-semibold text-[#0b1c30]">{{ $row['value'] }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </section>
 
-            <section class="col-span-12 rounded-xl bg-[#eff4ff] p-6 shadow-sm ring-1 ring-[#dce9ff] dark:bg-slate-900 dark:ring-white/10 lg:col-span-4">
-                <h3 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#002045] dark:text-white">Profil fiscal</h3>
-                <p class="text-sm font-semibold text-[#002045] dark:text-white">{{ $taxLabel }}</p>
-                <p class="text-xs text-[#43474e] dark:text-slate-300">{{ $taxRate }}</p>
-            </section>
+            {{-- ── Sidebar: fiscal + notes ───────────────────────────────────── --}}
+            <div class="xl:col-span-4 space-y-6">
 
-            <section class="col-span-12 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-                <h3 class="mb-3 text-lg font-bold text-[#002045] dark:text-white">Notes internes</h3>
-                <p class="whitespace-pre-line text-sm text-[#43474e] dark:text-slate-300">{{ $notes }}</p>
-            </section>
+                {{-- Fiscal profile --}}
+                <section class="rounded-[1.25rem] bg-[linear-gradient(135deg,#002045_0%,#1a365d_100%)] p-6 text-white shadow-sm">
+                    <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">Fiscalité</p>
+                    <h3 class="mt-2 text-lg font-black">Profil fiscal</h3>
+                    <div class="mt-5 space-y-3 border-t border-white/10 pt-5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-white/70">Profil</span>
+                            <span class="text-sm font-black text-[#8df5e4]">{{ $taxLabel }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-white/70">Taux</span>
+                            <span class="text-sm font-black">{{ $taxRate }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Internal notes --}}
+                <section class="rounded-[1.25rem] border border-[#c4c6cf]/30 bg-white p-6 shadow-sm">
+                    <div class="mb-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Interne</p>
+                        <h3 class="mt-1 text-lg font-black text-[#002045]">Notes internes</h3>
+                    </div>
+                    <p class="whitespace-pre-line text-sm leading-relaxed text-[#43474e]">{{ $notes }}</p>
+                </section>
+            </div>
+
         </div>
     </div>
 </x-filament-panels::page>
