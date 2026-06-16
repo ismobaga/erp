@@ -1,89 +1,62 @@
 @extends('crommix-blog::layouts.public')
 
 @section('title', $post->seo_title ?: $post->title)
-@section('meta_description', $post->seo_description ?: 'Article de blog Crommix Mali')
-
-@push('styles')
-    <style>
-        .wrap {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px 22px 46px;
-        }
-
-        .back {
-            display: inline-flex;
-            margin-bottom: 16px;
-            color: #1b4332;
-            text-decoration: none;
-            font-weight: 700;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        article {
-            background: #fff;
-            border: 1px solid #c1c8c2;
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: 0 16px 34px rgba(27, 67, 50, 0.1);
-        }
-
-        .kicker {
-            display: inline-block;
-            font-size: 11px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            background: #e5e2e1;
-            color: #1b4332;
-            border-radius: 999px;
-            padding: 5px 10px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        h1 {
-            margin: 0 0 10px;
-            font-size: clamp(1.6rem, 2.7vw, 2.5rem);
-            color: #012d1d;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        .meta {
-            font-size: 13px;
-            color: #5f5e5e;
-            margin: 0 0 18px;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        .content {
-            line-height: 1.8;
-            color: #414844;
-        }
-
-        .divider {
-            height: 3px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #1b4332, #86af99, transparent);
-            margin-bottom: 18px;
-        }
-    </style>
-@endpush
+@section('meta_description', $post->seo_description ?: ($post->excerpt ?: 'Article de blog ' . ($companyName ?? 'CROMMIX')))
 
 @section('content')
-    <main class="wrap">
-        <a class="back" href="{{ route('blog.index') }}">← Retour au blog</a>
-        <article>
-            <span class="kicker">Article</span>
-            <h1>{{ $post->title }}</h1>
-            <div class="divider"></div>
-            <p class="meta">
-                {{ optional($post->published_at)->format('d/m/Y H:i') ?? 'Non planifié' }}
-                @if($post->author)
-                    · {{ $post->author->name }}
-                @endif
-            </p>
-            <div class="content">{!! nl2br(e($post->content)) !!}</div>
-        </article>
-    </main>
+    {{-- Article hero --}}
+    <section class="bg-[#f8f9ff] py-16">
+        <div class="mx-auto max-w-3xl px-6 lg:px-8">
+            <a href="{{ route('blog.index') }}"
+               class="mb-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#43474e] transition hover:text-[#002045]">
+                ← Retour au blog
+            </a>
+
+            <div class="mt-2 flex flex-wrap items-center gap-3">
+                <span class="rounded-full bg-[#dce9ff] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2d476f]">Article</span>
+                <span class="text-xs text-[#57657a]">
+                    {{ optional($post->published_at)->format('d/m/Y') ?? '' }}
+                    @if($post->author)
+                        · {{ $post->author->name }}
+                    @endif
+                </span>
+            </div>
+
+            <h1 class="mt-5 text-3xl font-black leading-tight tracking-tight text-[#002045] lg:text-4xl">
+                {{ $post->title }}
+            </h1>
+
+            @if(filled($post->excerpt))
+                <p class="mt-4 text-lg leading-relaxed text-[#43474e]">{{ $post->excerpt }}</p>
+            @endif
+        </div>
+    </section>
+
+    {{-- Article body --}}
+    <section class="bg-[#eff4ff] py-12">
+        <div class="mx-auto max-w-3xl px-6 lg:px-8">
+            <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-[#dce9ff] lg:p-12">
+                <div class="prose prose-slate max-w-none
+                            prose-headings:font-black prose-headings:text-[#002045] prose-headings:tracking-tight
+                            prose-p:text-[#43474e] prose-p:leading-relaxed
+                            prose-a:text-[#002045] prose-a:font-semibold hover:prose-a:opacity-70
+                            prose-strong:text-[#002045]
+                            prose-blockquote:border-l-[#002045] prose-blockquote:text-[#43474e]">
+                    {!! nl2br(e($post->content)) !!}
+                </div>
+            </div>
+
+            {{-- Footer nav --}}
+            <div class="mt-8 flex items-center justify-between">
+                <a href="{{ route('blog.index') }}"
+                   class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
+                    ← Tous les articles
+                </a>
+                <a href="{{ route('company.contact') }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
+                    Nous contacter
+                </a>
+            </div>
+        </div>
+    </section>
 @endsection

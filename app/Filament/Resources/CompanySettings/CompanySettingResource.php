@@ -231,6 +231,9 @@ class CompanySettingResource extends Resource
                                 Toggle::make('advanced_options.multi_currency')
                                     ->label('Multi-devise')
                                     ->default(false),
+                                Toggle::make('advanced_options.blog')
+                                    ->label('Blog public')
+                                    ->default(false),
                             ]),
                     ]),
             ])

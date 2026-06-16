@@ -60,6 +60,7 @@ return [
             'advanced_reports',
             'advanced_tax_settings',
             'multi_currency',
+            'blog',
         ],
         'defaults' => [
             'quotes' => false,
@@ -71,6 +72,7 @@ return [
             'advanced_reports' => false,
             'advanced_tax_settings' => false,
             'multi_currency' => false,
+            'blog' => false,
         ],
     ],
 

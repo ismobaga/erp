@@ -1,134 +1,78 @@
 @extends('crommix-blog::layouts.public')
 
-@section('title', 'Crommix Mali · Blog')
-@section('meta_description', 'Articles opérationnels, retours terrain et stratégies de croissance.')
-
-@push('styles')
-    <style>
-        .hero {
-            background: radial-gradient(560px 260px at 15% 0%, rgba(193, 236, 212, .5) 0%, transparent 62%), linear-gradient(145deg, #f5f3f3 15%, #efeded 70%, #e4e2e2 100%);
-            color: #1b1c1c;
-            padding: 72px 22px 54px;
-            border-bottom: 1px solid #c1c8c2;
-        }
-
-        .hero-wrap,
-        .list-wrap {
-            max-width: 1040px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            margin: 0 0 8px;
-            font-size: clamp(1.8rem, 2.8vw, 2.8rem);
-            font-family: 'Manrope', sans-serif;
-            color: #012d1d;
-        }
-
-        .hero p {
-            margin: 0;
-            color: #414844;
-            max-width: 760px;
-        }
-
-        .list {
-            margin: -22px auto 38px;
-            padding: 0 22px;
-        }
-
-        .card {
-            background: #ffffff;
-            border: 1px solid #c1c8c2;
-            border-radius: 18px;
-            padding: 22px;
-            margin-bottom: 14px;
-            box-shadow: 0 14px 30px rgba(27, 67, 50, 0.09);
-        }
-
-        .eyebrow {
-            display: inline-block;
-            font-size: 11px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            background: #e5e2e1;
-            color: #1b4332;
-            border-radius: 999px;
-            padding: 5px 10px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        .title {
-            margin: 0 0 8px;
-            font-size: 1.3rem;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        .title a {
-            color: #012d1d;
-            text-decoration: none;
-        }
-
-        .title a:hover {
-            color: #1b4332;
-        }
-
-        .meta {
-            margin: 0 0 12px;
-            color: #5f5e5e;
-            font-size: 13px;
-            font-family: 'Manrope', sans-serif;
-        }
-
-        .excerpt {
-            margin: 0;
-            line-height: 1.7;
-            color: #414844;
-        }
-
-        .empty {
-            border: 1px dashed #c1c8c2;
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            color: #5f5e5e;
-            background: #fff;
-        }
-
-        nav[role="navigation"] {
-            margin-top: 18px;
-        }
-    </style>
-@endpush
+@section('title', ($companyName ?? 'CROMMIX') . ' — Blog')
+@section('meta_description', 'Articles opérationnels, retours terrain et stratégies de croissance pour structurer vos opérations.')
 
 @section('content')
-    <header class="hero">
-        <div class="hero-wrap">
-            <h1>Journal Crommix Mali</h1>
-            <p>Articles opérationnels, retours terrain et stratégies de croissance pour structurer vos opérations.</p>
+    {{-- Hero --}}
+    <section class="bg-[#f8f9ff] py-20">
+        <div class="mx-auto max-w-4xl px-6 lg:px-8">
+            <span class="inline-block rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">Journal</span>
+            <h1 class="mt-5 text-4xl font-black tracking-tight text-[#002045] lg:text-5xl">Blog</h1>
+            <p class="mt-4 max-w-xl text-lg leading-relaxed text-[#43474e]">
+                Articles opérationnels, retours terrain et stratégies de croissance pour structurer vos opérations.
+            </p>
         </div>
-    </header>
+    </section>
 
-    <main class="list list-wrap">
-        @forelse($posts as $post)
-            <article class="card">
-                <span class="eyebrow">Article</span>
-                <h2 class="title"><a href="{{ route('blog.show', $post->slug) }}">{{ $post->title }}</a></h2>
-                <p class="meta">
-                    {{ optional($post->published_at)->format('d/m/Y H:i') ?? 'Non planifié' }}
-                    @if($post->author)
-                        · {{ $post->author->name }}
+    {{-- Posts --}}
+    <section class="bg-[#eff4ff] py-16">
+        <div class="mx-auto max-w-4xl px-6 lg:px-8">
+            @forelse($posts as $post)
+                <article class="mb-5 rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff] transition hover:shadow-md">
+                    <div class="mb-3 flex items-center gap-3">
+                        <span class="rounded-full bg-[#dce9ff] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2d476f]">Article</span>
+                        <span class="text-xs text-[#57657a]">
+                            {{ optional($post->published_at)->format('d/m/Y') ?? 'Non planifié' }}
+                            @if($post->author)
+                                · {{ $post->author->name }}
+                            @endif
+                        </span>
+                    </div>
+
+                    <h2 class="text-xl font-bold text-[#002045]">
+                        <a href="{{ route('blog.show', $post->slug) }}" class="transition hover:text-[#1a365d]">
+                            {{ $post->title }}
+                        </a>
+                    </h2>
+
+                    @if(filled($post->excerpt))
+                        <p class="mt-3 text-sm leading-relaxed text-[#43474e]">{{ $post->excerpt }}</p>
                     @endif
-                </p>
-                @if(filled($post->excerpt))
-                    <p class="excerpt">{{ $post->excerpt }}</p>
-                @endif
-            </article>
-        @empty
-            <section class="empty">Aucun article publié pour le moment.</section>
-        @endforelse
 
-        {{ $posts->links() }}
-    </main>
+                    <div class="mt-5">
+                        <a href="{{ route('blog.show', $post->slug) }}"
+                           class="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-[#002045] transition hover:opacity-70">
+                            Lire l'article →
+                        </a>
+                    </div>
+                </article>
+            @empty
+                <div class="rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-white p-12 text-center">
+                    <div class="mb-3 text-4xl opacity-30">📝</div>
+                    <p class="text-sm font-semibold text-[#57657a]">Aucun article publié pour le moment.</p>
+                    <p class="mt-1 text-xs text-[#57657a]/70">Revenez bientôt.</p>
+                </div>
+            @endforelse
+
+            @if($posts->hasPages())
+                <div class="mt-8 flex items-center justify-between">
+                    @if($posts->previousPageUrl())
+                        <a href="{{ $posts->previousPageUrl() }}"
+                           class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
+                            ← Précédent
+                        </a>
+                    @else
+                        <span></span>
+                    @endif
+                    @if($posts->nextPageUrl())
+                        <a href="{{ $posts->nextPageUrl() }}"
+                           class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
+                            Suivant →
+                        </a>
+                    @endif
+                </div>
+            @endif
+        </div>
+    </section>
 @endsection

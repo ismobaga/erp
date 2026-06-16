@@ -38,11 +38,14 @@
                 @php
                     $navLinks = [
                         ['route' => 'company.presentation', 'label' => 'Accueil'],
-                        ['route' => 'company.about', 'label' => 'À propos'],
-                        ['route' => 'company.services', 'label' => 'Services'],
-                        ['route' => 'company.solutions', 'label' => 'Solutions'],
-                        ['route' => 'company.contact', 'label' => 'Contact'],
+                        ['route' => 'company.about',        'label' => 'À propos'],
+                        ['route' => 'company.services',     'label' => 'Services'],
+                        ['route' => 'company.solutions',    'label' => 'Solutions'],
+                        ['route' => 'company.contact',      'label' => 'Contact'],
                     ];
+                    if (company_feature_enabled('blog', $company ?? null)) {
+                        array_splice($navLinks, 4, 0, [['route' => 'blog.index', 'label' => 'Blog']]);
+                    }
                 @endphp
                 @foreach($navLinks as $link)
                     @php $active = request()->routeIs($link['route']); @endphp
@@ -142,9 +145,12 @@
                 <a href="{{ route('company.confidentialite') }}"
                     class="transition hover:text-[#005048]">Confidentialité</a>
                 <a href="{{ route('company.conditions') }}" class="transition hover:text-[#005048]">Conditions</a>
-                <a href="{{ route('company.cookies') }}" class="transition hover:text-[#005048]">Cookies</a>
-                <a href="{{ route('company.bureaux') }}" class="transition hover:text-[#005048]">Bureaux</a>
-                <a href="/admin/login" class="transition hover:text-[#005048]">Portail ERP</a>
+                <a href="{{ route('company.cookies') }}"    class="transition hover:text-[#005048]">Cookies</a>
+                <a href="{{ route('company.bureaux') }}"    class="transition hover:text-[#005048]">Bureaux</a>
+                @if(company_feature_enabled('blog', $company ?? null))
+                <a href="{{ route('blog.index') }}"         class="transition hover:text-[#005048]">Blog</a>
+                @endif
+                <a href="/admin/login"                      class="transition hover:text-[#005048]">Portail ERP</a>
             </div>
             <div
                 class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">
