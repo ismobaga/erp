@@ -4,7 +4,9 @@ namespace App\Support;
 
 class PhoneFormatter
 {
-    public static function normalize(string $phone, string $defaultCountryCode = '223'): string
+    public const DEFAULT_COUNTRY_CODE = '223';
+
+    public static function normalize(string $phone, string $defaultCountryCode = self::DEFAULT_COUNTRY_CODE): string
     {
         $phone = trim($phone);
 
@@ -24,7 +26,7 @@ class PhoneFormatter
             return '';
         }
 
-        if (!str_starts_with($phone, $defaultCountryCode) && strlen($phone) <= 8) {
+        if (!str_starts_with($phone, $defaultCountryCode) && \strlen($phone) <= 8) {
             $phone = $defaultCountryCode . $phone;
         }
 

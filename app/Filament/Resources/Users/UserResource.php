@@ -15,6 +15,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -61,12 +62,19 @@ class UserResource extends Resource
                                 TextInput::make('email')
                                     ->label('Adresse e-mail')
                                     ->email()
-                                    ->required()
-                                    ->unique(ignoreRecord: true),
+                                    ->unique(ignoreRecord: true)
+                                    ->live(onBlur: true)
+                                    ->required(fn (Get $get): bool => blank($get('phone')))
+                                    ->rule('required_without:phone')
+                                    ->validationMessages(['required_without' => 'Veuillez saisir un e-mail ou un numéro de téléphone.']),
                                 TextInput::make('phone')
                                     ->label('Téléphone')
                                     ->tel()
-                                    ->dehydrateStateUsing(fn($state): ?string => filled($state) ? PhoneFormatter::normalize((string) $state) : null),
+                                    ->live(onBlur: true)
+                                    ->required(fn (Get $get): bool => blank($get('email')))
+                                    ->rule('required_without:email')
+                                    ->validationMessages(['required_without' => 'Veuillez saisir un e-mail ou un numéro de téléphone.'])
+                                    ->dehydrateStateUsing(fn ($state): ?string => filled($state) ? PhoneFormatter::normalize((string) $state) : null),
                                 Select::make('status')
                                     ->options([
                                         'active' => 'Actif',

@@ -51,7 +51,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             return true;
         }
 
-        return $this->hasVerifiedEmail() && $this->hasAnyRole([
+        // Allow access when email is verified, OR when the user has no email
+        // at all (phone-only account) — email verification cannot apply.
+        $emailOk = $this->hasVerifiedEmail() || blank($this->email);
+
+        return $emailOk && $this->hasAnyRole([
             'Admin',
             'Finance',
             'Project Manager',
