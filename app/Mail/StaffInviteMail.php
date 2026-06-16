@@ -14,7 +14,7 @@ class StaffInviteMail extends Mailable
 {
     use Queueable;
     use SerializesModels {
-        __wakeup as restoreModels;
+        __unserialize as restoreModels;
     }
 
     public string $companyName;
@@ -38,24 +38,24 @@ class StaffInviteMail extends Mailable
         $this->loginUrl = url('/admin/login');
     }
 
-    public function __wakeup(): void
+    public function __unserialize(array $values): void
     {
         // Company has no tenant scope — restore it first, then set context,
         // then restore User via the trait.
-        if (! $this->company instanceof Company) {
-            $this->company = Company::find($this->company->id);
+        if (isset($values['company']) && ! ($values['company'] instanceof Company)) {
+            $values['company'] = Company::find($values['company']->id);
         }
 
-        app()->instance('currentCompany', $this->company);
+        app()->instance('currentCompany', $values['company']);
 
-        $this->restoreModels();
+        $this->restoreModels($values);
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: $this->companyEmail,
-            subject: 'Bienvenue dans ' . $this->companyName . ' – Votre accès collaborateur',
+            subject: "Bienvenue dans {$this->companyName} – Votre accès collaborateur",
         );
     }
 

@@ -14,7 +14,7 @@ class InvoiceReminderMail extends Mailable
 {
     use Queueable;
     use SerializesModels {
-        __wakeup as restoreModels;
+        __unserialize as restoreModels;
     }
 
     public string $companyName;
@@ -40,22 +40,22 @@ class InvoiceReminderMail extends Mailable
         $this->clientName = $client?->contact_name ?? $client?->company_name ?? 'Client';
     }
 
-    public function __wakeup(): void
+    public function __unserialize(array $values): void
     {
-        if (! $this->company instanceof Company) {
-            $this->company = Company::find($this->company->id);
+        if (isset($values['company']) && ! ($values['company'] instanceof Company)) {
+            $values['company'] = Company::find($values['company']->id);
         }
 
-        app()->instance('currentCompany', $this->company);
+        app()->instance('currentCompany', $values['company']);
 
-        $this->restoreModels();
+        $this->restoreModels($values);
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: $this->companyEmail,
-            subject: '[Rappel de paiement] Facture ' . $this->invoiceNumber . ' – ' . $this->formattedAmount,
+            subject: "[Rappel de paiement] Facture {$this->invoiceNumber} – {$this->formattedAmount}",
         );
     }
 

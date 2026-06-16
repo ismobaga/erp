@@ -14,7 +14,7 @@ class InvoiceSentMail extends Mailable
 {
     use Queueable;
     use SerializesModels {
-        __wakeup as restoreModels;
+        __unserialize as restoreModels;
     }
 
     public string $companyName;
@@ -42,18 +42,18 @@ class InvoiceSentMail extends Mailable
             : null;
     }
 
-    public function __wakeup(): void
+    public function __unserialize(array $values): void
     {
         // Company has no tenant scope — restore it first so context can be established
         // before SerializesModels restores Invoice (which uses HasCompanyScope).
-        if (! $this->company instanceof Company) {
-            $this->company = Company::find($this->company->id);
+        if (isset($values['company']) && ! ($values['company'] instanceof Company)) {
+            $values['company'] = Company::find($values['company']->id);
         }
 
-        app()->instance('currentCompany', $this->company);
+        app()->instance('currentCompany', $values['company']);
 
         // Restore remaining ModelIdentifiers (Invoice) with company context in place.
-        $this->restoreModels();
+        $this->restoreModels($values);
     }
 
     public function envelope(): Envelope

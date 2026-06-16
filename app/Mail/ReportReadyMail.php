@@ -15,7 +15,7 @@ class ReportReadyMail extends Mailable
 {
     use Queueable;
     use SerializesModels {
-        __wakeup as restoreModels;
+        __unserialize as restoreModels;
     }
 
     public string $companyName;
@@ -32,23 +32,22 @@ class ReportReadyMail extends Mailable
         $this->companyEmail = $company->email ?? config('mail.from.address', 'noreply@erp.local');
     }
 
-    public function __wakeup(): void
+    public function __unserialize(array $values): void
     {
-        // Company has no tenant scope — restore it, then set context.
-        if (! $this->company instanceof Company) {
-            $this->company = Company::find($this->company->id);
+        if (isset($values['company']) && ! ($values['company'] instanceof Company)) {
+            $values['company'] = Company::find($values['company']->id);
         }
 
-        app()->instance('currentCompany', $this->company);
+        app()->instance('currentCompany', $values['company']);
 
-        $this->restoreModels();
+        $this->restoreModels($values);
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: $this->companyEmail,
-            subject: '[' . $this->companyName . '] Votre rapport programmé est prêt',
+            subject: "[{$this->companyName}] Votre rapport programmé est prêt",
         );
     }
 
