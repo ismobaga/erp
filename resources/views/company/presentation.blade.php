@@ -40,15 +40,16 @@
 
             <div class="relative col-span-5">
                 <div class="aspect-square overflow-hidden rounded-[2rem] shadow-2xl">
-                    <img src="/images/hero.png" alt="Immeuble corporate moderne" class="h-full w-full  object-contain">
+                    <img src="/images/hero.png" alt="Immeuble corporate moderne" class="h-full w-full object-contain">
                 </div>
 
-                <div
-                    class="absolute -bottom-8 -left-4 hidden max-w-xs rounded-[1.5rem] border border-[#c4c6cf]/20 bg-white/85 p-6 shadow-xl backdrop-blur-md md:block">
-                    <!-- <div class="mb-2 text-4xl font-black text-[#005048]">99.9%</div> -->
-                    <!-- <p class="text-sm font-medium text-[#43474e]">
-                                                                                                                    Précision opérationnelle garantie dans nos déploiements ERP.
-                                                                                                                </p> -->
+                <div class="absolute -bottom-6 -left-4 hidden max-w-[220px] rounded-2xl border border-[#c4c6cf]/20 bg-white/90 p-5 shadow-xl backdrop-blur-md md:block">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="h-2 w-2 rounded-full bg-[#70d8c8] animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#005048]">Disponible</span>
+                    </div>
+                    <div class="text-2xl font-black text-[#002045]">DMS</div>
+                    <p class="text-xs font-medium text-[#43474e] mt-0.5">Logiciel de gestion officinale</p>
                 </div>
             </div>
         </div>
@@ -220,29 +221,23 @@
     <section class="relative overflow-hidden bg-[#002045] py-24 text-white">
         <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2 lg:px-8">
             <div class="relative z-10">
+                <span class="inline-block rounded-full bg-[#8df5e4]/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#8df5e4] mb-6">Conçu ici, pour ici</span>
                 <h2 class="mb-8 text-4xl font-black tracking-tight">Conçu pour le contexte ouest-africain</h2>
-                <div class="space-y-8">
-                    <div class="flex gap-6">
-                        <div
-                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#8df5e4]/20 text-[#8df5e4]">
-                            📶</div>
-                        <div>
-                            <h4 class="mb-2 text-xl font-bold">Connectivité adaptative</h4>
-                            <p class="text-sm text-[#d6e3ff]">Optimisé pour fonctionner de manière fluide, même dans des
-                                conditions de bande passante limitée.</p>
+                <div class="space-y-6">
+                    @foreach([
+                        ['📶', 'Connectivité adaptative',   'Optimisé pour fonctionner fluidement même avec une bande passante limitée.'],
+                        ['🌍', 'Expertise locale',           'Conformité avec les régulations régionales et les pratiques commerciales du terrain.'],
+                        ['🔒', 'Sécurité & conformité',     'Vos données restent protégées selon les standards internationaux.'],
+                        ['🛠️', 'Support réactif',           'Une équipe locale disponible pour accompagner vos équipes au quotidien.'],
+                    ] as [$icon, $title, $desc])
+                        <div class="flex gap-4">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#8df5e4]/15 text-[#8df5e4] text-lg">{{ $icon }}</div>
+                            <div>
+                                <h4 class="mb-1 font-bold">{{ $title }}</h4>
+                                <p class="text-sm text-[#d6e3ff]">{{ $desc }}</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="flex gap-6">
-                        <div
-                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#8df5e4]/20 text-[#8df5e4]">
-                            🌍</div>
-                        <div>
-                            <h4 class="mb-2 text-xl font-bold">Expertise locale</h4>
-                            <p class="text-sm text-[#d6e3ff]">Conformité avec les régulations régionales et les pratiques
-                                commerciales du terrain.</p>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
 

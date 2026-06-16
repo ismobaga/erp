@@ -23,37 +23,104 @@
 
 <body class="bg-[#f8f9ff] text-[#0b1c30] antialiased">
     <!-- Header / Navigation -->
-    <header class="sticky top-0 z-50 border-b border-[#c4c6cf]/20 bg-[#f8f9ff]/90 backdrop-blur-xl">
-        <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
+    <header class="sticky top-0 z-50 border-b border-[#c4c6cf]/20 bg-[#f8f9ff]/95 backdrop-blur-xl">
+        <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
             <a href="{{ route('company.presentation') }}" class="flex items-center">
                 @if($companyLogoUrl ?? null)
-                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="h-10 w-auto object-contain">
+                    <img src="{{ $companyLogoUrl }}" alt="{{ $companyName }}" class="h-9 w-auto object-contain">
                 @else
-                    <span class="text-2xl font-black tracking-tight text-[#002045] uppercase">{{ $companyName }}</span>
+                    <span class="text-xl font-black tracking-tight text-[#002045] uppercase">{{ $companyName }}</span>
                 @endif
             </a>
 
-            <div class="hidden items-center gap-8 md:flex">
-                <a href="{{ route('company.presentation') }}"
-                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Accueil</a>
-                <a href="{{ route('company.about') }}"
-                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">À propos</a>
-                <a href="{{ route('company.services') }}"
-                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Services</a>
-                <a href="{{ route('company.solutions') }}"
-                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Solutions</a>
-                <a href="{{ route('company.contact') }}"
-                    class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Contact</a>
+            {{-- Desktop nav --}}
+            <div class="hidden items-center gap-1 md:flex">
+                @php
+                    $navLinks = [
+                        ['route' => 'company.presentation', 'label' => 'Accueil'],
+                        ['route' => 'company.about', 'label' => 'À propos'],
+                        ['route' => 'company.services', 'label' => 'Services'],
+                        ['route' => 'company.solutions', 'label' => 'Solutions'],
+                        ['route' => 'company.contact', 'label' => 'Contact'],
+                    ];
+                @endphp
+                @foreach($navLinks as $link)
+                    @php $active = request()->routeIs($link['route']); @endphp
+                    <a href="{{ route($link['route']) }}"
+                        class="relative px-3 py-2 text-sm font-medium transition-colors rounded-md
+                                       {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
+                        {{ $link['label'] }}
+                        @if($active)
+                            <span class="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#002045]"></span>
+                        @endif
+                    </a>
+                @endforeach
                 <a href="/admin/login"
-                    class="rounded-lg border border-[#c4c6cf]/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#002045] transition hover:bg-[#eff4ff]">Connexion</a>
+                    class="ml-4 rounded-lg border border-[#c4c6cf]/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#002045] transition hover:bg-[#eff4ff]">Connexion</a>
             </div>
 
-            <a href="{{ route('company.contact') }}"
-                class="rounded-lg bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                Nous contacter
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('company.contact') }}"
+                    class="hidden rounded-lg bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 md:inline-flex">
+                    Nous contacter
+                </a>
+
+                {{-- Mobile hamburger --}}
+                <button id="mobile-menu-btn" type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg border border-[#c4c6cf]/40 text-[#002045] transition hover:bg-[#eff4ff] md:hidden"
+                    aria-label="Menu" aria-expanded="false">
+                    <svg id="icon-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <svg id="icon-close" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
         </nav>
+
+        {{-- Mobile menu --}}
+        <div id="mobile-menu" class="hidden border-t border-[#c4c6cf]/20 bg-[#f8f9ff] md:hidden">
+            <div class="flex flex-col px-6 py-4 gap-1">
+                @foreach($navLinks as $link)
+                    @php $active = request()->routeIs($link['route']); @endphp
+                    <a href="{{ route($link['route']) }}"
+                        class="rounded-lg px-4 py-3 text-sm font-medium transition
+                                       {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">
+                        {{ $link['label'] }}
+                    </a>
+                @endforeach
+                <div class="mt-3 flex flex-col gap-2 border-t border-[#c4c6cf]/20 pt-3">
+                    <a href="{{ route('company.contact') }}"
+                        class="rounded-lg bg-[#002045] px-4 py-3 text-center text-sm font-semibold text-white">
+                        Nous contacter
+                    </a>
+                    <a href="/admin/login"
+                        class="rounded-lg border border-[#c4c6cf]/60 px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-[#002045]">
+                        Connexion
+                    </a>
+                </div>
+            </div>
+        </div>
     </header>
+
+    <script nonce="{{ csp_nonce() }}">
+        (function () {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('icon-open');
+            const iconClose = document.getElementById('icon-close');
+            btn?.addEventListener('click', function () {
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!expanded));
+                menu?.classList.toggle('hidden');
+                iconOpen?.classList.toggle('hidden');
+                iconClose?.classList.toggle('hidden');
+            });
+        })();
+    </script>
 
     <!-- Main Content -->
     <main id="top">
