@@ -4,8 +4,11 @@ namespace App\Mail;
 
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Services\Pdf\BusinessDocumentPdf;
+use App\Support\ResolvesLogoDataUri;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -13,6 +16,7 @@ use Illuminate\Queue\SerializesModels;
 class InvoiceSentMail extends Mailable
 {
     use Queueable;
+    use ResolvesLogoDataUri;
     use SerializesModels {
         __unserialize as restoreModels;
     }
@@ -60,12 +64,41 @@ class InvoiceSentMail extends Mailable
     {
         return new Envelope(
             from: $this->companyEmail,
-            subject: 'Facture ' . $this->invoiceNumber . ' – ' . $this->formattedTotal,
+            subject: "Facture {$this->invoiceNumber} – {$this->formattedTotal}",
         );
     }
 
     public function content(): Content
     {
         return new Content(view: 'mail.invoice-sent');
+    }
+
+    public function attachments(): array
+    {
+        $this->invoice->loadMissing(['client', 'items.service', 'quote']);
+
+        $pdfBuilder = app(BusinessDocumentPdf::class);
+        $companyName = $this->company->name ?: config('app.name');
+
+        $viewData = [
+            'invoice'     => $this->invoice,
+            'company'     => $this->company,
+            'bankDetails' => [
+                'bank_name'      => $this->company->bank_name,
+                'account_name'   => $this->company->bank_account_name ?: ($this->company->legal_name ?: $companyName),
+                'account_number' => $this->company->bank_account_number,
+                'swift_code'     => $this->company->bank_swift_code,
+            ],
+            'logoDataUri' => $this->resolveLogoDataUri($this->company->logo_path),
+            'isDownload'  => true,
+            'compact'     => $pdfBuilder->shouldUseCompactForInvoice($this->invoice),
+        ];
+
+        $pdfContent = $pdfBuilder->make('invoices.pdf', $viewData)->output();
+
+        return [
+            Attachment::fromData(fn () => $pdfContent, $this->invoiceNumber . '.pdf')
+                ->withMime('application/pdf'),
+        ];
     }
 }
