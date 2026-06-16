@@ -23,6 +23,7 @@ class DefaultCompanySeeder extends Seeder
                 'email' => env('COMPANY_EMAIL', 'contact@example.com'),
                 'is_active' => true,
                 'is_demo' => false,
+                'logo_path' => 'company-assets/cm-logo.png',
             ],
         );
 
