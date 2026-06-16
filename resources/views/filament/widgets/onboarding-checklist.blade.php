@@ -3,39 +3,55 @@
         $steps = $this->getSteps();
         $completedCount = collect($steps)->where('done', true)->count();
         $totalCount = count($steps);
+        $pct = $totalCount > 0 ? round(($completedCount / $totalCount) * 100) : 0;
     @endphp
 
     @if(!empty($steps) && $completedCount < $totalCount)
-    <div style="background: linear-gradient(135deg, #eff4ff 0%, #fff 100%); border-radius: 16px; padding: 28px 32px; border: 1px solid #dce9ff;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div class="architectural-card border border-[#dce9ff]">
+        {{-- Header --}}
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h2 style="font-size: 16px; font-weight: 900; color: #002045; margin-bottom: 4px;">
-                    🚀 Démarrage rapide
-                </h2>
-                <p style="font-size: 13px; color: #57657a;">
-                    {{ $completedCount }}/{{ $totalCount }} étapes complétées — client → facture → paiement.
-                </p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#43474e]">Démarrage rapide</p>
+                <h3 class="mt-1 text-lg font-black tracking-[-0.02em] text-[#002045]">Configurez votre espace</h3>
+                <p class="mt-0.5 text-xs text-[#57657a]">{{ $completedCount }}/{{ $totalCount }} étapes complétées</p>
             </div>
-            <div style="background: #dce9ff; border-radius: 999px; padding: 4px 4px; width: 160px; height: 10px; overflow: hidden;">
-                <div style="background: #002045; border-radius: 999px; height: 100%; width: {{ round(($completedCount / max($totalCount, 1)) * 100) }}%; transition: width 0.3s;"></div>
+
+            <div class="flex flex-col items-end gap-1">
+                <span class="text-sm font-black text-[#002045]">{{ $pct }}%</span>
+                <div class="h-2 w-36 overflow-hidden rounded-full bg-[#dce9ff]">
+                    <div class="h-full rounded-full bg-[#002045] transition-all duration-500"
+                         style="width: {{ $pct }}%"></div>
+                </div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+        {{-- Steps --}}
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($steps as $step)
-            <div style="background: {{ $step['done'] ? '#f0fdf4' : '#ffffff' }}; border-radius: 12px; padding: 16px; border: 1px solid {{ $step['done'] ? '#bbf7d0' : '#e5eaf2' }};">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="font-size: 18px;">{{ $step['done'] ? '✅' : '⭕' }}</span>
-                    <span style="font-size: 13px; font-weight: 800; color: {{ $step['done'] ? '#166534' : '#002045' }};">{{ $step['label'] }}</span>
+                <div class="relative flex flex-col rounded-2xl p-5 transition
+                    {{ $step['done']
+                        ? 'bg-[#f0fdf4] ring-1 ring-[#bbf7d0]'
+                        : 'bg-white ring-1 ring-[#e5eaf2] hover:ring-[#002045]/20' }}">
+
+                    <div class="mb-3 flex items-center gap-2.5">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm
+                            {{ $step['done'] ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#eff4ff] text-[#002045]' }}">
+                            {{ $step['done'] ? '✓' : '○' }}
+                        </span>
+                        <span class="text-xs font-black {{ $step['done'] ? 'text-[#166534]' : 'text-[#002045]' }}">
+                            {{ $step['label'] }}
+                        </span>
+                    </div>
+
+                    <p class="flex-1 text-[11px] leading-relaxed text-[#57657a]">{{ $step['description'] }}</p>
+
+                    @if(!$step['done'])
+                        <a href="{{ $step['url'] }}"
+                           class="mt-4 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#002045] transition hover:opacity-70">
+                            {{ $step['cta'] }} →
+                        </a>
+                    @endif
                 </div>
-                <p style="font-size: 12px; color: #57657a; margin-bottom: 12px; line-height: 1.5;">{{ $step['description'] }}</p>
-                @if(!$step['done'])
-                <a href="{{ $step['url'] }}"
-                   style="display: inline-block; background: #002045; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em;">
-                    {{ $step['cta'] }}
-                </a>
-                @endif
-            </div>
             @endforeach
         </div>
     </div>
