@@ -136,6 +136,7 @@ class ListUsers extends ListRecords
 
                     $spatieRoleName = $roleMap[$data['role']] ?? 'Staff';
                     $user->assignRole(Role::findByName($spatieRoleName, 'web'));
+                    $user->companies()->syncWithoutDetaching([currentCompany()->id]);
 
                     Mail::to($user->email)->queue(new StaffInviteMail(
                         $user,

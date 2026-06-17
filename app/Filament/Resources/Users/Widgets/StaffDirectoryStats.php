@@ -24,10 +24,11 @@ class StaffDirectoryStats extends StatsOverviewWidget
                 return $this->placeholderStats();
             }
 
-            $total = User::query()->count();
-            $active = User::query()->where('status', 'active')->count();
+            $companyId = currentCompany()->id;
+            $total = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->count();
+            $active = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->where('status', 'active')->count();
             $managers = Schema::hasTable('model_has_roles')
-                ? User::query()->whereHas('roles', fn($query) => $query->whereIn('name', ['manager', 'project-manager', 'project manager']))->count()
+                ? User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->whereHas('roles', fn($query) => $query->whereIn('name', ['manager', 'project-manager', 'project manager']))->count()
                 : 0;
             $rate = $total > 0 ? round(($active / $total) * 100, 1) : 0;
 
@@ -35,32 +36,35 @@ class StaffDirectoryStats extends StatsOverviewWidget
                 Stat::make('Total staff', number_format($total))
                     ->description('Registered collaborators in the directory')
                     ->color('primary')
-                    ->chart($this->countTrend(fn($query) => $query)),
+                    ->chart($this->countTrend($companyId, fn($query) => $query)),
                 Stat::make('Currently active', number_format($active))
                     ->description('Available for current operations')
                     ->color('success')
-                    ->chart($this->countTrend(fn($query) => $query->where('status', 'active'))),
+                    ->chart($this->countTrend($companyId, fn($query) => $query->where('users.status', 'active'))),
                 Stat::make('Project managers', number_format($managers))
                     ->description('Leadership and delivery oversight roles')
                     ->color('info')
-                    ->chart($this->managerTrend()),
+                    ->chart($this->managerTrend($companyId)),
                 Stat::make('Operational rate', number_format($rate, 1) . '%')
                     ->description('Active share of the workforce ledger')
                     ->color('warning')
-                    ->chart($this->rateTrend()),
+                    ->chart($this->rateTrend($companyId)),
             ];
         } catch (Throwable) {
             return $this->placeholderStats();
         }
     }
 
-    protected function countTrend(callable $scope): array
+    protected function countTrend(int $companyId, callable $scope): array
     {
         return collect(range(6, 0))
-            ->map(function (int $offset) use ($scope): int {
+            ->map(function (int $offset) use ($companyId, $scope): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
-                $query = DB::table('users')->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()]);
+                $query = DB::table('users')
+                    ->join('company_user', 'company_user.user_id', '=', 'users.id')
+                    ->where('company_user.company_id', $companyId)
+                    ->whereBetween('users.created_at', [$start->toDateTimeString(), $end->toDateTimeString()]);
                 $scope($query);
 
                 return (int) $query->count();
@@ -68,34 +72,36 @@ class StaffDirectoryStats extends StatsOverviewWidget
             ->all();
     }
 
-    protected function rateTrend(): array
+    protected function rateTrend(int $companyId): array
     {
         return collect(range(6, 0))
-            ->map(function (int $offset): int {
+            ->map(function (int $offset) use ($companyId): int {
                 $checkpoint = now()->copy()->subMonths($offset)->endOfMonth();
-                $total = DB::table('users')->where('created_at', '<=', $checkpoint->toDateTimeString())->count();
-                $active = DB::table('users')
-                    ->where('created_at', '<=', $checkpoint->toDateTimeString())
-                    ->where('status', 'active')
-                    ->count();
+                $base = DB::table('users')
+                    ->join('company_user', 'company_user.user_id', '=', 'users.id')
+                    ->where('company_user.company_id', $companyId)
+                    ->where('users.created_at', '<=', $checkpoint->toDateTimeString());
+                $total = (clone $base)->count();
+                $active = (clone $base)->where('users.status', 'active')->count();
 
                 return $total > 0 ? (int) round(($active / $total) * 100) : 0;
             })
             ->all();
     }
 
-    protected function managerTrend(): array
+    protected function managerTrend(int $companyId): array
     {
         if (!Schema::hasTable('model_has_roles') || !Schema::hasTable('roles')) {
             return array_fill(0, 7, 0);
         }
 
         return collect(range(6, 0))
-            ->map(function (int $offset): int {
+            ->map(function (int $offset) use ($companyId): int {
                 $start = now()->copy()->subMonths($offset)->startOfMonth();
                 $end = now()->copy()->subMonths($offset)->endOfMonth();
 
                 return User::query()
+                    ->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))
                     ->whereBetween('created_at', [$start->toDateTimeString(), $end->toDateTimeString()])
                     ->whereHas('roles', fn($query) => $query->whereIn('name', ['manager', 'project-manager', 'project manager', 'Project Manager']))
                     ->count();

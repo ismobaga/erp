@@ -36,7 +36,9 @@ class SecurityAccessOverview extends Widget
         $logs = [];
 
         if (Schema::hasTable('users')) {
+            $companyId = currentCompany()->id;
             $recentUsers = User::query()
+                ->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))
                 ->whereNotNull('last_login_at')
                 ->latest('last_login_at')
                 ->take(3)
@@ -81,8 +83,9 @@ class SecurityAccessOverview extends Widget
             return $this->placeholderMetrics();
         }
 
-        $total = User::query()->count();
-        $restricted = User::query()->where('status', 'restricted')->count();
+        $companyId = currentCompany()->id;
+        $total = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->count();
+        $restricted = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->where('status', 'restricted')->count();
 
         return [
             'active_personnel' => number_format($total),
