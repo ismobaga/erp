@@ -105,6 +105,17 @@ class AppServiceProvider extends ServiceProvider
         Expense::observe(ExpenseObserver::class);
         CreditNote::observe(CreditNoteObserver::class);
 
+        // With Spatie teams enabled, permission grants are company-scoped.
+        // Super Admin is a *global* role (company_id = NULL), so grant it
+        // every ability up front regardless of the active company context.
+        Gate::before(function ($user, string $ability): ?bool {
+            if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+                return true;
+            }
+
+            return null;
+        });
+
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);
         Gate::policy(Payment::class, PaymentPolicy::class);

@@ -4,8 +4,11 @@ namespace Tests;
 
 use App\Models\Company;
 use App\Models\FinancialPeriod;
+use App\Models\User;
+use App\Support\CurrentCompanyTeamResolver;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\PermissionRegistrar;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -40,5 +43,26 @@ abstract class TestCase extends BaseTestCase
         app()->instance('currentCompany', $company);
 
         return $company;
+    }
+
+    /**
+     * Assign the global (company_id = NULL) Super Admin role.
+     *
+     * With Spatie teams enabled, a plain assignRole('Super Admin') would be
+     * scoped to the currently bound company and NOT be recognized by
+     * User::isSuperAdmin(). Tests that need a real super admin must use this.
+     */
+    protected function assignSuperAdmin(User $user): User
+    {
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+        try {
+            $user->assignRole('Super Admin');
+        } finally {
+            CurrentCompanyTeamResolver::clearOverride();
+            $user->unsetRelation('roles');
+        }
+
+        return $user;
     }
 }

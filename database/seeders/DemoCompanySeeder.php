@@ -146,7 +146,21 @@ class DemoCompanySeeder extends Seeder
                 ],
             );
 
-            $user->syncRoles([$definition['role']]);
+            if ($definition['role'] === 'Super Admin') {
+                // Super Admin is a global (company_id = NULL) assignment.
+                app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+                try {
+                    $user->syncRoles([$definition['role']]);
+                } finally {
+                    \App\Support\CurrentCompanyTeamResolver::clearOverride();
+                    $user->unsetRelation('roles');
+                }
+            } else {
+                // Scoped to the demo company (bound as currentCompany above).
+                $user->syncRoles([$definition['role']]);
+            }
+
             $company->users()->syncWithoutDetaching([
                 $user->id => ['role' => $definition['pivot_role']],
             ]);

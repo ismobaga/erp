@@ -106,7 +106,7 @@ class RoleAccessControlTest extends TestCase
         config()->set('erp.edition.profiles.simple.enabled_modules', ['dashboard', 'quotes', 'invoices', 'payments', 'expenses']);
 
         $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Super Admin');
+        $this->assignSuperAdmin($user);
 
         $this->actingAs($user)
             ->get('/admin/report-generation')

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CurrentCompanyTeamResolver;
 use App\Support\DemoGuard;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'phone', 'department', 'preferences', 'status', 'last_login_at', 'password'])]
@@ -37,6 +39,34 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         ];
     }
 
+    /**
+     * Whether this user holds the global (company_id = NULL) Super Admin role.
+     *
+     * With Spatie teams enabled, hasRole() only sees assignments for the
+     * current company context. Super Admin is assigned globally, so the check
+     * must run with a NULL team context.
+     */
+    protected ?bool $memoizedIsSuperAdmin = null;
+
+    public function isSuperAdmin(): bool
+    {
+        if ($this->memoizedIsSuperAdmin !== null) {
+            return $this->memoizedIsSuperAdmin;
+        }
+
+        $registrar = app(PermissionRegistrar::class);
+
+        $registrar->setPermissionsTeamId(null);
+        $this->unsetRelation('roles');
+
+        try {
+            return $this->memoizedIsSuperAdmin = $this->hasRole('Super Admin');
+        } finally {
+            CurrentCompanyTeamResolver::clearOverride();
+            $this->unsetRelation('roles');
+        }
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         if ($this->status === 'restricted') {
@@ -44,10 +74,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
 
         if ($panel->getId() === 'superadmin') {
-            return $this->hasRole('Super Admin');
+            return $this->isSuperAdmin();
         }
 
-        if ($this->hasRole('Super Admin')) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 

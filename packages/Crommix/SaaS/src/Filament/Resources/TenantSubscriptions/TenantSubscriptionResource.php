@@ -38,7 +38,8 @@ class TenantSubscriptionResource extends Resource
     {
         $user = auth()->user();
 
-        return $user?->hasRole('Super Admin') || $user?->can('saas.subscriptions.view') ?? false;
+        return ($user !== null && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || ($user?->can('saas.subscriptions.view') ?? false);
     }
 
     public static function form(Schema $schema): Schema

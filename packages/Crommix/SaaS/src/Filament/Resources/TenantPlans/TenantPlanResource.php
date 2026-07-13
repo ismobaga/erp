@@ -40,7 +40,8 @@ class TenantPlanResource extends Resource
     {
         $user = auth()->user();
 
-        return $user?->hasRole('Super Admin') || $user?->can('saas.plans.view') ?? false;
+        return ($user !== null && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || ($user?->can('saas.plans.view') ?? false);
     }
 
     public static function form(Schema $schema): Schema

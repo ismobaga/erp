@@ -49,7 +49,7 @@ trait HasPermissionAccess
             return false;
         }
 
-        if (method_exists($user, 'hasRole') && $user->hasRole('Super Admin')) {
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true;
         }
 

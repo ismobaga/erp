@@ -4,9 +4,11 @@ namespace Database\Seeders;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\CurrentCompanyTeamResolver;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 class DefaultCompanySeeder extends Seeder
 {
@@ -50,7 +52,16 @@ class DefaultCompanySeeder extends Seeder
             ],
         );
 
-        $user->assignRole('Super Admin');
+        // Super Admin is a global role assignment (company_id = NULL) — it
+        // must not be scoped to the company bound above.
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+        try {
+            $user->assignRole('Super Admin');
+        } finally {
+            CurrentCompanyTeamResolver::clearOverride();
+            $user->unsetRelation('roles');
+        }
 
         $company->users()->syncWithoutDetaching([
             $user->id => ['role' => 'owner'],

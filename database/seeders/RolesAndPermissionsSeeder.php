@@ -2,13 +2,29 @@
 
 namespace Database\Seeders;
 
+use App\Support\CurrentCompanyTeamResolver;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
+    {
+        // The role/permission catalog is global (company_id = NULL): only
+        // *assignments* are company-scoped. Force a null team context so this
+        // seeder behaves the same regardless of any bound company.
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+        try {
+            $this->seedCatalog();
+        } finally {
+            CurrentCompanyTeamResolver::clearOverride();
+        }
+    }
+
+    private function seedCatalog(): void
     {
         $permissions = [
             'users.view',

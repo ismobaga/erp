@@ -35,7 +35,7 @@ class OperationalResilienceTest extends TestCase
         Storage::fake('local');
 
         $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Super Admin');
+        $this->assignSuperAdmin($user);
 
         $client = Client::create([
             'type' => 'company',
@@ -67,7 +67,7 @@ class OperationalResilienceTest extends TestCase
     public function test_health_monitor_logs_alerts_for_failed_jobs(): void
     {
         $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Super Admin');
+        $this->assignSuperAdmin($user);
 
         config()->set('erp.resilience.monitoring.failed_jobs_alert_threshold', 1);
 
@@ -188,7 +188,7 @@ class OperationalResilienceTest extends TestCase
         ]);
 
         $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Super Admin');
+        $this->assignSuperAdmin($user);
 
         $count = app(OperationalResilienceService::class)->purgeFailedJobs($user->id);
 
