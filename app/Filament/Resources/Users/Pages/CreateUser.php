@@ -45,6 +45,11 @@ class CreateUser extends CreateRecord
     {
         /** @var User $user */
         $user = $this->record;
-        $user->companies()->syncWithoutDetaching([currentCompany()->id]);
+
+        $companyId = currentCompany()?->id;
+
+        if ($companyId !== null) {
+            $user->companies()->syncWithoutDetaching([$companyId]);
+        }
     }
 }

@@ -164,4 +164,57 @@ class TenantIsolationTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.company_name', 'Client of B');
     }
+
+    // ── 5. Stale session id must never assign records to a former company ─────
+
+    public function test_stale_session_company_id_is_not_trusted_when_creating_records(): void
+    {
+        $companyA = Company::create(['name' => 'Former Co', 'currency' => 'FCFA', 'is_active' => true]);
+        $companyB = Company::create(['name' => 'Current Co', 'currency' => 'FCFA', 'is_active' => true]);
+
+        // The user belongs to B only — they have been removed from A, but the
+        // session still references A (stale value).
+        $user = User::factory()->create(['status' => 'active']);
+        $user->companies()->attach($companyB->id, ['role' => 'admin']);
+
+        $this->actingAs($user);
+        session(['current_company_id' => $companyA->id]);
+
+        // Simulate the middleware not having bound a company (as happens when
+        // the session id fails validation).
+        app()->forgetInstance('currentCompany');
+
+        $client = Client::create(['type' => 'company', 'company_name' => 'New Client', 'status' => 'active']);
+
+        // The record must belong to the user's real company, never the stale one.
+        $this->assertSame($companyB->id, (int) $client->company_id);
+        $this->assertNotSame($companyA->id, (int) $client->company_id);
+
+        // The stale session value must have been replaced.
+        $this->assertSame($companyB->id, (int) session('current_company_id'));
+    }
+
+    // ── 6. Middleware falls back to a valid company when the session is stale ─
+
+    public function test_middleware_replaces_stale_session_company_with_first_membership(): void
+    {
+        $companyA = Company::create(['name' => 'Stale Co', 'currency' => 'FCFA', 'is_active' => true]);
+        $companyB = Company::create(['name' => 'Real Co', 'currency' => 'FCFA', 'is_active' => true]);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->companies()->attach($companyB->id, ['role' => 'admin']);
+
+        app()->forgetInstance('currentCompany');
+
+        // Any route in the 'web' group runs SetCurrentCompany.
+        $response = $this->actingAs($user)
+            ->withSession(['current_company_id' => $companyA->id])
+            ->get('/dashboard');
+
+        // The middleware must have discarded the stale id and bound the user's
+        // actual company instead of leaving them with an empty (0 = 1) scope.
+        $response->assertSessionHas('current_company_id', $companyB->id);
+        $this->assertTrue(app()->bound('currentCompany'));
+        $this->assertSame($companyB->id, currentCompany()->id);
+    }
 }

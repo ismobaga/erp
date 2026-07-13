@@ -65,6 +65,7 @@ class Company extends Model implements HasSubscription
             'whatsapp_enabled' => 'boolean',
             'advanced_options' => 'array',
             'bank_swift_code' => 'encrypted',
+            'bank_account_number' => 'encrypted',
             'onboarded_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];
@@ -180,12 +181,33 @@ class Company extends Model implements HasSubscription
 
     // ── HasSubscription contract ───────────────────────────────────────────────
 
+    /**
+     * Memoized per model instance to avoid re-querying on every feature check
+     * within a request. Use refreshActiveSubscription() after mutating
+     * subscriptions in the same request.
+     */
+    protected ?TenantSubscription $memoizedActiveSubscription = null;
+
+    protected bool $activeSubscriptionResolved = false;
+
     public function activeSubscription(): ?TenantSubscription
     {
-        return $this->subscriptions()
-            ->whereIn('status', ['active', 'trialing'])
-            ->latest()
-            ->first();
+        if (! $this->activeSubscriptionResolved) {
+            $this->memoizedActiveSubscription = $this->subscriptions()
+                ->whereIn('status', ['active', 'trialing'])
+                ->latest()
+                ->first();
+            $this->activeSubscriptionResolved = true;
+        }
+
+        return $this->memoizedActiveSubscription;
+    }
+
+    public function refreshActiveSubscription(): ?TenantSubscription
+    {
+        $this->activeSubscriptionResolved = false;
+
+        return $this->activeSubscription();
     }
 
     public function isSubscribed(): bool

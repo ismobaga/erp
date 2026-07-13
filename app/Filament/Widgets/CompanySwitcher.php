@@ -57,7 +57,15 @@ class CompanySwitcher extends Widget
 
         $this->currentCompany = $company;
 
-        // Redirect to refresh the full page so every resource reloads under the new scope.
-        $this->redirect(request()->header('Referer') ?? '/admin');
+        // Redirect to refresh the full page so every resource reloads under
+        // the new scope. Only trust the Referer when it points to this app —
+        // never redirect to an external host.
+        $referer = (string) request()->header('Referer');
+
+        $target = str_starts_with($referer, url('/'))
+            ? $referer
+            : '/admin';
+
+        $this->redirect($target);
     }
 }

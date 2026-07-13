@@ -193,8 +193,16 @@ class UserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        $companyId = currentCompany()?->id;
+
+        if ($companyId === null) {
+            // No company context (e.g. Super Admin without an attached
+            // company) — show nothing rather than erroring or leaking users.
+            return parent::getEloquentQuery()->whereRaw('0 = 1');
+        }
+
         return parent::getEloquentQuery()
-            ->whereHas('companies', fn (Builder $q) => $q->where('companies.id', currentCompany()->id));
+            ->whereHas('companies', fn (Builder $q) => $q->where('companies.id', $companyId));
     }
 
     public static function getRelations(): array

@@ -35,8 +35,9 @@ class SecurityAccessOverview extends Widget
     {
         $logs = [];
 
-        if (Schema::hasTable('users')) {
-            $companyId = currentCompany()->id;
+        $companyId = currentCompany()?->id;
+
+        if (Schema::hasTable('users') && $companyId !== null) {
             $recentUsers = User::query()
                 ->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))
                 ->whereNotNull('last_login_at')
@@ -79,17 +80,20 @@ class SecurityAccessOverview extends Widget
 
     protected function getMetrics(): array
     {
-        if (!Schema::hasTable('users')) {
+        $companyId = currentCompany()?->id;
+
+        if (!Schema::hasTable('users') || $companyId === null) {
             return $this->placeholderMetrics();
         }
 
-        $companyId = currentCompany()->id;
         $total = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->count();
         $restricted = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->where('status', 'restricted')->count();
 
         return [
             'active_personnel' => number_format($total),
-            'mfa_compliance' => '100%',
+            // 2FA is not enforced yet — report the honest value rather than a
+            // hard-coded 100%. Compute this for real once MFA is rolled out.
+            'mfa_compliance' => '—',
             'pending_revocations' => number_format($restricted),
         ];
     }

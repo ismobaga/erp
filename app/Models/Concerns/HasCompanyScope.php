@@ -72,7 +72,10 @@ trait HasCompanyScope
 
             // Resolution fallback order:
             // 1) currentCompany container binding (normal web flow)
-            // 2) session current_company_id
+            // 2) session current_company_id — only if the authenticated user
+            //    still belongs to that company (a stale session id must never
+            //    be trusted, or records could be written into a company the
+            //    user has since been removed from)
             // 3) authenticated user's first attached company
             $companyId = null;
 
@@ -81,7 +84,18 @@ trait HasCompanyScope
             }
 
             if (blank($companyId) && app()->bound('session')) {
-                $companyId = session('current_company_id');
+                $sessionCompanyId = session('current_company_id');
+
+                if (filled($sessionCompanyId)) {
+                    $user = Auth::user();
+
+                    if ($user !== null && $user->companies()->whereKey($sessionCompanyId)->exists()) {
+                        $companyId = $sessionCompanyId;
+                    } else {
+                        // Stale or unauthenticated session value — discard it.
+                        session()->forget('current_company_id');
+                    }
+                }
             }
 
             if (blank($companyId)) {

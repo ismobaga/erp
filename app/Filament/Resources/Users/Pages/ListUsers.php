@@ -78,6 +78,16 @@ class ListUsers extends ListRecords
                     ])->required()->native(false),
                 ])
                 ->action(function (array $data, WhatsappSendService $whatsappSendService) use ($roleMap, $roleLabels): void {
+                    if (currentCompany() === null) {
+                        Notification::make()
+                            ->title('Aucune société active.')
+                            ->body('Sélectionnez une société avant d’inviter un membre.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
                     if (User::query()->where('email', $data['email'])->exists()) {
                         Notification::make()
                             ->title('Adresse e-mail déjà utilisée.')

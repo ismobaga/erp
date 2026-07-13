@@ -34,7 +34,18 @@ class SetCurrentCompany
 
         $company = $companyId
             ? $user->companies()->find($companyId)
-            : $user->companies()->first();
+            : null;
+
+        if ($company === null) {
+            // The session references a company the user no longer belongs to
+            // (or none at all). Clear the stale id so nothing downstream can
+            // trust it, then fall back to the user's first company.
+            if ($companyId !== null) {
+                session()->forget('current_company_id');
+            }
+
+            $company = $user->companies()->first();
+        }
 
         if ($company instanceof Company) {
             app()->instance('currentCompany', $company);

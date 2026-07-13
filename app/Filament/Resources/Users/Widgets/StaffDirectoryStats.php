@@ -20,11 +20,12 @@ class StaffDirectoryStats extends StatsOverviewWidget
     protected function getStats(): array
     {
         try {
-            if (!Schema::hasTable('users')) {
+            $companyId = currentCompany()?->id;
+
+            if (!Schema::hasTable('users') || $companyId === null) {
                 return $this->placeholderStats();
             }
 
-            $companyId = currentCompany()->id;
             $total = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->count();
             $active = User::query()->whereHas('companies', fn($q) => $q->where('companies.id', $companyId))->where('status', 'active')->count();
             $managers = Schema::hasTable('model_has_roles')
