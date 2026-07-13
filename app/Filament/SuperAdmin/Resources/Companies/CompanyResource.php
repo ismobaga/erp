@@ -10,6 +10,7 @@ use App\Support\ErpEdition;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -23,7 +24,10 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CompanyResource extends Resource
 {
@@ -197,15 +201,36 @@ class CompanyResource extends Resource
                         'full' => 'Full',
                         default => 'Serveur',
                     }),
+                TextColumn::make('deleted_at')
+                    ->label('Archivée le')
+                    ->date()
+                    ->placeholder('—')
+                    ->sortable(),
                 TextColumn::make('updated_at')
                     ->label('Mis à jour')
                     ->since()
                     ->sortable(),
             ])
             ->defaultSort('name')
+            ->filters([
+                TrashedFilter::make()->label('Sociétés archivées'),
+            ])
             ->recordActions([
                 EditAction::make(),
+                // Soft delete = archive. Financial data is preserved; the
+                // company disappears from switchers and scoped queries.
+                DeleteAction::make()
+                    ->label('Archiver')
+                    ->modalHeading('Archiver cette société ?')
+                    ->modalDescription('La société sera masquée partout mais ses données (factures, écritures, paiements) sont conservées. Elle pourra être restaurée.'),
+                RestoreAction::make()->label('Restaurer'),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Let the TrashedFilter decide whether archived companies are shown.
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     public static function getRelations(): array

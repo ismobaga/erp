@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use RuntimeException;
 
 #[Fillable([
     'name',
@@ -57,6 +59,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Company extends Model implements HasSubscription
 {
+    use SoftDeletes;
+
     protected function casts(): array
     {
         return [
@@ -82,7 +86,28 @@ class Company extends Model implements HasSubscription
 
         static::deleting(function (Company $company): void {
             DemoGuard::ensureCompanyDeletionAllowed($company);
+
+            // Soft delete = archive, always allowed. Permanently destroying a
+            // company that still holds financial records is forbidden — those
+            // records may be legally required and would be orphaned.
+            if ($company->isForceDeleting() && $company->hasFinancialRecords()) {
+                throw new RuntimeException(
+                    'Cannot permanently delete a company with financial records (invoices, payments, or journal entries). Archive it instead.',
+                );
+            }
         });
+    }
+
+    /**
+     * Whether the company still owns financial records. Uses forCompany() to
+     * bypass the tenant scope (which is bound to the *current* company, not
+     * necessarily this one).
+     */
+    public function hasFinancialRecords(): bool
+    {
+        return Invoice::forCompany($this->id)->exists()
+            || Payment::forCompany($this->id)->exists()
+            || JournalEntry::forCompany($this->id)->exists();
     }
 
     /**

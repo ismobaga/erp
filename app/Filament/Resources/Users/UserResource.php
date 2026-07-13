@@ -9,6 +9,7 @@ use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use App\Support\PhoneFormatter;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -20,6 +21,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -87,7 +89,19 @@ class UserResource extends Resource
                                     ->native(false)
                                     ->required(),
                                 Select::make('roles')
-                                    ->relationship('roles', 'name')
+                                    ->label('Rôles (société actuelle)')
+                                    ->helperText('Les rôles s’appliquent uniquement à la société active. Changez de société pour gérer les accès ailleurs.')
+                                    // The roles relation is team-scoped (Spatie teams):
+                                    // it reads and writes assignments for the current
+                                    // company only. Super Admin is a global role and can
+                                    // never be granted from here.
+                                    ->relationship(
+                                        'roles',
+                                        'name',
+                                        fn (Builder $query): Builder => $query
+                                            ->whereNull('company_id')
+                                            ->where('name', '!=', 'Super Admin'),
+                                    )
                                     ->multiple()
                                     ->preload()
                                     ->searchable()
@@ -163,13 +177,55 @@ class UserResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                Action::make('removeFromCompany')
+                    ->label('Retirer de la société')
+                    ->icon(Heroicon::OutlinedUserMinus)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Retirer ce membre de la société ?')
+                    ->modalDescription('Ses rôles dans cette société seront révoqués et il n’y aura plus accès. Son compte et ses accès dans d’autres sociétés sont conservés.')
+                    ->visible(fn (User $record): bool => currentCompany() !== null
+                        && $record->getKey() !== auth()->id())
+                    ->action(fn (User $record) => static::removeFromCurrentCompany($record)),
+                // Deleting a user account is global (it affects every company
+                // the user belongs to) — reserved for Super Admins.
+                DeleteAction::make()
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
                 ]),
             ]);
+    }
+
+    /**
+     * Offboard a user from the active company: revoke their roles in this
+     * company and drop the membership. Their account, and any roles in other
+     * companies, are untouched. If their session still points to this
+     * company, SetCurrentCompany discards it on their next request.
+     */
+    public static function removeFromCurrentCompany(User $record): void
+    {
+        $company = currentCompany();
+
+        if ($company === null) {
+            return;
+        }
+
+        // The roles relation is team-scoped, so detach() only removes
+        // assignments belonging to the current company.
+        $record->roles()->detach();
+        $record->unsetRelation('roles');
+
+        $record->companies()->detach($company->id);
+
+        Notification::make()
+            ->title('Membre retiré de la société.')
+            ->body($record->name.' n’a plus accès à '.$company->name.'.')
+            ->success()
+            ->send();
     }
 
     protected static function resolveAccessTier(User $record): string
