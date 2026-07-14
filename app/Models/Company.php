@@ -89,8 +89,10 @@ class Company extends Model implements HasSubscription
 
             // Soft delete = archive, always allowed. Permanently destroying a
             // company that still holds financial records is forbidden — those
-            // records may be legally required and would be orphaned.
-            if ($company->isForceDeleting() && $company->hasFinancialRecords()) {
+            // records may be legally required and would be orphaned. Demo
+            // companies are exempt: their data is disposable by definition
+            // and the demo:reset command must be able to recreate them.
+            if ($company->isForceDeleting() && ! $company->is_demo && $company->hasFinancialRecords()) {
                 throw new RuntimeException(
                     'Cannot permanently delete a company with financial records (invoices, payments, or journal entries). Archive it instead.',
                 );

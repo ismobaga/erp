@@ -35,7 +35,10 @@ class DemoResetCommand extends Command
 
             $demoCompanies->each(function (Company $company) use (&$demoUserIds): void {
                 $demoUserIds = $demoUserIds->merge($company->users()->pluck('users.id'));
-                $company->delete();
+                // Hard delete: Company uses SoftDeletes, but demo tenants must
+                // be fully destroyed so re-seeding can recreate the 'demo'
+                // slug without colliding with an archived row.
+                $company->forceDelete();
             });
 
             $this->cleanupOrphanedDemoUsers($demoUserIds->unique());

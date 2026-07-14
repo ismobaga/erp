@@ -18,6 +18,10 @@ abstract class TestCase extends BaseTestCase
         $this->withoutVite();
         FinancialPeriod::flushLockCache();
 
+        // The team resolver override is static and would otherwise leak
+        // between tests in the same PHPUnit process.
+        CurrentCompanyTeamResolver::clearOverride();
+
         // Automatically bind a default company to the IoC container whenever
         // the companies table is available (i.e. after migrations have run).
         // This ensures all HasCompanyScope models receive a company_id without

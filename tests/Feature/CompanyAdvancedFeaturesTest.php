@@ -39,7 +39,6 @@ class CompanyAdvancedFeaturesTest extends TestCase
     public function test_advanced_features_are_isolated_per_company_context(): void
     {
         $user = User::factory()->create(['status' => 'active']);
-        $user->assignRole('Admin');
         $this->actingAs($user);
 
         $companyA = Company::create([
@@ -54,10 +53,18 @@ class CompanyAdvancedFeaturesTest extends TestCase
             'is_active' => true,
         ]);
 
+        $user->companies()->attach([$companyA->id, $companyB->id]);
+
+        // Roles are company-scoped (Spatie teams): grant Admin in each
+        // company so only the feature flag differs between contexts.
         $this->setUpCompany($companyA);
+        $user->assignRole('Admin');
+        $user->unsetRelation('roles');
         $this->assertTrue(QuoteResource::shouldRegisterNavigation());
 
         $this->setUpCompany($companyB);
+        $user->assignRole('Admin');
+        $user->unsetRelation('roles');
         $this->assertFalse(QuoteResource::shouldRegisterNavigation());
     }
 
