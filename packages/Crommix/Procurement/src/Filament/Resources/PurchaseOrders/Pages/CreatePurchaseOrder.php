@@ -3,9 +3,15 @@
 namespace Crommix\Procurement\Filament\Resources\PurchaseOrders\Pages;
 
 use Crommix\Procurement\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
+use Crommix\Procurement\Services\ProcurementService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePurchaseOrder extends CreateRecord
 {
     protected static string $resource = PurchaseOrderResource::class;
+
+    protected function afterCreate(): void
+    {
+        app(ProcurementService::class)->recalculate($this->getRecord());
+    }
 }
