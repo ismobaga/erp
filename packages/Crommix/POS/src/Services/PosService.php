@@ -2,6 +2,7 @@
 
 namespace Crommix\POS\Services;
 
+use App\Services\LedgerPostingService;
 use Crommix\Inventory\Services\InventoryService;
 use Crommix\POS\Models\PosOrder;
 use Crommix\POS\Models\PosSession;
@@ -10,7 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class PosService
 {
-    public function __construct(private readonly InventoryService $inventoryService) {}
+    public function __construct(
+        private readonly InventoryService $inventoryService,
+        private readonly LedgerPostingService $ledger,
+    ) {}
 
     /**
      * Open a new POS session.
@@ -80,8 +84,22 @@ class PosService
             }
 
             $this->recalculate($order);
+            $order->refresh();
 
-            return $order->refresh();
+            // Cash sale: money is received at the till, so post straight to
+            // the ledger (DR cash / CR revenue [+ tax]). Idempotent per order.
+            $this->ledger->postCashSale(
+                date: now()->toDateString(),
+                reference: 'POS-' . $order->id,
+                sourceType: 'pos_order',
+                sourceId: $order->id,
+                total: (float) $order->total_amount,
+                taxAmount: (float) $order->tax_amount,
+                userId: Auth::id(),
+                companyId: $order->company_id ? (int) $order->company_id : null,
+            );
+
+            return $order;
         });
     }
 

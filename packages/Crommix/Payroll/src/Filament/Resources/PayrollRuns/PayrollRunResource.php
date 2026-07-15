@@ -7,10 +7,13 @@ use Crommix\Payroll\Filament\Resources\PayrollRuns\Pages\CreatePayrollRun;
 use Crommix\Payroll\Filament\Resources\PayrollRuns\Pages\EditPayrollRun;
 use Crommix\Payroll\Filament\Resources\PayrollRuns\Pages\ListPayrollRuns;
 use Crommix\Payroll\Models\PayrollRun;
+use Crommix\Payroll\Services\PayrollService;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -57,14 +60,16 @@ class PayrollRunResource extends Resource
                 ->maxLength(7),
             Select::make('status')
                 ->label('Status')
+                // 'completed' is intentionally absent: completion goes through
+                // the Complete action so the run is posted to the ledger.
                 ->options([
                     'draft'      => 'Draft',
                     'processing' => 'Processing',
-                    'completed'  => 'Completed',
                     'cancelled'  => 'Cancelled',
                 ])
                 ->native(false)
                 ->default('draft')
+                ->disabled(fn (?PayrollRun $record): bool => $record?->status === 'completed')
                 ->required(),
             TextInput::make('reference')
                 ->label('Reference')
@@ -101,8 +106,45 @@ class PayrollRunResource extends Resource
                     ]),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                Action::make('generateItems')
+                    ->label('Generate items')
+                    ->icon('heroicon-o-user-group')
+                    ->color('info')
+                    ->visible(fn (PayrollRun $record): bool => $record->status === 'draft' && ! $record->items()->exists())
+                    ->requiresConfirmation()
+                    ->modalHeading('Generate payroll items?')
+                    ->modalDescription('One line per active employee will be created from their base salary.')
+                    ->action(function (PayrollRun $record, PayrollService $payrollService): void {
+                        $run = $payrollService->generateItems($record);
+
+                        Notification::make()
+                            ->title('Payroll items generated.')
+                            ->body($run->items()->count().' employee line(s) — gross total: '.number_format((float) $run->total_gross))
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('complete')
+                    ->label('Complete')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (PayrollRun $record): bool => in_array($record->status, ['draft', 'processing'], true)
+                        && $record->items()->exists())
+                    ->requiresConfirmation()
+                    ->modalHeading('Complete this payroll run?')
+                    ->modalDescription('The run will be locked and the salary expense posted to the general ledger.')
+                    ->action(function (PayrollRun $record, PayrollService $payrollService): void {
+                        $payrollService->complete($record, (int) auth()->id());
+
+                        Notification::make()
+                            ->title('Payroll run completed.')
+                            ->body('Salary expense posted to the ledger.')
+                            ->success()
+                            ->send();
+                    }),
+                EditAction::make()
+                    ->visible(fn (PayrollRun $record): bool => $record->status !== 'completed'),
+                DeleteAction::make()
+                    ->visible(fn (PayrollRun $record): bool => $record->status !== 'completed'),
             ]);
     }
 

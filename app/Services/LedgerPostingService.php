@@ -299,6 +299,168 @@ class LedgerPostingService
     }
 
     // -------------------------------------------------------------------------
+    // Cash sale posting (POS and other package-level point-of-sale flows)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Post an immediate cash sale (money received at the moment of sale, no
+     * receivable):
+     *   DR Cash/Bank (1010)      → total
+     *   CR Sales Revenue (4100)  → total − tax
+     *   CR Tax Payable (2200)    → tax portion (if any)
+     *
+     * Generic by design so package modules (POS, …) can post without this
+     * service depending on their models.
+     */
+    public function postCashSale(
+        string $date,
+        string $reference,
+        string $sourceType,
+        int $sourceId,
+        float $total,
+        float $taxAmount = 0.0,
+        ?int $userId = null,
+        ?int $companyId = null,
+    ): ?JournalEntry {
+        if ($total <= 0) {
+            return null;
+        }
+
+        $companyId = $this->resolveCompanyId($companyId);
+
+        $cash = $this->account('cash', $companyId);
+        $revenue = $this->account('sales_revenue', $companyId);
+        $tax = $this->account('tax_payable', $companyId);
+
+        if (!$cash || !$revenue) {
+            return null;
+        }
+
+        $taxAmount = max(0.0, min($taxAmount, $total));
+        $revenueAmount = Money::of((string) $total)
+            ->subtract(Money::of((string) $taxAmount))
+            ->toFloat();
+
+        $lines = [
+            [
+                'account_id' => $cash->id,
+                'debit' => $total,
+                'credit' => 0,
+                'description' => 'Cash sale: ' . $reference,
+            ],
+            [
+                'account_id' => $revenue->id,
+                'debit' => 0,
+                'credit' => $revenueAmount,
+                'description' => 'Revenue: ' . $reference,
+            ],
+        ];
+
+        if ($taxAmount > 0 && $tax) {
+            $lines[] = [
+                'account_id' => $tax->id,
+                'debit' => 0,
+                'credit' => $taxAmount,
+                'description' => 'Tax: ' . $reference,
+            ];
+        }
+
+        return $this->createAndPost(
+            date: $this->normalizeDateToString($date),
+            description: 'Cash sale ' . $reference,
+            sourceType: $sourceType,
+            sourceId: $sourceId,
+            lines: $lines,
+            userId: $userId,
+            financialPeriodId: $this->resolvePeriodId($date),
+            companyId: $companyId,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Payroll posting
+    // -------------------------------------------------------------------------
+
+    /**
+     * Post a completed payroll run:
+     *   DR Payroll Expense (5400)     → gross
+     *   CR Accounts Payable (2100)    → net wages payable to employees
+     *   CR Tax Payable (2200)         → withheld deductions (tax/social)
+     *
+     * Generic by design (see postCashSale) — invariant: gross = net + deductions.
+     */
+    public function postPayrollRun(
+        string $date,
+        string $reference,
+        int $sourceId,
+        float $gross,
+        float $deductions,
+        float $net,
+        ?int $userId = null,
+        ?int $companyId = null,
+    ): ?JournalEntry {
+        if ($gross <= 0) {
+            return null;
+        }
+
+        if (abs($gross - ($net + $deductions)) > 0.01) {
+            throw new \InvalidArgumentException(
+                'Unbalanced payroll posting: gross must equal net + deductions.',
+            );
+        }
+
+        $companyId = $this->resolveCompanyId($companyId);
+
+        $expense = $this->account('expense_payroll', $companyId);
+        $ap = $this->account('accounts_payable', $companyId);
+        $tax = $this->account('tax_payable', $companyId);
+
+        if (!$expense || !$ap) {
+            return null;
+        }
+
+        if ($deductions > 0 && !$tax) {
+            // Without a liability account for withholdings, the entry cannot balance.
+            return null;
+        }
+
+        $lines = [
+            [
+                'account_id' => $expense->id,
+                'debit' => $gross,
+                'credit' => 0,
+                'description' => 'Payroll expense: ' . $reference,
+            ],
+            [
+                'account_id' => $ap->id,
+                'debit' => 0,
+                'credit' => $net,
+                'description' => 'Net wages payable: ' . $reference,
+            ],
+        ];
+
+        if ($deductions > 0) {
+            $lines[] = [
+                'account_id' => $tax->id,
+                'debit' => 0,
+                'credit' => $deductions,
+                'description' => 'Withholdings payable: ' . $reference,
+            ];
+        }
+
+        return $this->createAndPost(
+            date: $this->normalizeDateToString($date),
+            description: 'Payroll run ' . $reference,
+            sourceType: 'payroll_run',
+            sourceId: $sourceId,
+            lines: $lines,
+            userId: $userId,
+            financialPeriodId: $this->resolvePeriodId($date),
+            companyId: $companyId,
+        );
+    }
+
+    // -------------------------------------------------------------------------
     // Reversal entries
     // -------------------------------------------------------------------------
 

@@ -2,12 +2,16 @@
 
 namespace Crommix\Payroll\Services;
 
+use App\Services\LedgerPostingService;
 use Crommix\HR\Models\Employee;
 use Crommix\Payroll\Models\PayrollItem;
 use Crommix\Payroll\Models\PayrollRun;
+use Illuminate\Support\Facades\DB;
 
 class PayrollService
 {
+    public function __construct(private readonly LedgerPostingService $ledger) {}
+
     /**
      * Create a new payroll run for the given month.
      *
@@ -59,16 +63,33 @@ class PayrollService
     }
 
     /**
-     * Mark the run as completed and record the processor.
+     * Mark the run as completed, record the processor, and post the salary
+     * expense to the general ledger (DR payroll expense / CR net wages
+     * payable [+ withholdings]). Posting is idempotent per run.
      */
     public function complete(PayrollRun $run, int $userId): PayrollRun
     {
-        $run->update([
-            'status'       => 'completed',
-            'processed_by' => $userId,
-            'processed_at' => now(),
-        ]);
+        return DB::transaction(function () use ($run, $userId): PayrollRun {
+            $run->update([
+                'status'       => 'completed',
+                'processed_by' => $userId,
+                'processed_at' => now(),
+            ]);
 
-        return $run->refresh();
+            $run->refresh();
+
+            $this->ledger->postPayrollRun(
+                date: now()->toDateString(),
+                reference: $run->reference ?: ('PAY-RUN-' . $run->id . ($run->period_month ? ' (' . $run->period_month . ')' : '')),
+                sourceId: $run->id,
+                gross: (float) $run->total_gross,
+                deductions: (float) $run->total_deductions,
+                net: (float) $run->total_net,
+                userId: $userId,
+                companyId: $run->company_id ? (int) $run->company_id : null,
+            );
+
+            return $run;
+        });
     }
 }

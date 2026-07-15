@@ -6,12 +6,16 @@ use BackedEnum;
 use Crommix\POS\Filament\Resources\PosOrders\Pages\CreatePosOrder;
 use Crommix\POS\Filament\Resources\PosOrders\Pages\EditPosOrder;
 use Crommix\POS\Filament\Resources\PosOrders\Pages\ListPosOrders;
+use Crommix\Inventory\Models\Product;
 use Crommix\POS\Models\PosOrder;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -64,25 +68,60 @@ class PosOrderResource extends Resource
                 ->native(false)
                 ->default('cash')
                 ->required(),
-            Select::make('status')
-                ->label('Status')
-                ->options([
-                    'pending'   => 'Pending',
-                    'completed' => 'Completed',
-                    'refunded'  => 'Refunded',
-                    'cancelled' => 'Cancelled',
-                ])
-                ->native(false)
-                ->default('pending')
-                ->required(),
-            TextInput::make('total_amount')
-                ->label('Total')
-                ->numeric()
-                ->prefix('$'),
             TextInput::make('amount_paid')
                 ->label('Amount Paid')
                 ->numeric()
-                ->prefix('$'),
+                ->minValue(0),
+            Textarea::make('notes')
+                ->label('Notes')
+                ->rows(2),
+            // Sales are processed through PosService (stock deduction + ledger
+            // posting), so items are captured here and handed to the service —
+            // totals and status are computed, never typed.
+            Repeater::make('items')
+                ->label('Items')
+                ->columnSpanFull()
+                ->columns(4)
+                ->defaultItems(1)
+                ->required()
+                ->visibleOn('create')
+                ->dehydrated()
+                ->schema([
+                    Select::make('product_id')
+                        ->label('Product')
+                        ->options(fn (): array => Product::query()
+                            ->where('is_active', true)
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->all())
+                        ->searchable()
+                        ->placeholder('— free line —')
+                        ->live()
+                        ->afterStateUpdated(function ($state, Set $set): void {
+                            $product = $state ? Product::query()->find($state) : null;
+
+                            if ($product !== null) {
+                                $set('name', $product->name);
+                                $set('unit_price', (string) $product->sale_price);
+                            }
+                        }),
+                    TextInput::make('name')
+                        ->label('Description')
+                        ->required()
+                        ->maxLength(255),
+                    TextInput::make('quantity')
+                        ->label('Qty')
+                        ->numeric()
+                        ->default(1)
+                        ->required()
+                        ->minValue(1),
+                    TextInput::make('unit_price')
+                        ->label('Unit Price')
+                        ->numeric()
+                        ->default(0)
+                        ->required()
+                        ->minValue(0),
+                ]),
         ]);
     }
 
@@ -123,8 +162,12 @@ class PosOrderResource extends Resource
                     ]),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                // Completed orders have deducted stock and posted to the
+                // ledger — they must not be silently edited or deleted.
+                EditAction::make()
+                    ->visible(fn (PosOrder $record): bool => $record->status !== 'completed'),
+                DeleteAction::make()
+                    ->visible(fn (PosOrder $record): bool => $record->status !== 'completed'),
             ]);
     }
 
