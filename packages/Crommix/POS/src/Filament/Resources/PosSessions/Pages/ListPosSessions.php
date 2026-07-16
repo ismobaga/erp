@@ -19,13 +19,14 @@ class ListPosSessions extends ListRecords
     {
         return [
             Action::make('openSession')
-                ->label('Open session')
+                ->label('Ouvrir une session')
                 ->icon('heroicon-o-lock-open')
                 ->color('success')
                 ->visible(fn (): bool => ! PosSession::query()->open()->exists())
+                ->modalHeading('Ouvrir une session de caisse')
                 ->schema([
                     TextInput::make('opening_float')
-                        ->label('Opening float')
+                        ->label('Fonds d’ouverture')
                         ->numeric()
                         ->default(0)
                         ->required()
@@ -38,7 +39,7 @@ class ListPosSessions extends ListRecords
                     $posService->openSession((float) $data['opening_float'], $data['notes'] ?? null);
 
                     Notification::make()
-                        ->title('Till session opened.')
+                        ->title('Session de caisse ouverte.')
                         ->success()
                         ->send();
                 }),

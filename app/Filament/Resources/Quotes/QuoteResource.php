@@ -53,7 +53,7 @@ class QuoteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
+    protected static string|\UnitEnum|null $navigationGroup = 'Ventes';
 
     protected static ?int $navigationSort = 2;
 

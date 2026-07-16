@@ -41,7 +41,7 @@ class RecurringInvoiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPath;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
+    protected static string|\UnitEnum|null $navigationGroup = 'Ventes';
 
     protected static ?int $navigationSort = 5;
 

@@ -65,6 +65,24 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 CompanySwitcher::class,
             ])
+            // Explicit menu order so groups read logically (sales → purchasing
+            // → stock → POS → accounting → CRM → HR → payroll → comms →
+            // marketing → admin) instead of alphabetically. Ungrouped daily
+            // items (Factures, Paiements, Clients, Dépenses) stay pinned above.
+            ->navigationGroups([
+                'Ventes',
+                'Achats',
+                'Stock',
+                'Point de vente',
+                'Comptabilité',
+                'Relation client',
+                'Ressources humaines',
+                'Paie',
+                'Communication',
+                'Support',
+                'Marketing',
+                'Administration',
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

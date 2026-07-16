@@ -23,9 +23,13 @@ class StockMovementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Inventory';
+    protected static string|\UnitEnum|null $navigationGroup = 'Stock';
 
-    protected static ?string $navigationLabel = 'Stock Movements';
+    protected static ?string $navigationLabel = 'Mouvements de stock';
+
+    protected static ?string $modelLabel = 'mouvement de stock';
+
+    protected static ?string $pluralModelLabel = 'mouvements de stock';
 
     protected static ?int $navigationSort = 3;
 
@@ -54,36 +58,42 @@ class StockMovementResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('created_at')->label('Date')->dateTime('d/m/Y H:i')->sortable(),
-                TextColumn::make('product.name')->label('Product')->searchable()->sortable(),
-                TextColumn::make('warehouse.name')->label('Warehouse')->placeholder('—')->toggleable(),
+                TextColumn::make('product.name')->label('Produit')->searchable()->sortable(),
+                TextColumn::make('warehouse.name')->label('Entrepôt')->placeholder('—')->toggleable(),
                 TextColumn::make('type')->label('Type')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'in' => 'Entrée',
+                        'out' => 'Sortie',
+                        'adjustment' => 'Ajustement',
+                        default => $state,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'in' => 'success',
                         'out' => 'danger',
                         default => 'warning',
                     }),
-                TextColumn::make('quantity')->label('Qty')
+                TextColumn::make('quantity')->label('Qté')
                     ->formatStateUsing(fn ($state): string => ($state > 0 ? '+' : '').$state),
-                TextColumn::make('quantity_before')->label('Before')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('quantity_after')->label('After'),
+                TextColumn::make('quantity_before')->label('Avant')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('quantity_after')->label('Après'),
                 TextColumn::make('reference_type')->label('Source')
-                    ->formatStateUsing(fn (?string $state): string => $state ? str_replace('_', ' ', $state) : 'manual')
+                    ->formatStateUsing(fn (?string $state): string => $state ? str_replace('_', ' ', $state) : 'manuel')
                     ->badge()
                     ->color('gray')
                     ->toggleable(),
-                TextColumn::make('creator.name')->label('By')->toggleable(),
+                TextColumn::make('creator.name')->label('Par')->toggleable(),
                 TextColumn::make('notes')->label('Notes')->limit(40)->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('type')
                     ->options([
-                        'in' => 'In',
-                        'out' => 'Out',
-                        'adjustment' => 'Adjustment',
+                        'in' => 'Entrée',
+                        'out' => 'Sortie',
+                        'adjustment' => 'Ajustement',
                     ]),
                 SelectFilter::make('product_id')
-                    ->label('Product')
+                    ->label('Produit')
                     ->relationship('product', 'name')
                     ->searchable()
                     ->preload(),

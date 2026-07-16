@@ -28,7 +28,7 @@ class PosOrderResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'POS';
+    protected static string|\UnitEnum|null $navigationGroup = 'Point de vente';
 
     protected static ?string $navigationLabel = 'Orders';
 

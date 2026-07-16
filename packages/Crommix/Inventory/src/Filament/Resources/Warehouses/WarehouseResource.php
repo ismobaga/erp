@@ -26,9 +26,13 @@ class WarehouseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Inventory';
+    protected static string|\UnitEnum|null $navigationGroup = 'Stock';
 
-    protected static ?string $navigationLabel = 'Warehouses';
+    protected static ?string $navigationLabel = 'Entrepôts';
+
+    protected static ?string $modelLabel = 'entrepôt';
+
+    protected static ?string $pluralModelLabel = 'entrepôts';
 
     protected static ?int $navigationSort = 2;
 
@@ -53,17 +57,17 @@ class WarehouseResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Name')
+                ->label('Nom')
                 ->required()
                 ->maxLength(255),
             TextInput::make('code')
                 ->label('Code')
                 ->maxLength(50),
             Toggle::make('is_active')
-                ->label('Active')
+                ->label('Actif')
                 ->default(true),
             Textarea::make('address')
-                ->label('Address')
+                ->label('Adresse')
                 ->rows(3)
                 ->columnSpanFull(),
         ]);
@@ -73,16 +77,16 @@ class WarehouseResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')->label('Name')->searchable()->sortable(),
+                TextColumn::make('name')->label('Nom')->searchable()->sortable(),
                 TextColumn::make('code')->label('Code')->searchable()->toggleable(),
                 TextColumn::make('stock_movements_count')
-                    ->label('Movements')
+                    ->label('Mouvements')
                     ->counts('stockMovements')
                     ->sortable(),
-                IconColumn::make('is_active')->label('Active')->boolean(),
+                IconColumn::make('is_active')->label('Actif')->boolean(),
             ])
             ->filters([
-                TernaryFilter::make('is_active')->label('Active'),
+                TernaryFilter::make('is_active')->label('Actif'),
             ])
             ->recordActions([
                 EditAction::make(),

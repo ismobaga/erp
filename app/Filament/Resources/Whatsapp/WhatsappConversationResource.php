@@ -28,7 +28,7 @@ class WhatsappConversationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleOvalLeft;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Avancé';
+    protected static string|\UnitEnum|null $navigationGroup = 'Communication';
 
     protected static ?int $navigationSort = 20;
 

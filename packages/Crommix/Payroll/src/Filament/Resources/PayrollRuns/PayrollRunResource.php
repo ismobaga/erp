@@ -27,7 +27,7 @@ class PayrollRunResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Payroll';
+    protected static string|\UnitEnum|null $navigationGroup = 'Paie';
 
     protected static ?string $navigationLabel = 'Payroll Runs';
 

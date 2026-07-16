@@ -21,11 +21,12 @@ class ListStockMovements extends ListRecords
     {
         return [
             Action::make('adjustStock')
-                ->label('Adjust stock')
+                ->label('Ajuster le stock')
                 ->icon('heroicon-o-adjustments-horizontal')
+                ->modalHeading('Ajuster le stock')
                 ->schema([
                     Select::make('product_id')
-                        ->label('Product')
+                        ->label('Produit')
                         ->options(fn (): array => Product::query()
                             ->where('track_inventory', true)
                             ->orderBy('name')
@@ -34,7 +35,7 @@ class ListStockMovements extends ListRecords
                         ->searchable()
                         ->required(),
                     Select::make('warehouse_id')
-                        ->label('Warehouse')
+                        ->label('Entrepôt')
                         ->options(fn (): array => Warehouse::query()
                             ->where('is_active', true)
                             ->orderBy('name')
@@ -42,12 +43,12 @@ class ListStockMovements extends ListRecords
                             ->all())
                         ->placeholder('—'),
                     TextInput::make('quantity')
-                        ->label('Quantity (+ in / − out)')
+                        ->label('Quantité (+ entrée / − sortie)')
                         ->numeric()
                         ->required()
                         ->rules(['integer', 'not_in:0']),
                     Textarea::make('notes')
-                        ->label('Reason / notes')
+                        ->label('Motif / notes')
                         ->rows(2)
                         ->required(),
                 ])
@@ -57,8 +58,8 @@ class ListStockMovements extends ListRecords
 
                     if ($quantity < 0 && $product->stock_quantity + $quantity < 0) {
                         Notification::make()
-                            ->title('Insufficient stock.')
-                            ->body("Current stock of {$product->name} is {$product->stock_quantity}.")
+                            ->title('Stock insuffisant.')
+                            ->body("Le stock actuel de {$product->name} est de {$product->stock_quantity}.")
                             ->danger()
                             ->send();
 
@@ -74,8 +75,8 @@ class ListStockMovements extends ListRecords
                     );
 
                     Notification::make()
-                        ->title('Stock adjusted.')
-                        ->body("{$product->name}: ".($quantity > 0 ? '+' : '')."{$quantity} → ".$product->fresh()->stock_quantity)
+                        ->title('Stock ajusté.')
+                        ->body("{$product->name} : ".($quantity > 0 ? '+' : '')."{$quantity} → ".$product->fresh()->stock_quantity)
                         ->success()
                         ->send();
                 }),

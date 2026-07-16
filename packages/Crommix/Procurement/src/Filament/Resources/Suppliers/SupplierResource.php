@@ -26,9 +26,13 @@ class SupplierResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Procurement';
+    protected static string|\UnitEnum|null $navigationGroup = 'Achats';
 
-    protected static ?string $navigationLabel = 'Suppliers';
+    protected static ?string $navigationLabel = 'Fournisseurs';
+
+    protected static ?string $modelLabel = 'fournisseur';
+
+    protected static ?string $pluralModelLabel = 'fournisseurs';
 
     protected static ?int $navigationSort = 2;
 
@@ -53,7 +57,7 @@ class SupplierResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Name')
+                ->label('Nom')
                 ->required()
                 ->maxLength(255),
             TextInput::make('code')
@@ -64,25 +68,25 @@ class SupplierResource extends Resource
                 ->email()
                 ->maxLength(255),
             TextInput::make('phone')
-                ->label('Phone')
+                ->label('Téléphone')
                 ->tel()
                 ->maxLength(50),
             TextInput::make('nif')
-                ->label('NIF / Tax ID')
+                ->label('NIF / Identifiant fiscal')
                 ->maxLength(100),
             TextInput::make('currency')
-                ->label('Currency')
+                ->label('Devise')
                 ->default('FCFA')
                 ->maxLength(10),
             TextInput::make('payment_terms')
-                ->label('Payment Terms')
-                ->placeholder('e.g. Net 30')
+                ->label('Conditions de paiement')
+                ->placeholder('ex. Net 30')
                 ->maxLength(255),
             Toggle::make('is_active')
-                ->label('Active')
+                ->label('Actif')
                 ->default(true),
             Textarea::make('address')
-                ->label('Address')
+                ->label('Adresse')
                 ->rows(3)
                 ->columnSpanFull(),
         ]);
@@ -92,19 +96,19 @@ class SupplierResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')->label('Name')->searchable()->sortable(),
+                TextColumn::make('name')->label('Nom')->searchable()->sortable(),
                 TextColumn::make('code')->label('Code')->searchable()->toggleable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->toggleable(),
-                TextColumn::make('phone')->label('Phone')->toggleable(),
-                TextColumn::make('payment_terms')->label('Terms')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('phone')->label('Téléphone')->toggleable(),
+                TextColumn::make('payment_terms')->label('Conditions')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('purchase_orders_count')
-                    ->label('Orders')
+                    ->label('Commandes')
                     ->counts('purchaseOrders')
                     ->sortable(),
-                IconColumn::make('is_active')->label('Active')->boolean(),
+                IconColumn::make('is_active')->label('Actif')->boolean(),
             ])
             ->filters([
-                TernaryFilter::make('is_active')->label('Active'),
+                TernaryFilter::make('is_active')->label('Actif'),
             ])
             ->recordActions([
                 EditAction::make(),

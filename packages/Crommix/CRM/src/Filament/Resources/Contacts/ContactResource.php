@@ -26,9 +26,13 @@ class ContactResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'CRM';
+    protected static string|\UnitEnum|null $navigationGroup = 'Relation client';
 
     protected static ?string $navigationLabel = 'Contacts';
+
+    protected static ?string $modelLabel = 'contact';
+
+    protected static ?string $pluralModelLabel = 'contacts';
 
     protected static ?int $navigationSort = 2;
 
@@ -53,28 +57,28 @@ class ContactResource extends Resource
     {
         return $schema->components([
             TextInput::make('first_name')
-                ->label('First Name')
+                ->label('Prénom')
                 ->required()
                 ->maxLength(255),
             TextInput::make('last_name')
-                ->label('Last Name')
+                ->label('Nom')
                 ->maxLength(255),
             TextInput::make('email')
                 ->label('E-mail')
                 ->email()
                 ->maxLength(255),
             TextInput::make('phone')
-                ->label('Phone')
+                ->label('Téléphone')
                 ->tel()
                 ->maxLength(50),
             TextInput::make('job_title')
-                ->label('Job Title')
+                ->label('Fonction')
                 ->maxLength(255),
             TextInput::make('company_name')
-                ->label('Company')
+                ->label('Société')
                 ->maxLength(255),
             Select::make('assigned_to')
-                ->label('Assigned To')
+                ->label('Assigné à')
                 ->options(fn (): array => User::query()
                     ->whereHas('companies', fn ($q) => $q->where('companies.id', currentCompany()?->id))
                     ->orderBy('name')
@@ -83,7 +87,7 @@ class ContactResource extends Resource
                 ->searchable()
                 ->placeholder('—'),
             Textarea::make('address')
-                ->label('Address')
+                ->label('Adresse')
                 ->rows(2)
                 ->columnSpanFull(),
             Textarea::make('notes')
@@ -98,27 +102,27 @@ class ContactResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('full_name')
-                    ->label('Name')
+                    ->label('Nom')
                     ->state(fn (Contact $record): string => $record->full_name)
                     ->searchable(['first_name', 'last_name'])
                     ->sortable(['first_name']),
-                TextColumn::make('company_name')->label('Company')->searchable()->toggleable(),
+                TextColumn::make('company_name')->label('Société')->searchable()->toggleable(),
                 TextColumn::make('email')->label('E-mail')->searchable()->toggleable(),
-                TextColumn::make('phone')->label('Phone')->toggleable(),
-                TextColumn::make('job_title')->label('Title')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('phone')->label('Téléphone')->toggleable(),
+                TextColumn::make('job_title')->label('Fonction')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('lead.status')
-                    ->label('Origin')
+                    ->label('Origine')
                     ->placeholder('Direct')
-                    ->formatStateUsing(fn (): string => 'Lead')
+                    ->formatStateUsing(fn (): string => 'Prospect')
                     ->badge()
                     ->color('info')
                     ->toggleable(),
-                TextColumn::make('assignee.name')->label('Assigned')->placeholder('—')->toggleable(),
-                TextColumn::make('created_at')->label('Created')->date('d/m/Y')->sortable(),
+                TextColumn::make('assignee.name')->label('Assigné')->placeholder('—')->toggleable(),
+                TextColumn::make('created_at')->label('Créé le')->date('d/m/Y')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('assigned_to')
-                    ->label('Assigned To')
+                    ->label('Assigné à')
                     ->relationship('assignee', 'name'),
             ])
             ->recordActions([

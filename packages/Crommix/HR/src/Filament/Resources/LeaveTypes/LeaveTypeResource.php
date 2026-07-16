@@ -26,7 +26,7 @@ class LeaveTypeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'HR';
+    protected static string|\UnitEnum|null $navigationGroup = 'Ressources humaines';
 
     protected static ?string $navigationLabel = 'Leave Types';
 
