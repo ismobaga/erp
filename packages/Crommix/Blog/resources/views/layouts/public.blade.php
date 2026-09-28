@@ -1,11 +1,44 @@
 <!DOCTYPE html>
 <html class="scroll-smooth" lang="fr">
 
+@php
+    $blogCompany    = $blogCompany ?? currentCompany();
+    $companyName    = $blogCompany?->name ?: config('app.name', 'CROMMIX');
+    $companyLogoUrl = filled($blogCompany?->logo_path)
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($blogCompany->logo_path)
+        : (file_exists(public_path('images/cm-logo.svg')) ? asset('images/cm-logo.svg') : null);
+    $activeCompany  = $blogCompany;
+    // Inline @section values are already HTML-escaped; decode them so the
+    // {{ }} output below escapes exactly once.
+    $sectionText    = fn (string $name): string => trim(html_entity_decode($__env->yieldContent($name), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $pageTitle      = $sectionText('title') ?: $companyName . ' — Blog';
+    $pageDescription = $sectionText('meta_description') ?: 'Articles et actualités.';
+    $ogImage        = $sectionText('og_image') ?: $companyLogoUrl;
+    $canonicalUrl   = $sectionText('canonical') ?: url()->current();
+@endphp
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', ($companyName ?? 'CROMMIX') . ' — Blog')</title>
-    <meta name="description" content="@yield('meta_description', 'Articles et actualités.')">
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <link rel="alternate" type="application/rss+xml" title="{{ $companyName }} — Blog" href="{{ route('blog.feed') }}">
+
+    {{-- Open Graph / social cards --}}
+    <meta property="og:site_name" content="{{ $companyName }}">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:type" content="{{ $sectionText('og_type') ?: 'website' }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    @if($ogImage)
+        <meta property="og:image" content="{{ $ogImage }}">
+    @endif
+    <meta name="twitter:card" content="{{ $ogImage ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    @stack('meta')
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
@@ -18,17 +51,6 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-
-@php
-    $companySetting = \Illuminate\Support\Facades\Schema::hasTable('company_settings')
-        ? \App\Models\CompanySetting::query()->first()
-        : null;
-    $companyName    = $companySetting?->company_name ?: config('app.name', 'CROMMIX');
-    $companyLogoUrl = $companySetting?->logo_url ?: null;
-    $activeCompany  = \Illuminate\Support\Facades\Schema::hasTable('companies')
-        ? \App\Models\Company::query()->where('is_active', true)->first()
-        : null;
-@endphp
 
 <body class="bg-[#f8f9ff] text-[#0b1c30] antialiased">
 
@@ -52,11 +74,10 @@
                     ['route' => 'blog.index',           'label' => 'Blog'],
                     ['route' => 'company.contact',      'label' => 'Contact'],
                 ];
-                // Blog is always in nav here since this layout is only reached when blog is enabled
             @endphp
             <div class="hidden items-center gap-1 md:flex">
                 @foreach($navLinks as $link)
-                    @php $active = request()->routeIs($link['route']); @endphp
+                    @php $active = request()->routeIs($link['route'] === 'blog.index' ? 'blog.*' : $link['route']); @endphp
                     <a href="{{ route($link['route']) }}"
                         class="relative px-3 py-2 text-sm font-medium transition-colors rounded-md
                                {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
@@ -90,7 +111,7 @@
         <div id="mobile-menu" class="hidden border-t border-[#c4c6cf]/20 bg-[#f8f9ff] md:hidden">
             <div class="flex flex-col px-6 py-4 gap-1">
                 @foreach($navLinks as $link)
-                    @php $active = request()->routeIs($link['route']); @endphp
+                    @php $active = request()->routeIs($link['route'] === 'blog.index' ? 'blog.*' : $link['route']); @endphp
                     <a href="{{ route($link['route']) }}"
                         class="rounded-lg px-4 py-3 text-sm font-medium transition
                                {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">

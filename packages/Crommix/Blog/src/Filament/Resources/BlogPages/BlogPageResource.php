@@ -3,6 +3,7 @@
 namespace Crommix\Blog\Filament\Resources\BlogPages;
 
 use BackedEnum;
+use Crommix\Blog\Filament\Concerns\BlogResourceHelpers;
 use Crommix\Blog\Filament\Resources\BlogPages\Pages\CreateBlogPage;
 use Crommix\Blog\Filament\Resources\BlogPages\Pages\EditBlogPage;
 use Crommix\Blog\Filament\Resources\BlogPages\Pages\ListBlogPages;
@@ -12,8 +13,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -27,6 +28,8 @@ use Illuminate\Support\Str;
 
 class BlogPageResource extends Resource
 {
+    use BlogResourceHelpers;
+
     protected static ?string $model = BlogPage::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWindow;
@@ -61,23 +64,14 @@ class BlogPageResource extends Resource
 
                                     $set('slug', Str::slug($state));
                                 }),
-                            TextInput::make('slug')
-                                ->label('Slug URL')
-                                ->required()
-                                ->maxLength(255)
-                                ->unique(ignoreRecord: true)
-                                ->helperText('Utilisé dans l’URL publique de la page.'),
+                            static::companySlugInput('Utilisé dans l’URL publique : /pages/{slug}.'),
                             TextInput::make('hero_title')
                                 ->label('Titre hero')
                                 ->maxLength(255),
                             Textarea::make('hero_subtitle')
                                 ->label('Sous-titre hero')
                                 ->rows(2),
-                            Textarea::make('content')
-                                ->label('Contenu')
-                                ->rows(18)
-                                ->placeholder('Décrivez votre offre, vos bénéfices et appels à action...')
-                                ->required(),
+                            static::richContentEditor('content', 'Contenu'),
                         ]),
                     Section::make('Publication et SEO')
                         ->description('Pilotez la visibilité web et les métadonnées.')
@@ -124,12 +118,12 @@ class BlogPageResource extends Resource
                 TextColumn::make('template')
                     ->label('Template')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => $state === 'landing' ? 'Landing produit' : 'Standard'),
+                    ->formatStateUsing(fn (string $state): string => $state === 'landing' ? 'Landing produit' : 'Standard'),
                 TextColumn::make('status')
                     ->label('Statut')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => $state === 'published' ? 'Publié' : 'Brouillon')
-                    ->color(fn(string $state): string => $state === 'published' ? 'success' : 'gray'),
+                    ->formatStateUsing(fn (string $state): string => $state === 'published' ? 'Publié' : 'Brouillon')
+                    ->color(fn (string $state): string => $state === 'published' ? 'success' : 'gray'),
                 TextColumn::make('published_at')->label('Publication')->dateTime('d/m/Y H:i')->sortable(),
                 TextColumn::make('updated_at')->since()->label('Mis à jour'),
             ])

@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog;
 
+use App\Http\Middleware\SetCurrentCompany;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -39,8 +40,8 @@ class BlogPanelProvider extends PanelProvider
                 'warning' => Color::hex('#d4a574'),
                 'danger' => Color::hex('#ba1a1a'),
             ])
-            ->discoverResources(in: __DIR__ . '/Filament/Resources', for: 'Crommix\\Blog\\Filament\\Resources')
-            ->discoverPages(in: __DIR__ . '/Filament/Pages', for: 'Crommix\\Blog\\Filament\\Pages')
+            ->discoverResources(in: __DIR__.'/Filament/Resources', for: 'Crommix\\Blog\\Filament\\Resources')
+            ->discoverPages(in: __DIR__.'/Filament/Pages', for: 'Crommix\\Blog\\Filament\\Pages')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -54,6 +55,8 @@ class BlogPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+                // Binds the user's current company so blog content is scoped per tenant.
+                SetCurrentCompany::class,
+            ], isPersistent: true);
     }
 }

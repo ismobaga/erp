@@ -1,7 +1,8 @@
 @extends('crommix-blog::layouts.public')
 
 @section('title', $page->seo_title ?: $page->title)
-@section('meta_description', $page->seo_description ?: 'Page publique ' . ($companyName ?? 'CROMMIX'))
+@section('meta_description', $page->seo_description ?: ($page->hero_subtitle ?: 'Page publique ' . ($blogCompany->name ?? 'CROMMIX')))
+@section('canonical', route('blog.pages.show', $page->slug))
 
 @section('content')
     {{-- Hero --}}
@@ -21,13 +22,8 @@
     <section class="bg-[#eff4ff] py-16">
         <div class="mx-auto max-w-4xl px-6 lg:px-8">
             <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-[#dce9ff] lg:p-12">
-                <div class="prose prose-slate max-w-none
-                            prose-headings:font-black prose-headings:text-[#002045] prose-headings:tracking-tight
-                            prose-p:text-[#43474e] prose-p:leading-relaxed
-                            prose-a:text-[#002045] prose-a:font-semibold hover:prose-a:opacity-70
-                            prose-strong:text-[#002045]
-                            prose-blockquote:border-l-[#002045] prose-blockquote:text-[#43474e]">
-                    {!! nl2br(e($page->content)) !!}
+                <div class="blog-content">
+                    {{ $page->renderedContent() }}
                 </div>
             </div>
 
