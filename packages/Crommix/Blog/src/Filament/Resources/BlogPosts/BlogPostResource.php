@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog\Filament\Resources\BlogPosts;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use App\Models\User;
 use BackedEnum;
 use Crommix\Blog\Filament\Concerns\BlogResourceHelpers;
@@ -33,11 +34,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class BlogPostResource extends Resource
 {
     use BlogResourceHelpers;
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'blog';
+
+    protected static ?string $companyFeature = 'blog';
 
     protected static ?string $model = BlogPost::class;
 
@@ -95,6 +102,7 @@ class BlogPostResource extends Resource
                                 ->extraAttributes(['class' => 'ledger-summary-card'])
                                 ->schema([
                                     Select::make('status')
+                                        ->disabled(fn (): bool => ! static::canPublish())
                                         ->label('Statut')
                                         ->options([
                                             'draft' => 'Brouillon',
@@ -104,10 +112,12 @@ class BlogPostResource extends Resource
                                         ->default('draft')
                                         ->required(),
                                     DateTimePicker::make('published_at')
+                                        ->disabled(fn (): bool => ! static::canPublish())
                                         ->label('Date de publication')
                                         ->helperText('Laisser vide pour publier immédiatement ; une date future programme l’article.')
                                         ->seconds(false),
                                     Toggle::make('is_featured')
+                                        ->disabled(fn (): bool => ! static::canPublish())
                                         ->label('Mettre à la une')
                                         ->helperText('L’article à la une le plus récent est mis en avant en tête du blog.'),
                                     Select::make('author_id')
@@ -254,6 +264,16 @@ class BlogPostResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canChangeRecord($record, 'update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canChangeRecord($record, 'delete');
     }
 
     public static function getPages(): array

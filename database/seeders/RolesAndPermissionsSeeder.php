@@ -90,6 +90,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'saas.subscriptions.manage',
             'saas.billing.view',
             'saas.onboarding.manage',
+            'blog.view',
+            'blog.create',
+            'blog.update',
+            'blog.delete',
+            'blog.publish',
         ];
 
         foreach ($permissions as $permission) {
@@ -102,6 +107,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $projectManager = Role::findOrCreate('Project Manager', 'web');
         $staff = Role::findOrCreate('Staff', 'web');
         $readOnly = Role::findOrCreate('Read Only', 'web');
+        $editor = Role::findOrCreate('Editor', 'web');
 
         $superAdmin->syncPermissions(Permission::all());
 
@@ -161,6 +167,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'quotes.view',
             'projects.view',
             'documents.view',
+        ])->get());
+
+        // Editors write and edit blog content; publishing and deletion stay
+        // with Admins.
+        $editor->syncPermissions(Permission::whereIn('name', [
+            'blog.view',
+            'blog.create',
+            'blog.update',
         ])->get());
 
         $readOnly->syncPermissions(Permission::where('name', 'like', '%.view')->get());

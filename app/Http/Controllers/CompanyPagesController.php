@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\ContactRequest;
+use Crommix\Blog\Support\PublicBlogCompany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -97,25 +97,31 @@ class CompanyPagesController extends Controller
         ]);
 
         $redirectTarget = match ($source) {
-            'dms' => route('dms.presentation') . '/#contact',
+            'dms' => route('dms.presentation').'/#contact',
             'contact' => route('company.contact'),
-            default => route('company.presentation') . '/#contact',
+            default => route('company.presentation').'/#contact',
         };
 
         return redirect()->to($redirectTarget)->with(
             'status',
-            'Merci ' . e($validated['name']) . ' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
+            'Merci '.e($validated['name']).' — votre demande a bien été reçue. Nous vous recontacterons rapidement.'
         );
     }
 
     /**
      * Resolve the active company for public pages.
-     * For public pages there is no authenticated session, so we fall back to
-     * the first active Company row.
+     *
+     * Uses the same resolver as the public blog (BLOG_PUBLIC_COMPANY, then the
+     * request host, then the first active company) so the "Blog" link shown on
+     * these pages always reflects the company the blog actually serves.
      */
     protected function company(): ?Company
     {
-        return Company::query()->where('is_active', true)->first();
+        if (class_exists(PublicBlogCompany::class)) {
+            return PublicBlogCompany::resolve(request());
+        }
+
+        return Company::query()->where('is_active', true)->orderBy('id')->first();
     }
 
     /**
@@ -124,12 +130,15 @@ class CompanyPagesController extends Controller
     protected function viewData(): array
     {
         $company = $this->company();
-        $company->logo_path = "images/cm-logo.svg";
+
+        if ($company !== null) {
+            $company->logo_path = 'images/cm-logo.svg';
+        }
 
         return [
             'company' => $company,
             'companyName' => $company?->name ?: 'CROMMIX MALI S.A.',
-            'companyLogoUrl' => "images/cm-logo.svg", //$company?->logo_path ? Storage::disk('public')->url($company->logo_path) : null,
+            'companyLogoUrl' => 'images/cm-logo.svg', // $company?->logo_path ? Storage::disk('public')->url($company->logo_path) : null,
             'companyEmail' => $company?->email ?: 'contact@crommix.com',
             'companyPhone' => $company?->phone ?: '',
             'companyAddress' => trim(collect([$company?->address, $company?->city, $company?->country])->filter()->implode(', ')),

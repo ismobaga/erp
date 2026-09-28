@@ -5,17 +5,40 @@ namespace Crommix\Blog\Filament\Concerns;
 use Crommix\Blog\Support\BlogContent;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rules\Unique;
 
 /**
- * Shared behaviour for the blog panel resources: company-feature gating,
- * the rich editor setup and per-company unique slugs.
+ * Shared behaviour for the blog panel resources: publishing rights, the rich
+ * editor setup and per-company unique slugs. Access control itself (blog.*
+ * permissions + the "blog" company feature) comes from HasPermissionAccess.
  */
 trait BlogResourceHelpers
 {
-    public static function canViewAny(): bool
+    /** Whether the user may publish, schedule or feature content (blog.publish). */
+    public static function canPublish(): bool
     {
-        return auth()->check() && company_feature_enabled('blog');
+        $user = auth()->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->can('blog.publish');
+    }
+
+    /** Published content can only be changed by someone allowed to publish. */
+    protected static function canChangeRecord(Model $record, string $action): bool
+    {
+        if (! static::canAccessPermission($action)) {
+            return false;
+        }
+
+        return $record->getAttribute('status') !== 'published' || static::canPublish();
     }
 
     protected static function richContentEditor(string $field, string $label): RichEditor

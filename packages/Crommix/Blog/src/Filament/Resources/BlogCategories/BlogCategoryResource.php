@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog\Filament\Resources\BlogCategories;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use BackedEnum;
 use Crommix\Blog\Filament\Concerns\BlogResourceHelpers;
 use Crommix\Blog\Filament\Resources\BlogCategories\Pages\ManageBlogCategories;
@@ -22,6 +23,11 @@ use Illuminate\Support\Str;
 class BlogCategoryResource extends Resource
 {
     use BlogResourceHelpers;
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'blog';
+
+    protected static ?string $companyFeature = 'blog';
 
     protected static ?string $model = BlogCategory::class;
 

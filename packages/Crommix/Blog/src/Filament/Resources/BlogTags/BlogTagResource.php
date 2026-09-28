@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog\Filament\Resources\BlogTags;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use BackedEnum;
 use Crommix\Blog\Filament\Concerns\BlogResourceHelpers;
 use Crommix\Blog\Filament\Resources\BlogTags\Pages\ManageBlogTags;
@@ -21,6 +22,11 @@ use Illuminate\Support\Str;
 class BlogTagResource extends Resource
 {
     use BlogResourceHelpers;
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'blog';
+
+    protected static ?string $companyFeature = 'blog';
 
     protected static ?string $model = BlogTag::class;
 

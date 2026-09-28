@@ -85,6 +85,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         // at all (phone-only account) — email verification cannot apply.
         $emailOk = $this->hasVerifiedEmail() || blank($this->email);
 
+        // The blog editorial panel is open to anyone holding blog.view in the
+        // current company (Admins, Editors, Read Only).
+        if ($panel->getId() === 'blog') {
+            return $emailOk && $this->can('blog.view');
+        }
+
         return $emailOk && $this->hasAnyRole([
             'Admin',
             'Finance',

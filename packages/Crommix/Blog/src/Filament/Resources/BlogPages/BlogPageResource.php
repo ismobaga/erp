@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog\Filament\Resources\BlogPages;
 
+use App\Filament\Concerns\HasPermissionAccess;
 use BackedEnum;
 use Crommix\Blog\Filament\Concerns\BlogResourceHelpers;
 use Crommix\Blog\Filament\Resources\BlogPages\Pages\CreateBlogPage;
@@ -24,11 +25,17 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class BlogPageResource extends Resource
 {
     use BlogResourceHelpers;
+    use HasPermissionAccess;
+
+    protected static string $permissionScope = 'blog';
+
+    protected static ?string $companyFeature = 'blog';
 
     protected static ?string $model = BlogPage::class;
 
@@ -79,6 +86,7 @@ class BlogPageResource extends Resource
                         ->columnSpan(['lg' => 4])
                         ->schema([
                             Select::make('status')
+                                ->disabled(fn (): bool => ! static::canPublish())
                                 ->label('Statut')
                                 ->options([
                                     'draft' => 'Brouillon',
@@ -88,6 +96,7 @@ class BlogPageResource extends Resource
                                 ->default('draft')
                                 ->required(),
                             DateTimePicker::make('published_at')
+                                ->disabled(fn (): bool => ! static::canPublish())
                                 ->label('Date de publication')
                                 ->seconds(false),
                             Select::make('template')
@@ -144,6 +153,16 @@ class BlogPageResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canChangeRecord($record, 'update');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canChangeRecord($record, 'delete');
     }
 
     public static function getPages(): array

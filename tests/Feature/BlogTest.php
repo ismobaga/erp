@@ -19,6 +19,7 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class BlogTest extends TestCase
@@ -323,6 +324,87 @@ class BlogTest extends TestCase
             ->assertCanNotSeeTableRecords([$theirs]);
     }
 
+    // ── Permissions ─────────────────────────────────────────────────────────
+
+    public function test_blog_permissions_migration_creates_editor_role(): void
+    {
+        $editor = Role::query()->where('name', 'Editor')->firstOrFail();
+
+        $this->assertTrue($editor->hasPermissionTo('blog.create'));
+        $this->assertFalse($editor->hasPermissionTo('blog.publish'));
+    }
+
+    public function test_only_blog_roles_can_enter_the_blog_panel(): void
+    {
+        $this->actingAs($this->userWithRole('Editor'))->get('/blog-admin/blog-posts')->assertOk();
+        $this->actingAs($this->userWithRole('Read Only'))->get('/blog-admin/blog-posts')->assertOk();
+        $this->actingAs($this->userWithRole('Staff'))->get('/blog-admin/blog-posts')->assertForbidden();
+        $this->actingAs($this->userWithRole('Finance'))->get('/blog-admin/blog-posts')->assertForbidden();
+    }
+
+    public function test_read_only_can_browse_but_not_write(): void
+    {
+        $this->actingAs($this->userWithRole('Read Only'));
+        $draft = $this->makePost(['status' => 'draft']);
+
+        $this->assertTrue(BlogPostResource::canViewAny());
+        $this->assertFalse(BlogPostResource::canCreate());
+        $this->assertFalse(BlogPostResource::canEdit($draft));
+        $this->assertFalse(BlogCategoryResource::canCreate());
+    }
+
+    public function test_editor_writes_drafts_but_cannot_publish_or_touch_live_posts(): void
+    {
+        $editor = $this->userWithRole('Editor');
+        $this->actingAs($editor);
+        Filament::setCurrentPanel(Filament::getPanel('blog'));
+
+        Livewire::actingAs($editor)
+            ->test(CreateBlogPost::class)
+            ->fillForm([
+                'title' => 'Proposition de la rédaction',
+                'slug' => 'proposition',
+                'content' => '<p>Brouillon</p>',
+                'status' => 'published',
+                'is_featured' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $post = BlogPost::query()->where('slug', 'proposition')->firstOrFail();
+        $this->assertSame('draft', $post->status);
+        $this->assertFalse($post->is_featured);
+
+        $this->assertTrue(BlogPostResource::canEdit($post));
+        $this->assertFalse(BlogPostResource::canDelete($post));
+
+        $live = $this->makePost();
+        $this->assertFalse(BlogPostResource::canEdit($live));
+        $this->assertFalse(BlogPostResource::canDelete($live));
+        $this->assertFalse(BlogPostResource::canPublish());
+    }
+
+    public function test_admin_can_publish_and_delete(): void
+    {
+        $this->actingAs($this->admin());
+        $live = $this->makePost();
+
+        $this->assertTrue(BlogPostResource::canPublish());
+        $this->assertTrue(BlogPostResource::canEdit($live));
+        $this->assertTrue(BlogPostResource::canDelete($live));
+    }
+
+    public function test_main_site_blog_link_follows_the_public_blog_company(): void
+    {
+        $this->company->update(['advanced_options' => ['blog' => false]]);
+        $this->otherCompany(['slug' => 'filiale']);
+
+        $this->get('/about')->assertOk()->assertDontSee(route('blog.index'), false);
+
+        config(['crommix-blog.public_company' => 'filiale']);
+        $this->get('/about')->assertOk()->assertSee(route('blog.index'), false);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private function enableBlog(Company $company): void
@@ -359,11 +441,16 @@ class BlogTest extends TestCase
 
     private function admin(): User
     {
+        return $this->userWithRole('Admin');
+    }
+
+    private function userWithRole(string $role): User
+    {
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $user = User::factory()->create(['status' => 'active']);
         $user->companies()->attach($this->company->id);
-        $user->assignRole('Admin');
+        $user->assignRole($role);
 
         return $user;
     }
