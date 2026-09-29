@@ -405,6 +405,38 @@ class BlogTest extends TestCase
         $this->get('/about')->assertOk()->assertSee(route('blog.index'), false);
     }
 
+    // ── Labs ────────────────────────────────────────────────────────────────
+
+    public function test_labs_category_exists_and_nav_link_appears_once_it_has_a_published_post(): void
+    {
+        // The Labs category is created by migration for companies existing at
+        // migration time; the test company is created afterwards.
+        $labs = BlogCategory::query()->firstOrCreate(['slug' => 'labs'], ['name' => 'Labs']);
+        $labsUrl = route('blog.category', 'labs');
+
+        $this->makePost(['title' => 'Un article normal']);
+        $this->get('/blog')->assertOk()->assertDontSee('href="'.$labsUrl.'"', false);
+        $this->get('/about')->assertOk()->assertDontSee('href="'.$labsUrl.'"', false);
+
+        $this->makePost(['title' => 'cmx-lid', 'category_id' => $labs->id, 'stage' => 'experimental']);
+
+        $this->get('/blog')->assertOk()->assertSee('href="'.$labsUrl.'"', false);
+        $this->get('/about')->assertOk()->assertSee('href="'.$labsUrl.'"', false);
+        $this->get('/blog/categorie/labs')
+            ->assertOk()
+            ->assertSeeText('cmx-lid')
+            ->assertSeeText('Expérimental')
+            ->assertDontSeeText('Un article normal');
+    }
+
+    public function test_stage_badge_shows_on_article(): void
+    {
+        $post = $this->makePost(['stage' => 'beta']);
+
+        $this->get('/blog/'.$post->slug)->assertOk()->assertSeeText('Bêta');
+        $this->assertNull($this->makePost()->stageLabel());
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private function enableBlog(Company $company): void

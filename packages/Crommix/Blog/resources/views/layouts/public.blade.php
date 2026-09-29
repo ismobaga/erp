@@ -66,19 +66,22 @@
 
             {{-- Desktop nav --}}
             @php
-                $navLinks = [
-                    ['route' => 'company.presentation', 'label' => 'Accueil'],
-                    ['route' => 'company.about',        'label' => 'À propos'],
-                    ['route' => 'company.services',     'label' => 'Services'],
-                    ['route' => 'company.solutions',    'label' => 'Solutions'],
-                    ['route' => 'blog.index',           'label' => 'Blog'],
-                    ['route' => 'company.contact',      'label' => 'Contact'],
-                ];
+                $isLabs = request()->routeIs('blog.category') && request()->route('slug') === \Crommix\Blog\Support\Labs::SLUG;
+                $labsUrl = \Crommix\Blog\Support\Labs::url($blogCompany);
+                $navLinks = collect([
+                    ['url' => route('company.presentation'), 'label' => 'Accueil',   'active' => request()->routeIs('company.presentation')],
+                    ['url' => route('company.about'),        'label' => 'À propos',  'active' => request()->routeIs('company.about')],
+                    ['url' => route('company.services'),     'label' => 'Services',  'active' => request()->routeIs('company.services')],
+                    ['url' => route('company.solutions'),    'label' => 'Solutions', 'active' => request()->routeIs('company.solutions')],
+                    ['url' => route('blog.index'),           'label' => 'Blog',      'active' => request()->routeIs('blog.*') && ! $isLabs],
+                    $labsUrl ? ['url' => $labsUrl,          'label' => 'Labs',      'active' => $isLabs] : null,
+                    ['url' => route('company.contact'),      'label' => 'Contact',   'active' => request()->routeIs('company.contact')],
+                ])->filter()->all();
             @endphp
             <div class="hidden items-center gap-1 md:flex">
                 @foreach($navLinks as $link)
-                    @php $active = request()->routeIs($link['route'] === 'blog.index' ? 'blog.*' : $link['route']); @endphp
-                    <a href="{{ route($link['route']) }}"
+                    @php $active = $link['active']; @endphp
+                    <a href="{{ $link['url'] }}"
                         class="relative px-3 py-2 text-sm font-medium transition-colors rounded-md
                                {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
                         {{ $link['label'] }}
@@ -111,8 +114,8 @@
         <div id="mobile-menu" class="hidden border-t border-[#c4c6cf]/20 bg-[#f8f9ff] md:hidden">
             <div class="flex flex-col px-6 py-4 gap-1">
                 @foreach($navLinks as $link)
-                    @php $active = request()->routeIs($link['route'] === 'blog.index' ? 'blog.*' : $link['route']); @endphp
-                    <a href="{{ route($link['route']) }}"
+                    @php $active = $link['active']; @endphp
+                    <a href="{{ $link['url'] }}"
                         class="rounded-lg px-4 py-3 text-sm font-medium transition
                                {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">
                         {{ $link['label'] }}

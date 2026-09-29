@@ -21,6 +21,13 @@ class BlogPost extends Model
 
     protected $table = 'blog_posts';
 
+    /** Maturity stages for Labs posts (experiments → products). */
+    public const STAGES = [
+        'experimental' => 'Expérimental',
+        'beta' => 'Bêta',
+        'available' => 'Disponible',
+    ];
+
     protected $fillable = [
         'company_id',
         'title',
@@ -31,6 +38,7 @@ class BlogPost extends Model
         'content',
         'status',
         'is_featured',
+        'stage',
         'published_at',
         'author_id',
         'category_id',
@@ -73,6 +81,11 @@ class BlogPost extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(BlogTag::class, 'blog_post_tag', 'blog_post_id', 'blog_tag_id');
+    }
+
+    public function stageLabel(): ?string
+    {
+        return self::STAGES[$this->stage] ?? null;
     }
 
     public function renderedContent(): HtmlString

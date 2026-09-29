@@ -52,6 +52,7 @@
                             {{ $post->category->name }}
                         </a>
                     @endif
+                    @include('crommix-blog::blog.partials.stage', ['post' => $post])
                     @if($post->publicDate())
                         <time datetime="{{ $post->publicDate()->toDateString() }}">{{ $post->publicDate()->translatedFormat('d F Y') }}</time>
                     @endif

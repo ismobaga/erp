@@ -137,6 +137,12 @@ class BlogPostResource extends Resource
                                         ->createOptionForm([
                                             TextInput::make('name')->label('Nom')->required()->maxLength(255),
                                         ]),
+                                    Select::make('stage')
+                                        ->label('Stade du projet')
+                                        ->options(BlogPost::STAGES)
+                                        ->native(false)
+                                        ->placeholder('—')
+                                        ->helperText('Pour les articles Labs : affiche un badge Expérimental / Bêta / Disponible.'),
                                     Select::make('tags')
                                         ->label('Mots-clés')
                                         ->relationship('tags', 'name')
@@ -208,6 +214,16 @@ class BlogPostResource extends Resource
                         'Programmé' => 'warning',
                         default => 'gray',
                     }),
+                TextColumn::make('stage')
+                    ->label('Stade')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): ?string => BlogPost::STAGES[$state] ?? null)
+                    ->color(fn (?string $state): string => match ($state) {
+                        'available' => 'success',
+                        'beta' => 'info',
+                        default => 'warning',
+                    })
+                    ->toggleable(),
                 IconColumn::make('is_featured')->label('À la une')->boolean()->toggleable(),
                 TextColumn::make('author.name')->label('Auteur')->toggleable(),
                 TextColumn::make('published_at')->label('Publication')->dateTime('d/m/Y H:i')->sortable(),

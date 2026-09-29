@@ -44,12 +44,16 @@
                         ['route' => 'company.contact',      'label' => 'Contact'],
                     ];
                     if (company_feature_enabled('blog', $company ?? null)) {
-                        array_splice($navLinks, 4, 0, [['route' => 'blog.index', 'label' => 'Blog']]);
+                        $blogLinks = [['route' => 'blog.index', 'label' => 'Blog']];
+                        if (class_exists(\Crommix\Blog\Support\Labs::class) && \Crommix\Blog\Support\Labs::url($company ?? null)) {
+                            $blogLinks[] = ['route' => 'blog.category', 'params' => ['slug' => \Crommix\Blog\Support\Labs::SLUG], 'label' => 'Labs'];
+                        }
+                        array_splice($navLinks, 4, 0, $blogLinks);
                     }
                 @endphp
                 @foreach($navLinks as $link)
                     @php $active = request()->routeIs($link['route']); @endphp
-                    <a href="{{ route($link['route']) }}"
+                    <a href="{{ route($link['route'], $link['params'] ?? []) }}"
                         class="relative px-3 py-2 text-sm font-medium transition-colors rounded-md
                                        {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
                         {{ $link['label'] }}
@@ -89,7 +93,7 @@
             <div class="flex flex-col px-6 py-4 gap-1">
                 @foreach($navLinks as $link)
                     @php $active = request()->routeIs($link['route']); @endphp
-                    <a href="{{ route($link['route']) }}"
+                    <a href="{{ route($link['route'], $link['params'] ?? []) }}"
                         class="rounded-lg px-4 py-3 text-sm font-medium transition
                                        {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">
                         {{ $link['label'] }}

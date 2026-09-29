@@ -19,6 +19,7 @@
                     {{ $post->category->name }}
                 </a>
             @endif
+            @include('crommix-blog::blog.partials.stage', ['post' => $post])
             <span>{{ $post->publicDate()?->translatedFormat('d M Y') }}</span>
             <span aria-hidden="true">·</span>
             <span>{{ $post->readingMinutes() }} min de lecture</span>
