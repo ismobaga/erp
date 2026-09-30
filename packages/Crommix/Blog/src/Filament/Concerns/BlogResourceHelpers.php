@@ -2,6 +2,7 @@
 
 namespace Crommix\Blog\Filament\Concerns;
 
+use Crommix\Blog\Filament\Actions\EditSourceAction;
 use Crommix\Blog\Support\BlogContent;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
@@ -49,7 +50,11 @@ trait BlogResourceHelpers
             ->fileAttachmentsDisk(BlogContent::disk())
             ->fileAttachmentsDirectory('blog/attachments')
             ->fileAttachmentsVisibility('public')
-            ->extraInputAttributes(['style' => 'min-height: 24rem;']);
+            ->extraInputAttributes(['style' => 'min-height: 24rem;'])
+            ->hintActions([
+                EditSourceAction::markdown(),
+                EditSourceAction::html(),
+            ]);
     }
 
     /** Slug input unique within the current company only. */
