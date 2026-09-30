@@ -31,6 +31,7 @@ return [
             'documents' => 'documents',
             'settings' => 'settings',
             'contact_requests' => 'settings',
+            'redirects' => 'settings',
             'users' => 'users',
             'ledger' => 'ledger',
             'reports' => 'reports',

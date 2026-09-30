@@ -95,6 +95,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'blog.update',
             'blog.delete',
             'blog.publish',
+            'redirects.view',
+            'redirects.create',
+            'redirects.update',
+            'redirects.delete',
         ];
 
         foreach ($permissions as $permission) {

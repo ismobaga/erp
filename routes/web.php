@@ -10,6 +10,7 @@ use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\PaymentPdfController;
 use App\Http\Controllers\QuotePdfController;
+use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\ReportExportDownloadController;
 use App\Http\Controllers\WhatsappWebhookController;
 use App\Http\Middleware\SetCurrentCompany;
@@ -119,3 +120,9 @@ Route::post('/webhooks/gowa', WhatsappWebhookController::class)
     ->middleware('throttle:60,1')
     ->name('webhooks.gowa')
     ->withoutMiddleware([PreventRequestForgery::class]);
+
+// ── Managed redirects (short links) ──────────────────────────────────────────
+// Laravel always evaluates the fallback last, so a redirect can never shadow
+// a real page.
+Route::fallback(RedirectController::class)
+    ->middleware('throttle:120,1');
