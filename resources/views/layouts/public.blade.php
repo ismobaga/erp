@@ -10,6 +10,12 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
 
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="{{ $companyName }}" />
+    <link rel="manifest" href="/site.webmanifest" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
@@ -38,10 +44,10 @@
                 @php
                     $navLinks = [
                         ['route' => 'company.presentation', 'label' => 'Accueil'],
-                        ['route' => 'company.about',        'label' => 'À propos'],
-                        ['route' => 'company.services',     'label' => 'Services'],
-                        ['route' => 'company.solutions',    'label' => 'Solutions'],
-                        ['route' => 'company.contact',      'label' => 'Contact'],
+                        ['route' => 'company.about', 'label' => 'À propos'],
+                        ['route' => 'company.services', 'label' => 'Services'],
+                        ['route' => 'company.solutions', 'label' => 'Solutions'],
+                        ['route' => 'company.contact', 'label' => 'Contact'],
                     ];
                     if (company_feature_enabled('blog', $company ?? null)) {
                         $blogLinks = [['route' => 'blog.index', 'label' => 'Blog']];
@@ -55,7 +61,7 @@
                     @php $active = request()->routeIs($link['route']); @endphp
                     <a href="{{ route($link['route'], $link['params'] ?? []) }}"
                         class="relative px-3 py-2 text-sm font-medium transition-colors rounded-md
-                                       {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
+                                               {{ $active ? 'text-[#002045] font-semibold' : 'text-[#43474e] hover:text-[#002045] hover:bg-[#eff4ff]' }}">
                         {{ $link['label'] }}
                         @if($active)
                             <span class="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#002045]"></span>
@@ -95,7 +101,7 @@
                     @php $active = request()->routeIs($link['route']); @endphp
                     <a href="{{ route($link['route'], $link['params'] ?? []) }}"
                         class="rounded-lg px-4 py-3 text-sm font-medium transition
-                                       {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">
+                                               {{ $active ? 'bg-[#eff4ff] text-[#002045] font-semibold' : 'text-[#43474e] hover:bg-[#eff4ff] hover:text-[#002045]' }}">
                         {{ $link['label'] }}
                     </a>
                 @endforeach
@@ -149,12 +155,12 @@
                 <a href="{{ route('company.confidentialite') }}"
                     class="transition hover:text-[#005048]">Confidentialité</a>
                 <a href="{{ route('company.conditions') }}" class="transition hover:text-[#005048]">Conditions</a>
-                <a href="{{ route('company.cookies') }}"    class="transition hover:text-[#005048]">Cookies</a>
-                <a href="{{ route('company.bureaux') }}"    class="transition hover:text-[#005048]">Bureaux</a>
+                <a href="{{ route('company.cookies') }}" class="transition hover:text-[#005048]">Cookies</a>
+                <a href="{{ route('company.bureaux') }}" class="transition hover:text-[#005048]">Bureaux</a>
                 @if(company_feature_enabled('blog', $company ?? null))
-                <a href="{{ route('blog.index') }}"         class="transition hover:text-[#005048]">Blog</a>
+                    <a href="{{ route('blog.index') }}" class="transition hover:text-[#005048]">Blog</a>
                 @endif
-                <a href="/admin/login"                      class="transition hover:text-[#005048]">Portail ERP</a>
+                <a href="/admin/login" class="transition hover:text-[#005048]">Portail ERP</a>
             </div>
             <div
                 class="flex flex-col items-center gap-1 text-center text-[10px] uppercase tracking-wider text-[#43474e]/70">
