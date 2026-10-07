@@ -17,5 +17,58 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Local copy of the app: docker compose --profile app up ─────────────────
+  app:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: erp_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      assets:
+        condition: service_completed_successfully
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      # Real environment variables win over .env, so the copied .env needs no edits.
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:${APP_PORT:-8000}
+      APP_PORT: ${APP_PORT:-8000}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-erp}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SSLMODE: disable
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: log
+      SESSION_SECURE_COOKIE: "false"
+      DEMO_ENABLED: "true"
+      # Used by the seeders on an empty database only.
+      COMPANY_NAME: Crommix Mali S.A.
+      COMPANY_SLUG: crommix-mali
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: password
+    volumes:
+      - .:/app
+      # Dependencies live in Docker volumes: much faster than a Windows mount.
+      - vendor:/app/vendor
+
+  assets:
+    profiles: [ "app" ]
+    image: node:22-alpine
+    container_name: erp_assets
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npm run build"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+
 volumes:
   postgres_data:
+  vendor:
+  node_modules:

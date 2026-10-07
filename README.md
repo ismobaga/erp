@@ -55,6 +55,36 @@ This direction prioritizes composable modules, strict tenant isolation, and SaaS
 - Staff
 - Read Only
 
+## Local copy with Docker (recommended on Windows)
+
+Needs only Docker Desktop. From the project folder:
+
+```bash
+docker compose --profile app up --build
+```
+
+The first start installs dependencies, builds the assets, migrates and seeds
+PostgreSQL (a few minutes); later starts take seconds. Then open:
+
+| | URL | Login |
+|---|---|---|
+| Public site + blog | http://localhost:8000 | — |
+| Admin | http://localhost:8000/admin | `admin@example.com` / `password` |
+| Blog editor | http://localhost:8000/blog-admin | same |
+| Demo company | http://localhost:8000/admin | `admin@demo.erp` / `DemoPass!123` |
+
+All advanced features (blog, quotes, ledger…) are switched on locally.
+PHP and Blade changes show up on refresh; after editing CSS/JS run
+`docker compose --profile app run --rm assets`.
+
+| Task | Command |
+|---|---|
+| Stop | `Ctrl+C`, or `docker compose --profile app down` |
+| Run in the background | `docker compose --profile app up -d --build` |
+| Artisan / tests | `docker compose exec app php artisan test` |
+| Reset everything (DB, dependencies) | `docker compose --profile app down -v` |
+| Other port | `APP_PORT=8080 docker compose --profile app up` (PowerShell: `$env:APP_PORT=8080`) |
+
 ## Quick start
 
 ### Start PostgreSQL with Docker Compose
