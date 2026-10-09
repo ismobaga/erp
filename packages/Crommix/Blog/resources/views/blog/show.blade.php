@@ -37,87 +37,74 @@
 
 @section('content')
     <article>
-        {{-- Article hero --}}
-        <header class="bg-[#f8f9ff] py-16">
-            <div class="mx-auto max-w-3xl px-6 lg:px-8">
-                <a href="{{ route('blog.index') }}"
-                   class="mb-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#43474e] transition hover:text-[#002045]">
-                    ← Retour au blog
-                </a>
+        <header class="border-b border-sand-200">
+            <div class="site-container py-14 lg:py-20">
+                <div class="mx-auto max-w-3xl">
+                    <a href="{{ route('blog.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-ink-600 transition hover:text-ink-900">
+                        <x-site.icon name="arrow-right" class="h-4 w-4 rotate-180" /> Retour au blog
+                    </a>
 
-                <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#57657a]">
-                    @if($post->category)
-                        <a href="{{ route('blog.category', $post->category->slug) }}"
-                           class="rounded-full bg-[#dce9ff] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2d476f] transition hover:bg-[#c9dcff]">
-                            {{ $post->category->name }}
-                        </a>
+                    <div class="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-500">
+                        @if($post->category)
+                            <a href="{{ route('blog.category', $post->category->slug) }}" class="badge badge-muted transition hover:bg-sand-200">
+                                {{ $post->category->name }}
+                            </a>
+                        @endif
+                        @include('crommix-blog::blog.partials.stage', ['post' => $post])
+                        @if($post->publicDate())
+                            <time datetime="{{ $post->publicDate()->toDateString() }}">{{ $post->publicDate()->translatedFormat('d F Y') }}</time>
+                        @endif
+                        @if($post->author)
+                            <span aria-hidden="true">·</span><span>{{ $post->author->name }}</span>
+                        @endif
+                        <span aria-hidden="true">·</span><span>{{ $post->readingMinutes() }} min de lecture</span>
+                    </div>
+
+                    <h1 class="display mt-6 text-4xl sm:text-5xl">{{ $post->title }}</h1>
+
+                    @if(filled($post->excerpt))
+                        <p class="mt-6 text-xl leading-relaxed text-ink-600">{{ $post->excerpt }}</p>
                     @endif
-                    @include('crommix-blog::blog.partials.stage', ['post' => $post])
-                    @if($post->publicDate())
-                        <time datetime="{{ $post->publicDate()->toDateString() }}">{{ $post->publicDate()->translatedFormat('d F Y') }}</time>
-                    @endif
-                    @if($post->author)
-                        <span aria-hidden="true">·</span><span>{{ $post->author->name }}</span>
-                    @endif
-                    <span aria-hidden="true">·</span><span>{{ $post->readingMinutes() }} min de lecture</span>
                 </div>
-
-                <h1 class="mt-5 text-3xl font-black leading-tight tracking-tight text-[#002045] lg:text-4xl">
-                    {{ $post->title }}
-                </h1>
-
-                @if(filled($post->excerpt))
-                    <p class="mt-4 text-lg leading-relaxed text-[#43474e]">{{ $post->excerpt }}</p>
-                @endif
             </div>
         </header>
 
-        {{-- Article body --}}
-        <section class="bg-[#eff4ff] py-12">
-            <div class="mx-auto max-w-3xl px-6 lg:px-8">
-                @if($post->coverImageUrl())
-                    <figure class="mb-8 overflow-hidden rounded-2xl shadow-sm ring-1 ring-[#dce9ff]">
-                        <img src="{{ $post->coverImageUrl() }}" alt="{{ $post->cover_image_alt ?: $post->title }}"
-                             class="aspect-[16/9] w-full object-cover">
-                    </figure>
+        <div class="site-container py-12 lg:py-16">
+            @if($post->coverImageUrl())
+                <figure class="mx-auto mb-12 max-w-5xl overflow-hidden rounded-[1.75rem] border border-sand-200 bg-sand-100">
+                    <img src="{{ $post->coverImageUrl() }}" alt="{{ $post->cover_image_alt ?: $post->title }}" class="aspect-[16/9] w-full object-cover">
+                </figure>
+            @endif
+
+            <div class="mx-auto max-w-3xl">
+                <div class="blog-content">
+                    {{ $post->renderedContent() }}
+                </div>
+
+                @if($post->tags->isNotEmpty())
+                    <div class="mt-12 flex flex-wrap gap-2 border-t border-sand-200 pt-8">
+                        @foreach($post->tags as $tag)
+                            <a href="{{ route('blog.tag', $tag->slug) }}" rel="tag"
+                               class="rounded-full border border-sand-300 px-3 py-1 text-sm text-ink-700 transition hover:border-ink-900 hover:text-ink-900">
+                                #{{ $tag->name }}
+                            </a>
+                        @endforeach
+                    </div>
                 @endif
 
-                <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-[#dce9ff] lg:p-12">
-                    <div class="blog-content">
-                        {{ $post->renderedContent() }}
-                    </div>
-
-                    @if($post->tags->isNotEmpty())
-                        <div class="mt-10 flex flex-wrap gap-2 border-t border-[#dce9ff] pt-6">
-                            @foreach($post->tags as $tag)
-                                <a href="{{ route('blog.tag', $tag->slug) }}" rel="tag"
-                                   class="rounded-full bg-[#eff4ff] px-3 py-1 text-xs font-semibold text-[#2d476f] transition hover:bg-[#dce9ff]">
-                                    #{{ $tag->name }}
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-
-                <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
-                    <a href="{{ route('blog.index') }}"
-                       class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
-                        ← Tous les articles
-                    </a>
-                    <a href="{{ route('company.contact') }}"
-                       class="inline-flex items-center gap-2 rounded-xl bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                        Nous contacter
-                    </a>
+                <div class="mt-12 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-sand-200 bg-sand-100 p-6">
+                    <p class="font-medium text-ink-800">Un projet en lien avec cet article ?</p>
+                    <a href="{{ route('company.contact') }}" class="btn btn-primary btn-sm">Nous contacter</a>
                 </div>
             </div>
-        </section>
+        </div>
     </article>
 
     @if($related->isNotEmpty())
-        <section class="bg-[#f8f9ff] py-16" aria-labelledby="related-heading">
-            <div class="mx-auto max-w-6xl px-6 lg:px-8">
-                <h2 id="related-heading" class="mb-8 text-2xl font-black tracking-tight text-[#002045]">À lire aussi</h2>
-                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <section class="border-t border-sand-200 bg-white py-16 lg:py-20" aria-labelledby="related-heading">
+            <div class="site-container">
+                <h2 id="related-heading" class="display text-3xl">À lire aussi</h2>
+                <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($related as $relatedPost)
                         @include('crommix-blog::blog.partials.card', ['post' => $relatedPost])
                     @endforeach

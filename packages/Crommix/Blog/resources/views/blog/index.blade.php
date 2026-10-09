@@ -16,45 +16,41 @@
 
 @section('content')
     {{-- Hero --}}
-    <section class="bg-[#f8f9ff] py-16 lg:py-20">
-        <div class="mx-auto max-w-6xl px-6 lg:px-8">
+    <section class="relative overflow-hidden border-b border-sand-200">
+        <div class="absolute inset-y-0 right-0 hidden w-[28%] bg-bogolan lg:block" aria-hidden="true">
+            <div class="absolute inset-0 bg-gradient-to-r from-sand-50 to-transparent"></div>
+        </div>
+        <div class="site-container relative py-16 lg:py-24">
             @if($activeCategory || $activeTag)
-                <a href="{{ route('blog.index') }}"
-                   class="mb-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#43474e] transition hover:text-[#002045]">
-                    ← Tous les articles
+                <a href="{{ route('blog.index') }}" class="mb-8 inline-flex items-center gap-2 text-sm font-medium text-ink-600 transition hover:text-ink-900">
+                    <x-site.icon name="arrow-right" class="h-4 w-4 rotate-180" /> Tous les articles
                 </a>
             @endif
-            <span class="block w-fit rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">
-                {{ $activeCategory ? 'Catégorie' : ($activeTag ? 'Mot-clé' : 'Journal') }}
-            </span>
-            <h1 class="mt-5 text-4xl font-black tracking-tight text-[#002045] lg:text-5xl">{{ $heading }}</h1>
+            <p class="eyebrow">{{ $activeCategory ? 'Catégorie' : ($activeTag ? 'Mot-clé' : 'Journal') }}</p>
+            <h1 class="display mt-5 text-5xl sm:text-6xl">{{ $heading }}</h1>
             @if(filled($intro))
-                <p class="mt-4 max-w-2xl text-lg leading-relaxed text-[#43474e]">{{ $intro }}</p>
+                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-600">{{ $intro }}</p>
             @endif
 
             @if(! $activeCategory && ! $activeTag)
-                <form method="GET" action="{{ route('blog.index') }}" role="search" class="mt-8 flex max-w-xl gap-2">
+                <form method="GET" action="{{ route('blog.index') }}" role="search" class="mt-9 flex max-w-xl gap-2">
                     <label for="blog-search" class="sr-only">Rechercher un article</label>
                     <input id="blog-search" type="search" name="q" value="{{ $search }}" maxlength="100"
-                           placeholder="Rechercher un article…"
-                           class="min-w-0 flex-1 rounded-xl border border-[#c4c6cf]/60 bg-white px-4 py-2.5 text-sm text-[#0b1c30] focus:border-[#002045] focus:outline-none focus:ring-2 focus:ring-[#002045]/20">
-                    <button type="submit"
-                            class="rounded-xl bg-[#002045] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
-                        Rechercher
-                    </button>
+                           placeholder="Rechercher un article…" class="field min-w-0 flex-1 rounded-full px-5">
+                    <button type="submit" class="btn btn-primary">Rechercher</button>
                 </form>
             @endif
 
             @if($categories->isNotEmpty())
                 <nav aria-label="Catégories" class="mt-8 flex flex-wrap gap-2">
-                    <a href="{{ route('blog.index') }}"
-                       class="rounded-full px-4 py-1.5 text-xs font-semibold transition {{ ! $activeCategory ? 'bg-[#002045] text-white' : 'bg-white text-[#2d476f] ring-1 ring-[#dce9ff] hover:bg-[#eff4ff]' }}">
+                    <a href="{{ route('blog.index') }}" @if(! $activeCategory) aria-current="page" @endif
+                       class="rounded-full px-4 py-1.5 text-sm font-medium transition {{ ! $activeCategory ? 'bg-ink-900 text-sand-50' : 'border border-sand-300 bg-white text-ink-700 hover:border-ink-900' }}">
                         Tout
                     </a>
                     @foreach($categories as $category)
                         @php $isActive = $activeCategory?->is($category); @endphp
                         <a href="{{ route('blog.category', $category->slug) }}" @if($isActive) aria-current="page" @endif
-                           class="rounded-full px-4 py-1.5 text-xs font-semibold transition {{ $isActive ? 'bg-[#002045] text-white' : 'bg-white text-[#2d476f] ring-1 ring-[#dce9ff] hover:bg-[#eff4ff]' }}">
+                           class="rounded-full px-4 py-1.5 text-sm font-medium transition {{ $isActive ? 'bg-ink-900 text-sand-50' : 'border border-sand-300 bg-white text-ink-700 hover:border-ink-900' }}">
                             {{ $category->name }}
                         </a>
                     @endforeach
@@ -63,73 +59,72 @@
         </div>
     </section>
 
-    <section class="bg-[#eff4ff] py-16">
-        <div class="mx-auto max-w-6xl px-6 lg:px-8">
-            {{-- Featured post --}}
-            @if($featured)
-                <article class="group mb-10 grid overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-[#dce9ff] {{ $featured->coverImageUrl() ? 'md:grid-cols-2' : '' }}">
-                    @if($featured->coverImageUrl())
-                        <a href="{{ route('blog.show', $featured->slug) }}" class="block min-h-56 overflow-hidden bg-[#dce9ff]" tabindex="-1" aria-hidden="true">
-                            <img src="{{ $featured->coverImageUrl() }}" alt="" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]">
-                        </a>
-                    @endif
-                    <div class="flex flex-col justify-center p-8 lg:p-10">
-                        <span class="w-fit rounded-full bg-[#d4a574]/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7a5020]">À la une</span>
-                        <h2 class="mt-4 text-2xl font-black leading-tight text-[#002045] lg:text-3xl">
-                            <a href="{{ route('blog.show', $featured->slug) }}" class="transition hover:text-[#1a365d]">{{ $featured->title }}</a>
-                        </h2>
-                        <p class="mt-4 leading-relaxed text-[#43474e]">{{ $featured->summary(220) }}</p>
-                        <p class="mt-4 text-xs text-[#57657a]">
-                            {{ $featured->publicDate()?->translatedFormat('d M Y') }} · {{ $featured->readingMinutes() }} min de lecture
-                        </p>
+    <section class="site-container py-16 lg:py-20">
+        {{-- Featured post --}}
+        @if($featured)
+            <article class="group mb-12 grid overflow-hidden rounded-[1.75rem] border border-sand-200 bg-white {{ $featured->coverImageUrl() ? 'md:grid-cols-2' : '' }}">
+                @if($featured->coverImageUrl())
+                    <a href="{{ route('blog.show', $featured->slug) }}" class="block min-h-64 overflow-hidden bg-sand-100" tabindex="-1" aria-hidden="true">
+                        <img src="{{ $featured->coverImageUrl() }}" alt="" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]">
+                    </a>
+                @endif
+                <div class="flex flex-col justify-center p-8 lg:p-12">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="badge badge-soon">À la une</span>
+                        @include('crommix-blog::blog.partials.stage', ['post' => $featured])
                     </div>
-                </article>
-            @endif
-
-            @if($search !== '')
-                <p class="mb-6 text-sm text-[#43474e]">
-                    {{ $posts->total() }} résultat{{ $posts->total() > 1 ? 's' : '' }} pour « {{ $search }} »
-                    — <a href="{{ route('blog.index') }}" class="font-semibold text-[#002045] underline">effacer</a>
-                </p>
-            @endif
-
-            @if($posts->isNotEmpty())
-                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach($posts as $post)
-                        @include('crommix-blog::blog.partials.card', ['post' => $post])
-                    @endforeach
-                </div>
-            @else
-                <div class="rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-white p-12 text-center">
-                    <div class="mb-3 text-4xl opacity-30">📝</div>
-                    <p class="text-sm font-semibold text-[#57657a]">
-                        {{ $search !== '' ? 'Aucun article ne correspond à votre recherche.' : 'Aucun article publié pour le moment.' }}
+                    <h2 class="display mt-5 text-3xl lg:text-4xl">
+                        <a href="{{ route('blog.show', $featured->slug) }}" class="transition hover:text-terra-700">{{ $featured->title }}</a>
+                    </h2>
+                    <p class="mt-4 leading-relaxed text-ink-600">{{ $featured->summary(220) }}</p>
+                    <p class="mt-6 text-sm text-ink-500">
+                        {{ $featured->publicDate()?->translatedFormat('d M Y') }} · {{ $featured->readingMinutes() }} min de lecture
                     </p>
-                    <p class="mt-1 text-xs text-[#57657a]/70">Revenez bientôt.</p>
                 </div>
-            @endif
+            </article>
+        @endif
 
-            @if($posts->hasPages())
-                <nav aria-label="Pagination" class="mt-10 flex items-center justify-between">
-                    @if($posts->previousPageUrl())
-                        <a href="{{ $posts->previousPageUrl() }}" rel="prev"
-                           class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
-                            ← Précédent
-                        </a>
-                    @else
-                        <span></span>
-                    @endif
-                    <span class="text-xs text-[#57657a]">Page {{ $posts->currentPage() }} / {{ $posts->lastPage() }}</span>
-                    @if($posts->nextPageUrl())
-                        <a href="{{ $posts->nextPageUrl() }}" rel="next"
-                           class="inline-flex items-center gap-2 rounded-xl border border-[#c4c6cf]/40 bg-white px-5 py-2.5 text-sm font-semibold text-[#002045] transition hover:bg-[#eff4ff]">
-                            Suivant →
-                        </a>
-                    @else
-                        <span></span>
-                    @endif
-                </nav>
-            @endif
-        </div>
+        @if($search !== '')
+            <p class="mb-8 text-sm text-ink-600">
+                {{ $posts->total() }} résultat{{ $posts->total() > 1 ? 's' : '' }} pour « {{ $search }} »
+                — <a href="{{ route('blog.index') }}" class="font-semibold text-terra-700 underline underline-offset-4">effacer</a>
+            </p>
+        @endif
+
+        @if($posts->isNotEmpty())
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($posts as $post)
+                    @include('crommix-blog::blog.partials.card', ['post' => $post])
+                @endforeach
+            </div>
+        @elseif(! $featured)
+            <div class="rounded-[1.5rem] border border-dashed border-sand-300 bg-sand-100/60 px-8 py-16 text-center">
+                <span class="icon-tile mx-auto"><x-site.icon name="document" class="h-5 w-5" /></span>
+                <p class="mt-5 font-semibold text-ink-800">
+                    {{ $search !== '' ? 'Aucun article ne correspond à votre recherche.' : 'Aucun article publié pour le moment.' }}
+                </p>
+                <p class="mt-1 text-sm text-ink-500">Revenez bientôt.</p>
+            </div>
+        @endif
+
+        @if($posts->hasPages())
+            <nav aria-label="Pagination" class="mt-12 flex items-center justify-between gap-4">
+                @if($posts->previousPageUrl())
+                    <a href="{{ $posts->previousPageUrl() }}" rel="prev" class="btn btn-outline btn-sm">
+                        <x-site.icon name="arrow-right" class="h-4 w-4 rotate-180" /> Précédent
+                    </a>
+                @else
+                    <span></span>
+                @endif
+                <span class="text-sm text-ink-500">Page {{ $posts->currentPage() }} / {{ $posts->lastPage() }}</span>
+                @if($posts->nextPageUrl())
+                    <a href="{{ $posts->nextPageUrl() }}" rel="next" class="btn btn-outline btn-sm">
+                        Suivant <x-site.icon name="arrow-right" class="h-4 w-4" />
+                    </a>
+                @else
+                    <span></span>
+                @endif
+            </nav>
+        @endif
     </section>
 @endsection

@@ -1,164 +1,94 @@
 @extends('layouts.public')
 
 @section('title', 'Nos bureaux — ' . $companyName)
+
 @section('meta_description', 'Retrouvez les bureaux et coordonnées de ' . $companyName . ' en Afrique de l\'Ouest.')
 
-@section('nav_links')
-    <a href="{{ route('company.presentation') }}"
-        class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Accueil</a>
-    <a href="{{ route('company.presentation') }}#contact"
-        class="text-sm font-medium text-[#43474e] transition hover:text-[#002045]">Contact</a>
-@endsection
-
 @section('content')
-    <div class="mx-auto max-w-5xl px-6 py-20 lg:px-8">
+    <x-site.page-header eyebrow="Présence régionale" title="Nos bureaux"
+        lead="Au cœur de l’Afrique de l’Ouest, nos équipes vous accompagnent depuis deux pays pour servir toute la région." />
 
-        <div class="mb-16 text-center">
-            <span
-                class="inline-block rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">Présence
-                régionale</span>
-            <h1 class="mt-4 text-4xl font-black tracking-tight text-[#002045]">Nos bureaux</h1>
-            <p class="mt-4 mx-auto max-w-xl text-[#43474e]">Au cœur de l'Afrique de l'Ouest, nos équipes vous accompagnent
-                depuis deux pays pour servir toute la région.</p>
-        </div>
-
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-
-            {{-- Bureau principal : Mali --}}
-            <article class="relative overflow-hidden rounded-[2rem] bg-white p-10 shadow-sm ring-1 ring-[#dce9ff]">
-                <div class="absolute inset-y-0 left-0 w-1 bg-[#002045]"></div>
-                <div class="mb-6 flex items-center gap-3">
-                    <span class="text-3xl">🇲🇱</span>
+    <section class="site-container py-20">
+        <div class="grid gap-6 md:grid-cols-2">
+            {{-- Siège : Mali --}}
+            <article class="card flex flex-col p-8 lg:p-10">
+                <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h2 class="text-xl font-black text-[#002045]">{{ $companyName }}</h2>
-                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Siège social — Mali</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-terra-700">Siège social — Mali</p>
+                        <h2 class="display mt-3 text-3xl">{{ $companyName }}</h2>
                     </div>
+                    <span class="badge badge-available shrink-0">Siège</span>
                 </div>
-
-                <div class="space-y-4 text-sm text-[#0b1c30]">
-                    @if($companyAddress)
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">📍</span>
-                            <span>{{ $companyAddress }}</span>
-                        </div>
-                    @else
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">📍</span>
-                            <span>Bamako (République du Mali)<br>Bacodjicoroni Golf, Rue 661 Porte 343</span>
-                        </div>
-                    @endif
-
-                    @if($companyPhone)
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">☎️</span>
-                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $companyPhone) }}"
-                                class="transition hover:text-[#005048]">{{ $companyPhone }}</a>
-                        </div>
-                    @else
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">☎️</span>
-                            <span>+223 83 45 08 83</span>
-                        </div>
-                    @endif
-
-                    @if($companyEmail)
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">✉️</span>
-                            <a href="mailto:{{ $companyEmail }}" class="transition hover:text-[#005048]">{{ $companyEmail }}</a>
-                        </div>
-                    @endif
-
-                    @if($companyWebsite)
-                        <div class="flex gap-3">
-                            <span class="mt-0.5 text-[#005048]">🔗</span>
-                            <a href="{{ $companyWebsite }}" target="_blank" rel="noopener noreferrer"
-                                class="transition hover:text-[#005048]">{{ $companyWebsite }}</a>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <span
-                        class="rounded-lg bg-[#8df5e4]/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#005048]">Siège
-                        social</span>
-                    <span
-                        class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">ERP
-                        · Web · Conseil</span>
-                </div>
-            </article>
-
-            {{-- Bureau partenaire : Burkina Faso --}}
-            <article class="relative overflow-hidden rounded-[2rem] bg-white p-10 shadow-sm ring-1 ring-[#dce9ff]">
-                <div class="absolute inset-y-0 left-0 w-1 bg-[#70d8c8]"></div>
-                <div class="mb-6 flex items-center gap-3">
-                    <span class="text-3xl">🇧🇫</span>
-                    <div>
-                        <h2 class="text-xl font-black text-[#002045]">Crommix</h2>
-                        <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Bureau partenaire — Burkina
-                            Faso</p>
-                    </div>
-                </div>
-
-                <div class="space-y-4 text-sm text-[#0b1c30]">
-                    <div class="flex gap-3">
-                        <span class="mt-0.5 text-[#005048]">📍</span>
-                        <span>Ouagadougou (Burkina Faso)</span>
-                    </div>
-                    <div class="flex gap-3">
-                        <span class="mt-0.5 text-[#005048]">☎️</span>
-                        <span>+226 25 50 20 00</span>
-                    </div>
-                    <div class="flex gap-3">
-                        <span class="mt-0.5 text-[#005048]">🔗</span>
-                        <a href="https://crommix.com/" target="_blank" rel="noopener noreferrer"
-                            class="transition hover:text-[#005048]">crommix.com</a>
-                    </div>
-                </div>
-
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <span
-                        class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">Partenaire
-                        régional</span>
-                    <span
-                        class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">DMS
-                        · Logiciels métier</span>
-                </div>
-            </article>
-
-        </div>
-
-        {{-- Zone de couverture --}}
-        <section class="mt-16 rounded-[2rem] bg-[#002045] px-10 py-12 text-white">
-            <div class="grid grid-cols-1 items-center gap-10 md:grid-cols-2">
-                <div>
-                    <h2 class="text-3xl font-black tracking-tight">Zone de couverture</h2>
-                    <p class="mt-4 text-[#d6e3ff]">Nos solutions sont déployées et supportées dans toute l'Afrique de
-                        l'Ouest francophone, avec une expertise particulière sur :</p>
-                    <ul class="mt-6 space-y-2 text-sm text-[#d6e3ff]">
-                        <li class="flex items-center gap-2"><span class="text-[#8df5e4]">✓</span> Mali</li>
-                        <li class="flex items-center gap-2"><span class="text-[#8df5e4]">✓</span> Burkina Faso</li>
-                        <li class="flex items-center gap-2"><span class="text-[#8df5e4]">✓</span> Côte d'Ivoire</li>
-                        <li class="flex items-center gap-2"><span class="text-[#8df5e4]">✓</span> Sénégal</li>
-                        <li class="flex items-center gap-2"><span class="text-[#8df5e4]">✓</span> Niger · Guinée · Bénin
+                <ul class="mt-8 space-y-4 text-sm text-ink-800">
+                    <li class="flex gap-3">
+                        <x-site.icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                        <span>{!! $companyAddress ? e($companyAddress) : 'Bamako (République du Mali)<br>Bacodjicoroni Golf, Rue 661 Porte 343' !!}</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <x-site.icon name="phone" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                        @php $phone = $companyPhone ?: '+223 83 45 08 83'; @endphp
+                        <a href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}" class="transition hover:text-terra-700">{{ $phone }}</a>
+                    </li>
+                    @if ($companyEmail)
+                        <li class="flex gap-3">
+                            <x-site.icon name="mail" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                            <a href="mailto:{{ $companyEmail }}" class="transition hover:text-terra-700">{{ $companyEmail }}</a>
                         </li>
-                    </ul>
-                </div>
-                <div class="text-center">
-                    <div class="text-8xl font-black text-[#70d8c8]">🌍</div>
-                    <p class="mt-4 text-sm font-semibold uppercase tracking-widest text-[#8df5e4]">Afrique de l'Ouest</p>
-                </div>
-            </div>
-        </section>
+                    @endif
+                    @if ($companyWebsite)
+                        <li class="flex gap-3">
+                            <x-site.icon name="link" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                            <a href="{{ $companyWebsite }}" target="_blank" rel="noopener noreferrer" class="transition hover:text-terra-700">{{ $companyWebsite }}</a>
+                        </li>
+                    @endif
+                </ul>
+                <p class="mt-auto pt-8 text-sm text-ink-500">ERP · Web · Conseil</p>
+            </article>
 
-        {{-- CTA --}}
-        <div class="mt-12 rounded-2xl bg-[#eff4ff] p-8 text-center">
-            <p class="text-sm font-medium text-[#43474e]">Vous souhaitez nous rendre visite ou discuter de votre projet ?
-            </p>
-            <a href="{{ route('company.presentation') }}#contact"
-                class="mt-4 inline-block rounded-xl bg-[#002045] px-6 py-3 text-sm font-bold text-white transition hover:opacity-90">
-                Prendre contact
-            </a>
+            {{-- Partenaire : Burkina Faso --}}
+            <article class="card flex flex-col p-8 lg:p-10">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-terra-700">Bureau partenaire — Burkina Faso</p>
+                        <h2 class="display mt-3 text-3xl">Crommix</h2>
+                    </div>
+                    <span class="badge badge-muted shrink-0">Partenaire</span>
+                </div>
+                <ul class="mt-8 space-y-4 text-sm text-ink-800">
+                    <li class="flex gap-3">
+                        <x-site.icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                        <span>Ouagadougou (Burkina Faso)</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <x-site.icon name="phone" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                        <a href="tel:+22625502000" class="transition hover:text-terra-700">+226 25 50 20 00</a>
+                    </li>
+                    <li class="flex gap-3">
+                        <x-site.icon name="link" class="mt-0.5 h-5 w-5 shrink-0 text-terra-700" />
+                        <a href="https://crommix.com/" target="_blank" rel="noopener noreferrer" class="transition hover:text-terra-700">crommix.com</a>
+                    </li>
+                </ul>
+                <p class="mt-auto pt-8 text-sm text-ink-500">DMS · Logiciels métier</p>
+            </article>
         </div>
+    </section>
 
-    </div>
+    <section class="bg-bogolan-dark py-24 text-sand-50">
+        <div class="site-container grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div>
+                <p class="eyebrow eyebrow-light">Zone de couverture</p>
+                <h2 class="display mt-5 text-4xl text-sand-50 sm:text-5xl">Toute l’Afrique de l’Ouest francophone.</h2>
+                <p class="mt-6 max-w-lg leading-relaxed text-sand-200/80">Nos solutions sont déployées et supportées dans toute l’Afrique de l’Ouest francophone, avec une expertise particulière sur :</p>
+            </div>
+            <ul class="grid grid-cols-2 gap-x-8 gap-y-5">
+                @foreach (['Mali', 'Burkina Faso', 'Côte d’Ivoire', 'Sénégal', 'Niger', 'Guinée', 'Bénin'] as $country)
+                    <li class="flex items-center gap-3 border-t border-sand-50/15 pt-4 text-lg font-medium text-sand-50">
+                        <x-site.icon name="check" class="h-5 w-5 text-terra-400" /> {{ $country }}
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+
+    <x-site.cta title="Vous souhaitez nous rendre visite ?" text="Ou discuter de votre projet : écrivez-nous, nous organisons la rencontre." label="Prendre contact" />
 @endsection

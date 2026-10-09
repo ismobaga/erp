@@ -1,359 +1,197 @@
 @extends('layouts.public')
 
-@section('title', 'Accueil — CROMMIX MALI S.A.')
+@section('title', 'CROMMIX MALI S.A. — Le numérique bâti pour l’Afrique de l’Ouest')
 
-@section('meta_description', 'CROMMIX MALI S.A. — Innovation numérique pour l’Afrique, solutions logicielles et services de transformation digitale.')
+@section('meta_description', 'CROMMIX MALI S.A. — logiciels métier, ERP, données et conseil IT conçus à Bamako pour les organisations d’Afrique de l’Ouest.')
 
 @section('content')
-    <section id="mission" class="relative overflow-hidden bg-[#f8f9ff]">
-        <div class="absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-[#eff4ff] to-transparent lg:block"></div>
-        <div
-            class="mx-auto grid min-h-[780px] max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 lg:grid-cols-12 lg:px-8">
-            <div class="relative z-10 col-span-7">
-                <div
-                    class="mb-6 inline-flex items-center gap-2 rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">
-                    <span class="h-2 w-2 rounded-full bg-[#70d8c8]"></span>
-                    CROMMIX MALI S.A.
-                </div>
-
-                <h1 class="mb-6 max-w-3xl text-5xl font-extrabold leading-[1.05] tracking-tight text-[#002045] lg:text-7xl">
-                    Innovation numérique pour l’Afrique
+    {{-- ── Hero ─────────────────────────────────────────────────────────── --}}
+    <section class="relative overflow-hidden">
+        <div class="site-container grid items-center gap-14 py-16 lg:grid-cols-12 lg:py-24">
+            <div class="lg:col-span-7">
+                <p class="eyebrow">Bamako · Afrique de l’Ouest</p>
+                <h1 class="display mt-6 text-5xl sm:text-6xl lg:text-7xl">
+                    Le numérique, <em class="font-semibold text-terra-700">bâti</em> pour l’Afrique de l’Ouest.
                 </h1>
-
-                <p class="mb-10 max-w-xl text-xl leading-relaxed text-[#43474e]">
+                <p class="mt-7 max-w-xl text-lg leading-relaxed text-ink-600">
                     CROMMIX MALI S.A. accompagne les organisations africaines avec des solutions concrètes :
                     développement logiciel, ERP, données et conseil IT.
                 </p>
-
-                <div class="flex flex-wrap gap-4">
-                    <a href="#services"
-                        class="inline-flex items-center gap-2 rounded-xl bg-[#002045] px-8 py-4 font-bold text-white transition hover:opacity-90">
-                        Découvrir nos solutions
-                        <span aria-hidden="true">→</span>
+                <div class="mt-10 flex flex-wrap gap-3">
+                    <a href="{{ route('company.solutions') }}" class="btn btn-primary">
+                        Découvrir nos solutions <x-site.icon name="arrow-right" class="h-4 w-4" />
                     </a>
-                    <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
-                        class="rounded-xl border border-[#c4c6cf]/40 bg-[#eff4ff] px-8 py-4 font-bold text-[#002045] transition hover:bg-white">
+                    <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact" class="btn btn-outline">
                         Demander une démo
                     </a>
                 </div>
+                <ul class="mt-12 flex flex-wrap gap-x-8 gap-y-3 text-sm text-ink-600">
+                    <li class="flex items-center gap-2"><x-site.icon name="check" class="h-4 w-4 text-kola-600" /> DMS disponible</li>
+                    <li class="flex items-center gap-2"><x-site.icon name="check" class="h-4 w-4 text-kola-600" /> Équipe à Bamako</li>
+                    <li class="flex items-center gap-2"><x-site.icon name="check" class="h-4 w-4 text-kola-600" /> Pensé pour une connectivité variable</li>
+                </ul>
             </div>
 
-            <div class="relative col-span-5">
-                <div class="aspect-square overflow-hidden rounded-[2rem] shadow-2xl">
-                    <img src="/images/hero.png" alt="Immeuble corporate moderne" class="h-full w-full object-contain">
+            <div class="relative mx-auto w-full max-w-md lg:col-span-5 lg:max-w-none">
+                <div class="absolute -right-6 top-10 bottom-0 left-10 arch bg-bogolan" aria-hidden="true"></div>
+                <div class="arch relative aspect-[4/5] bg-ink-900 shadow-[0_40px_80px_-40px_rgb(46_38_32/0.6)]">
+                    <img src="{{ asset('images/mali.png') }}" alt="Bamako au crépuscule, le pont et le fleuve Niger"
+                        class="h-full w-full object-cover" width="768" height="960">
                 </div>
-
-                <div class="absolute -bottom-6 -left-4 hidden max-w-[220px] rounded-2xl border border-[#c4c6cf]/20 bg-white/90 p-5 shadow-xl backdrop-blur-md md:block">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="h-2 w-2 rounded-full bg-[#70d8c8] animate-pulse"></span>
-                        <span class="text-xs font-bold uppercase tracking-widest text-[#005048]">Disponible</span>
-                    </div>
-                    <div class="text-2xl font-black text-[#002045]">DMS</div>
-                    <p class="text-xs font-medium text-[#43474e] mt-0.5">Logiciel de gestion officinale</p>
+                <div class="absolute -left-4 bottom-8 w-60 rounded-2xl border border-sand-200 bg-white/95 p-5 shadow-xl backdrop-blur sm:-left-10">
+                    <span class="badge badge-available"><span class="h-1.5 w-1.5 rounded-full bg-kola-600"></span> Disponible</span>
+                    <p class="display mt-3 text-2xl">DMS</p>
+                    <p class="mt-1 text-sm text-ink-600">Logiciel de gestion officinale pour les pharmacies.</p>
+                    <a href="{{ route('dms.presentation') }}" class="link-arrow mt-3 text-sm">Découvrir <x-site.icon name="arrow-right" class="h-3.5 w-3.5" /></a>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="philosophie" class="bg-[#eff4ff] py-24">
-        <div class="mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div class="max-w-2xl">
-                    <h2 class="mb-4 text-3xl font-black uppercase tracking-tight text-[#002045]">Notre Philosophie
-                        Architecturale</h2>
-                    <p class="text-[#43474e]">Nous ne construisons pas seulement des logiciels ; nous érigeons des
-                        structures numériques pérennes.</p>
+    <div class="weave"></div>
+
+    {{-- ── Approche ─────────────────────────────────────────────────────── --}}
+    <section class="bg-white py-24">
+        <div class="site-container">
+            <div class="grid gap-10 lg:grid-cols-12">
+                <div class="lg:col-span-4">
+                    <p class="eyebrow">Notre approche</p>
+                    <h2 class="display mt-5 text-4xl">Des fondations numériques durables.</h2>
+                    <p class="mt-5 text-ink-600">Nous ne construisons pas seulement des logiciels ; nous érigeons des structures numériques pérennes.</p>
                 </div>
-                <div class="hidden h-px flex-1 bg-[#c4c6cf]/30 lg:block"></div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                <article class="relative overflow-hidden rounded-[1.5rem] bg-white p-10 shadow-sm">
-                    <div class="absolute inset-y-0 left-0 w-1 bg-[#002045]"></div>
-                    <div class="mb-6 text-3xl">🛡️</div>
-                    <h3 class="mb-4 text-xl font-bold text-[#002045]">Intégrité</h3>
-                    <p class="text-sm leading-relaxed text-[#43474e]">Une transparence absolue dans chaque transaction et
-                        chaque ligne de code livrée.</p>
-                </article>
-
-                <article class="relative overflow-hidden rounded-[1.5rem] bg-white p-10 shadow-sm">
-                    <div class="absolute inset-y-0 left-0 w-1 bg-[#70d8c8]"></div>
-                    <div class="mb-6 text-3xl">💡</div>
-                    <h3 class="mb-4 text-xl font-bold text-[#002045]">Innovation</h3>
-                    <p class="text-sm leading-relaxed text-[#43474e]">Nous repoussons les limites technologiques pour
-                        résoudre les défis locaux les plus concrets.</p>
-                </article>
-
-                <article class="relative overflow-hidden rounded-[1.5rem] bg-white p-10 shadow-sm">
-                    <div class="absolute inset-y-0 left-0 w-1 bg-[#515f74]"></div>
-                    <div class="mb-6 text-3xl">⚡</div>
-                    <h3 class="mb-4 text-xl font-bold text-[#002045]">Efficacité</h3>
-                    <p class="text-sm leading-relaxed text-[#43474e]">Des processus optimisés pour une croissance rapide,
-                        durable et mesurable.</p>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- <section id="services" class="bg-[#f8f9ff] py-24">
-                                                                                                                            <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                                                                                                                                <div class="mb-16 text-center">
-                                                                                                                                    <h2 class="mb-4 text-4xl font-black tracking-tight text-[#002045]">Écosystème central</h2>
-                                                                                                                                    <p class="mx-auto max-w-2xl text-[#43474e]">Une suite intégrée de solutions conçues pour l'interopérabilité
-                                                                                                                                        totale.</p>
-                                                                                                                                </div>
-
-                                                                                                                                <div class="grid h-auto grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-2 md:h-[600px]">
-                                                                                                                                    <article
-                                                                                                                                        class="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-[#1a365d] p-8 text-white md:col-span-2 md:row-span-2">
-                                                                                                                                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi-xtgOWk5hDfEAKs7bQtg_Oc3F3anSiDhhH2GE2TgvLgQnwWQ40f8ZlGuKvGAsIBkSVFpLZK-HjQkpghvaKGZTSfLS2CRIqWBXr6_S4K2-p0iiOvDOGHJ03D9ksglYXCt2baSHEs-_OLU_irqHFHIj5_FHXZqVf6tc1n6FcFav9XWu0x-rh0o-VpxlsnPT4jQJiZ6i1rcdYzze4knt0BU-XH1iybMTlGJADbCkB2zQSCMpQ2muAUvM0xOIeLfCGLuUF7XjU4aVYri"
-                                                                                                                                            alt="Tableau de bord ERP"
-                                                                                                                                            class="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay">
-                                                                                                                                        <div class="relative z-10">
-                                                                                                                                            <div class="mb-4 text-4xl text-[#8df5e4]">▦</div>
-                                                                                                                                            <h3 class="mb-4 text-3xl font-bold">ERP d'entreprise</h3>
-                                                                                                                                            <p class="leading-relaxed text-[#d6e3ff]">Gestion centralisée des ressources, de la finance et des
-                                                                                                                                                opérations sur une plateforme robuste.</p>
-                                                                                                                                        </div>
-                                                                                                                                        <div class="relative z-10 text-sm font-bold">En savoir plus →</div>
-                                                                                                                                    </article>
-
-                                                                                                                                    <article id="portfolio" class="flex flex-col justify-between rounded-[2rem] bg-[#d3e4fe] p-8 md:col-span-2">
-                                                                                                                                        <div class="flex items-start justify-between gap-4">
-                                                                                                                                            <div>
-                                                                                                                                                <h3 class="text-xl font-bold text-[#002045]">Architecture web</h3>
-                                                                                                                                                <p class="mt-2 text-sm text-[#43474e]">Infrastructures scalables et interfaces haute
-                                                                                                                                                    performance.</p>
-                                                                                                                                            </div>
-                                                                                                                                            <div class="text-2xl text-[#002045]">🌐</div>
-                                                                                                                                        </div>
-                                                                                                                                        <div class="self-end text-4xl font-black text-[#002045]/10">WEB.CORE</div>
-                                                                                                                                    </article>
-
-                                                                                                                                    <article class="flex flex-col justify-between rounded-[2rem] bg-[#d5e3fc] p-8">
-                                                                                                                                        <div class="text-3xl text-[#002045]">🚚</div>
-                                                                                                                                        <h3 class="text-lg font-bold leading-tight text-[#002045]">Gestion de flotte</h3>
-                                                                                                                                    </article>
-
-                                                                                                                                    <article id="carrieres"
-                                                                                                                                        class="flex cursor-pointer flex-col justify-between rounded-[2rem] bg-[#8df5e4] p-8 transition hover:translate-x-1">
-                                                                                                                                        <h3 class="text-lg font-bold leading-tight text-[#002521]">Conseil stratégique</h3>
-                                                                                                                                        <div class="text-3xl text-[#002521]">→</div>
-                                                                                                                                    </article>
-                                                                                                                                </div>
-                                                                                                                            </div>
-                                                                                                                        </section> -->
-
-    <section id="dms-products" class="bg-[#eff4ff] py-24">
-        <div class="mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="mb-12 text-center">
-                <span
-                    class="inline-block rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">Nos
-                    logiciels</span>
-                <h2 class="mt-4 text-3xl font-black tracking-tight text-[#002045]">Solutions pour votre transformation
-                    numérique</h2>
-                <p class="mt-3 mx-auto max-w-2xl text-[#43474e]">Des logiciels métier conçus pour les réalités des
-                    entreprises d'Afrique de l'Ouest. D'autres solutions arrivent prochainement.</p>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <article class="flex flex-col rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                    <div class="mb-4 flex items-center justify-between">
-                        <span
-                            class="rounded-lg bg-[#8df5e4]/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#005048]">Disponible</span>
-                        <span class="text-2xl">💊</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-[#002045]">DMS</h3>
-                    <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]">Gestion des pharmacies
-                    </p>
-                    <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]">Gestion officinale complète : commandes,
-                        stock, facturation, assurances mutuelles et tableau de bord.</p>
-                    <div class="mt-6 flex flex-wrap gap-3">
-                        <a href="{{ route('dms.presentation') }}"
-                            class="inline-flex items-center gap-1 rounded-lg bg-[#002045] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90">Voir
-                            la présentation →</a>
-                        <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact"
-                            class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#002045] transition hover:bg-[#eff4ff]">Demander
-                            une démo</a>
-                    </div>
-                </article>
-
-                <article class="flex flex-col rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                    <div class="mb-4 flex items-center justify-between">
-                        <span
-                            class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">Bientôt</span>
-                        <span class="text-2xl">📊</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-[#002045]">ERP</h3>
-                    <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]">Gestion des ressources
-                        d'entreprise</p>
-                    <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]">Finances, facturation, projets, achats et
-                        reporting — une plateforme unifiée pour piloter toute votre activité.</p>
-                    <div class="mt-6">
-                        <a href="{{ route('company.presentation', ['intent' => 'Implémentation ERP']) }}#contact"
-                            class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#002045] transition hover:bg-[#eff4ff]">Nous
-                            contacter</a>
-                    </div>
-                </article>
-
-                <article class="flex flex-col rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-[#f8f9ff] p-7">
-                    <div class="mb-4 flex items-center justify-between">
-                        <span
-                            class="rounded-lg bg-[#f8f9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#43474e]">En
-                            développement</span>
-                        <span class="text-2xl opacity-40">🔮</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-[#43474e]">Prochainement</h3>
-                    <p class="mt-1 text-xs font-semibold uppercase tracking-widest text-[#43474e]/60">Nouveaux logiciels
-                        métier</p>
-                    <p class="mt-3 flex-1 text-sm leading-relaxed text-[#43474e]/70">De nouvelles solutions sectorielles
-                        sont en cours de développement. Laissez-nous vos coordonnées pour être informé en priorité.</p>
-                    <div class="mt-6">
-                        <a href="{{ route('company.presentation', ['intent' => 'Autre Enquête']) }}#contact"
-                            class="inline-flex items-center gap-1 rounded-lg border border-[#c4c6cf]/40 px-4 py-2 text-sm font-bold text-[#43474e] transition hover:bg-white">Rester
-                            informé</a>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <section class="relative overflow-hidden bg-[#002045] py-24 text-white">
-        <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2 lg:px-8">
-            <div class="relative z-10">
-                <span class="inline-block rounded-full bg-[#8df5e4]/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#8df5e4] mb-6">Conçu ici, pour ici</span>
-                <h2 class="mb-8 text-4xl font-black tracking-tight">Conçu pour le contexte ouest-africain</h2>
-                <div class="space-y-6">
-                    @foreach([
-                        ['📶', 'Connectivité adaptative',   'Optimisé pour fonctionner fluidement même avec une bande passante limitée.'],
-                        ['🌍', 'Expertise locale',           'Conformité avec les régulations régionales et les pratiques commerciales du terrain.'],
-                        ['🔒', 'Sécurité & conformité',     'Vos données restent protégées selon les standards internationaux.'],
-                        ['🛠️', 'Support réactif',           'Une équipe locale disponible pour accompagner vos équipes au quotidien.'],
-                    ] as [$icon, $title, $desc])
-                        <div class="flex gap-4">
-                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#8df5e4]/15 text-[#8df5e4] text-lg">{{ $icon }}</div>
-                            <div>
-                                <h4 class="mb-1 font-bold">{{ $title }}</h4>
-                                <p class="text-sm text-[#d6e3ff]">{{ $desc }}</p>
+                <div class="grid gap-px overflow-hidden rounded-[1.5rem] border border-sand-200 bg-sand-200 sm:grid-cols-3 lg:col-span-8">
+                    @foreach ([
+                        ['01', 'shield', 'Intégrité', 'Une transparence absolue dans chaque transaction et chaque ligne de code livrée.'],
+                        ['02', 'light-bulb', 'Innovation', 'Nous repoussons les limites technologiques pour résoudre les défis locaux les plus concrets.'],
+                        ['03', 'bolt', 'Efficacité', 'Des processus optimisés pour une croissance rapide, durable et mesurable.'],
+                    ] as [$num, $icon, $title, $text])
+                        <article class="bg-white p-8">
+                            <div class="flex items-center justify-between">
+                                <span class="icon-tile"><x-site.icon :name="$icon" class="h-5 w-5" /></span>
+                                <span class="font-display text-3xl font-semibold text-sand-300">{{ $num }}</span>
                             </div>
-                        </div>
+                            <h3 class="mt-8 text-lg font-semibold text-ink-900">{{ $title }}</h3>
+                            <p class="mt-3 text-sm leading-relaxed text-ink-600">{{ $text }}</p>
+                        </article>
                     @endforeach
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="relative h-[400px]">
-                <div class="absolute inset-0 rotate-3 rounded-[40px] bg-white/10"></div>
-                <div class="absolute inset-0 -rotate-3 rounded-[40px] bg-white/10"></div>
-                <img src="{{ asset('images/mali.png') }}" alt="Vue urbaine ouest-africaine"
-                    class="absolute inset-0 h-full w-full rounded-[40px] object-cover shadow-2xl">
+    {{-- ── Logiciels ────────────────────────────────────────────────────── --}}
+    <section id="solutions" class="py-24">
+        <div class="site-container">
+            <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <div class="max-w-2xl">
+                    <p class="eyebrow">Nos logiciels</p>
+                    <h2 class="display mt-5 text-4xl">Des outils métier pour votre transformation.</h2>
+                    <p class="mt-5 text-ink-600">Conçus pour les réalités des entreprises d’Afrique de l’Ouest. D’autres solutions arrivent prochainement.</p>
+                </div>
+                <a href="{{ route('company.solutions') }}" class="link-arrow shrink-0">Toutes les solutions <x-site.icon name="arrow-right" class="h-4 w-4" /></a>
+            </div>
+
+            <div class="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <article class="card card-hover flex flex-col">
+                    <div class="flex items-center justify-between">
+                        <span class="badge badge-available">Disponible</span>
+                        <span class="icon-tile"><x-site.icon name="beaker" class="h-5 w-5" /></span>
+                    </div>
+                    <h3 class="display mt-6 text-3xl">DMS</h3>
+                    <p class="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Gestion des pharmacies</p>
+                    <p class="mt-4 flex-1 text-sm leading-relaxed text-ink-600">Gestion officinale complète : commandes, stock, facturation, assurances mutuelles et tableau de bord.</p>
+                    <div class="mt-7 flex flex-wrap gap-2">
+                        <a href="{{ route('dms.presentation') }}" class="btn btn-primary btn-sm">Voir la présentation</a>
+                        <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact" class="btn btn-outline btn-sm">Demander une démo</a>
+                    </div>
+                </article>
+
+                <article class="card card-hover flex flex-col">
+                    <div class="flex items-center justify-between">
+                        <span class="badge badge-soon">Bientôt</span>
+                        <span class="icon-tile"><x-site.icon name="squares" class="h-5 w-5" /></span>
+                    </div>
+                    <h3 class="display mt-6 text-3xl">ERP</h3>
+                    <p class="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Gestion des ressources d’entreprise</p>
+                    <p class="mt-4 flex-1 text-sm leading-relaxed text-ink-600">Finances, facturation, projets, achats et reporting — une plateforme unifiée pour piloter toute votre activité.</p>
+                    <div class="mt-7">
+                        <a href="{{ route('company.presentation', ['intent' => 'Implémentation ERP']) }}#contact" class="btn btn-outline btn-sm">Nous contacter</a>
+                    </div>
+                </article>
+
+                <article class="flex flex-col rounded-[1.25rem] border border-dashed border-sand-300 bg-sand-100/60 p-7">
+                    <div class="flex items-center justify-between">
+                        <span class="badge badge-muted">En développement</span>
+                        <span class="icon-tile bg-sand-200 text-ink-500"><x-site.icon name="cube" class="h-5 w-5" /></span>
+                    </div>
+                    <h3 class="display mt-6 text-3xl text-ink-700">Prochainement</h3>
+                    <p class="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nouveaux logiciels métier</p>
+                    <p class="mt-4 flex-1 text-sm leading-relaxed text-ink-600">De nouvelles solutions sectorielles sont en cours de développement. Laissez-nous vos coordonnées pour être informé en priorité.</p>
+                    <div class="mt-7">
+                        <a href="{{ route('company.presentation', ['intent' => 'Autre Enquête']) }}#contact" class="btn btn-outline btn-sm">Rester informé</a>
+                    </div>
+                </article>
             </div>
         </div>
     </section>
 
-    <section id="contact" class="bg-[#f8f9ff] py-24">
-        <div class="mx-auto max-w-7xl px-6 lg:px-8">
-            <div class="flex flex-col gap-12 rounded-[2rem] bg-[#eff4ff] p-8 lg:flex-row lg:items-start lg:p-16">
-                <div class="lg:w-1/2">
-                    <h2 class="mb-6 text-4xl font-black tracking-tight text-[#002045]">Établissez Votre Fondation</h2>
-                    <p class="mb-10 leading-relaxed text-[#43474e]">Prenez contact avec nos architectes de solutions pour
-                        discuter de la transformation de vos opérations d'entreprise.</p>
-
-                    @if (session('status'))
-                        <div
-                            class="mb-6 rounded-xl border border-[#70d8c8]/40 bg-white px-4 py-3 text-sm font-semibold text-[#005048]">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <div class="space-y-5 text-sm font-medium text-[#0b1c30]">
-                        <div class="flex items-center gap-4">
-                            <span>📍</span>
-                            <span>{{ $companyAddress }}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span>✉️</span>
-                            <span>{{ $companyEmail }}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span>☎️</span>
-                            <span>{{ $companyPhone }}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span>🔗</span>
-                            <span>{{ $companyWebsite }}</span>
-                        </div>
+    {{-- ── Contexte ─────────────────────────────────────────────────────── --}}
+    <section class="bg-bogolan-dark py-24 text-sand-50">
+        <div class="site-container grid gap-14 lg:grid-cols-12">
+            <div class="lg:col-span-5">
+                <p class="eyebrow eyebrow-light">Conçu ici, pour ici</p>
+                <h2 class="display mt-5 text-4xl text-sand-50 sm:text-5xl">Pensé pour le contexte ouest-africain.</h2>
+                <p class="mt-6 max-w-md leading-relaxed text-sand-200/80">
+                    Nos équipes connaissent le terrain : connectivité variable, réglementations locales et pratiques commerciales spécifiques.
+                </p>
+                <a href="{{ route('company.about') }}" class="btn btn-outline-on-dark mt-9">En savoir plus sur nous</a>
+            </div>
+            <div class="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:col-span-7">
+                @foreach ([
+                    ['signal', 'Connectivité adaptative', 'Optimisé pour fonctionner fluidement même avec une bande passante limitée.'],
+                    ['globe', 'Expertise locale', 'Conformité avec les régulations régionales et les pratiques commerciales du terrain.'],
+                    ['lock', 'Sécurité & conformité', 'Vos données restent protégées selon les standards internationaux.'],
+                    ['wrench', 'Support réactif', 'Une équipe locale disponible pour accompagner vos équipes au quotidien.'],
+                ] as [$icon, $title, $text])
+                    <div class="border-t border-sand-50/15 pt-6">
+                        <span class="icon-tile icon-tile-dark"><x-site.icon :name="$icon" class="h-5 w-5" /></span>
+                        <h3 class="mt-5 text-lg font-semibold text-sand-50">{{ $title }}</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-sand-200/75">{{ $text }}</p>
                     </div>
-                </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-                <div class="w-full lg:w-1/2">
-                    <form method="POST" action="{{ route('company.presentation.contact') }}" class="grid grid-cols-1 gap-6">
-                        @csrf
-                        <div class="space-y-1">
-                            <label for="name" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Nom
-                                complet</label>
-                            <input id="name" name="name" value="{{ old('name') }}" type="text" placeholder="Jean Dupont"
-                                class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                            @error('name')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="company_name"
-                                class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Entreprise <span
-                                    class="normal-case font-normal opacity-60">(optionnel)</span></label>
-                            <input id="company_name" name="company_name" value="{{ old('company_name') }}" type="text"
-                                placeholder="Nom de votre entreprise"
-                                class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                            @error('company_name')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="email" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">E-mail
-                                professionnel</label>
-                            <input id="email" name="email" value="{{ old('email') }}" type="email"
-                                placeholder="j.dupont@entreprise.ci"
-                                class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                            @error('email')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="intent" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Intention
-                                stratégique</label>
-                            <select id="intent" name="intent"
-                                class="w-full appearance-none rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">
-                                <option value="Demande démo DMS" @selected(old('intent', request('intent')) === 'Demande démo DMS')>Demande démo DMS</option>
-                                <option value="Implémentation ERP" @selected(old('intent') === 'Implémentation ERP')>
-                                    Implémentation ERP</option>
-                                <option value="Consultation Digitale" @selected(old('intent', request('intent')) === 'Consultation Digitale')>Consultation digitale</option>
-                                <option value="Gestion de Flotte" @selected(old('intent', request('intent')) === 'Gestion de Flotte')>Gestion de flotte</option>
-                                <option value="Autre Enquête" @selected(old('intent', request('intent')) === 'Autre Enquête')>
-                                    Autre enquête</option>
-                            </select>
-                            @error('intent')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="message"
-                                class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Message</label>
-                            <textarea id="message" name="message" rows="4" placeholder="Décrivez brièvement votre besoin..."
-                                class="w-full rounded-xl border border-transparent bg-white p-4 outline-none transition focus:border-[#002045]/15 focus:ring-2 focus:ring-[#002045]/10">{{ old('message') }}</textarea>
-                            @error('message')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <button type="submit"
-                            class="rounded-xl bg-[#002045] py-4 font-bold text-white shadow-lg shadow-[#002045]/10 transition hover:shadow-[#002045]/20">
-                            Envoyer la demande
-                        </button>
-                    </form>
+    {{-- ── Contact ──────────────────────────────────────────────────────── --}}
+    <section id="contact" class="scroll-mt-24 py-24">
+        <div class="site-container grid gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-5">
+                <p class="eyebrow">Parlons-en</p>
+                <h2 class="display mt-5 text-4xl">Établissons votre fondation.</h2>
+                <p class="mt-5 leading-relaxed text-ink-600">Prenez contact avec nos architectes de solutions pour discuter de la transformation de vos opérations.</p>
+                <dl class="mt-10 space-y-5 text-sm">
+                    @foreach ([
+                        ['map-pin', 'Adresse', $companyAddress ?: 'Bamako, Mali'],
+                        ['mail', 'E-mail', $companyEmail],
+                        ['phone', 'Téléphone', $companyPhone],
+                        ['link', 'Site web', $companyWebsite],
+                    ] as [$icon, $label, $value])
+                        @if (filled($value))
+                            <div class="flex items-start gap-4">
+                                <span class="icon-tile h-10 w-10"><x-site.icon :name="$icon" class="h-4.5 w-4.5" /></span>
+                                <div>
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">{{ $label }}</dt>
+                                    <dd class="mt-1 font-medium text-ink-900">{{ $value }}</dd>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </dl>
+            </div>
+            <div class="lg:col-span-7">
+                <div class="card p-7 sm:p-10">
+                    <x-site.contact-form default="Demande démo DMS" />
                 </div>
             </div>
         </div>

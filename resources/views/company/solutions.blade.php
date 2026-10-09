@@ -1,44 +1,61 @@
 @extends('layouts.public')
 
 @section('title', 'Solutions — CROMMIX MALI S.A.')
+
 @section('meta_description', 'Solutions CROMMIX MALI S.A. : DMS pour pharmacies, ERP/CGL pour la gestion d’entreprise, SiraLink et hébergement en préparation.')
 
 @section('content')
-    <section class="bg-[#f8f9ff] py-24">
-        <div class="mx-auto max-w-6xl px-6 lg:px-8">
-            <h1 class="text-4xl font-black tracking-tight text-[#002045] lg:text-5xl">Solutions & produits</h1>
-            <p class="mt-4 max-w-3xl text-lg leading-relaxed text-[#43474e]">
-                Un portefeuille de solutions conçu pour les réalités opérationnelles des entreprises d’Afrique.
-            </p>
+    <x-site.page-header eyebrow="Produits" title="Solutions & produits"
+        lead="Un portefeuille de solutions conçu pour les réalités opérationnelles des entreprises d’Afrique." />
+
+    <section class="site-container py-20">
+        <div class="grid gap-6 lg:grid-cols-2">
+            <article class="card card-hover flex flex-col lg:row-span-2 lg:p-10">
+                <div class="flex items-center justify-between">
+                    <span class="badge badge-available"><span class="h-1.5 w-1.5 rounded-full bg-kola-600"></span> Disponible</span>
+                    <span class="icon-tile"><x-site.icon name="beaker" class="h-5 w-5" /></span>
+                </div>
+                <h2 class="display mt-8 text-4xl">DMS</h2>
+                <p class="mt-1 text-sm font-medium text-ink-500">Drugstore Management System</p>
+                <p class="mt-5 leading-relaxed text-ink-600">Outil moderne de gestion des pharmacies : stock, commandes, facturation et suivi opérationnel.</p>
+                <ul class="mt-6 grid gap-2 text-sm text-ink-700 sm:grid-cols-2">
+                    @foreach (['Commandes & stock', 'Péremptions', 'Facturation', 'Assurances mutuelles'] as $item)
+                        <li class="flex items-center gap-2"><x-site.icon name="check" class="h-4 w-4 text-kola-600" /> {{ $item }}</li>
+                    @endforeach
+                </ul>
+                <div class="mt-auto flex flex-wrap gap-2 pt-10">
+                    <a href="{{ route('dms.presentation') }}" class="btn btn-primary btn-sm">Voir la présentation</a>
+                    <a href="{{ route('company.presentation', ['intent' => 'Demande démo DMS']) }}#contact" class="btn btn-outline btn-sm">Demander une démo</a>
+                </div>
+            </article>
+
+            <article class="card card-hover">
+                <div class="flex items-center justify-between">
+                    <span class="badge badge-soon">Prioritaire</span>
+                    <span class="icon-tile"><x-site.icon name="squares" class="h-5 w-5" /></span>
+                </div>
+                <h2 class="display mt-6 text-3xl">CROMMIX ERP / CGL</h2>
+                <p class="mt-4 text-sm leading-relaxed text-ink-600">Pilotage financier et opérationnel pour centraliser les processus d’entreprise.</p>
+                <a href="{{ route('company.presentation', ['intent' => 'Implémentation ERP']) }}#contact" class="link-arrow mt-5 text-sm">Être recontacté <x-site.icon name="arrow-right" class="h-4 w-4" /></a>
+            </article>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+                @foreach ([
+                    ['truck', 'SiraLink Fleet Tracking', 'Suivi et supervision de flotte, avec roadmap produit progressive.'],
+                    ['cloud', 'Services d’hébergement', 'Offres d’hébergement et d’exploitation managée selon les besoins clients.'],
+                ] as [$icon, $title, $text])
+                    <article class="rounded-[1.25rem] border border-dashed border-sand-300 bg-sand-100/60 p-7">
+                        <div class="flex items-center justify-between">
+                            <span class="badge badge-muted">Bientôt</span>
+                            <span class="text-ink-500"><x-site.icon :name="$icon" class="h-5 w-5" /></span>
+                        </div>
+                        <h2 class="mt-6 text-lg font-semibold text-ink-800">{{ $title }}</h2>
+                        <p class="mt-2 text-sm leading-relaxed text-ink-600">{{ $text }}</p>
+                    </article>
+                @endforeach
+            </div>
         </div>
     </section>
 
-    <section class="bg-[#eff4ff] py-20">
-        <div class="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-2 lg:px-8">
-            <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                <span class="rounded-lg bg-[#8df5e4]/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#005048]">Disponible</span>
-                <h2 class="mt-4 text-2xl font-bold text-[#002045]">DMS — Drugstore Management System</h2>
-                <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Outil moderne de gestion des pharmacies : stock, commandes, facturation et suivi opérationnel.</p>
-                <a href="{{ route('dms.presentation') }}" class="mt-5 inline-flex items-center gap-1 text-sm font-bold text-[#002045]">Voir la présentation →</a>
-            </article>
-
-            <article class="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-[#dce9ff]">
-                <span class="rounded-lg bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#2d476f]">Prioritaire</span>
-                <h2 class="mt-4 text-2xl font-bold text-[#002045]">CROMMIX ERP / CGL</h2>
-                <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Pilotage financier et opérationnel pour centraliser les processus d’entreprise.</p>
-            </article>
-
-            <article class="rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-[#f8f9ff] p-7">
-                <span class="rounded-lg bg-white px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#43474e]">Bientôt</span>
-                <h2 class="mt-4 text-2xl font-bold text-[#43474e]">SiraLink Fleet Tracking</h2>
-                <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Suivi et supervision de flotte, avec roadmap produit progressive.</p>
-            </article>
-
-            <article class="rounded-2xl border-2 border-dashed border-[#c4c6cf]/40 bg-[#f8f9ff] p-7">
-                <span class="rounded-lg bg-white px-3 py-1 text-xs font-bold uppercase tracking-widest text-[#43474e]">Bientôt</span>
-                <h2 class="mt-4 text-2xl font-bold text-[#43474e]">Services d’hébergement</h2>
-                <p class="mt-3 text-sm leading-relaxed text-[#43474e]">Offres d’hébergement et d’exploitation managée selon les besoins clients.</p>
-            </article>
-        </div>
-    </section>
+    <x-site.cta title="Une solution adaptée à votre activité ?" text="Présentez-nous vos besoins : nous vous orientons vers le bon outil, ou nous le construisons." />
 @endsection

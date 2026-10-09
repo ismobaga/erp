@@ -1,96 +1,47 @@
 @extends('layouts.public')
 
 @section('title', 'Contact — CROMMIX MALI S.A.')
+
 @section('meta_description', 'Contactez CROMMIX MALI S.A. pour vos besoins en logiciels métier, ERP, conseil IT et transformation digitale.')
 
 @section('content')
-    <section class="bg-[#f8f9ff] py-24">
-        <div class="mx-auto max-w-5xl px-6 lg:px-8">
-            <span class="inline-block rounded-full bg-[#dce9ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#2d476f]">Parlons-nous</span>
-            <h1 class="mt-5 text-4xl font-black tracking-tight text-[#002045] lg:text-5xl">Contact</h1>
-            <p class="mt-4 max-w-2xl text-lg leading-relaxed text-[#43474e]">Parlons de vos besoins et de votre feuille de route digitale.</p>
-        </div>
-    </section>
+    <x-site.page-header eyebrow="Parlons-en" title="Contact" lead="Parlons de vos besoins et de votre feuille de route digitale." />
 
-    <section class="bg-[#eff4ff] py-16">
-        <div class="mx-auto max-w-5xl px-6 lg:px-8">
-            <div class="grid gap-8 lg:grid-cols-5">
-                {{-- Contact info sidebar --}}
-                <div class="lg:col-span-2 space-y-4">
-                    @foreach([
-                        ['📍', 'Adresse', $companyAddress ?: 'Mali'],
-                        ['✉️', 'Email',   $companyEmail],
-                        ['☎️', 'Téléphone', $companyPhone ?: 'N/A'],
-                        ['🔗', 'Site web',  $companyWebsite ?? ''],
-                    ] as [$icon, $label, $value])
-                        @if($value)
-                        <div class="flex gap-4 rounded-2xl bg-white p-5 shadow-sm">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eff4ff] text-lg">{{ $icon }}</div>
+    <section class="site-container py-20">
+        <div class="grid gap-10 lg:grid-cols-12">
+            <aside class="space-y-4 lg:col-span-4">
+                @foreach ([
+                    ['map-pin', 'Adresse', $companyAddress ?: 'Bamako, Mali', null],
+                    ['mail', 'E-mail', $companyEmail, $companyEmail ? 'mailto:'.$companyEmail : null],
+                    ['phone', 'Téléphone', $companyPhone, $companyPhone ? 'tel:'.preg_replace('/[^0-9+]/', '', $companyPhone) : null],
+                    ['link', 'Site web', $companyWebsite ?? null, $companyWebsite ?? null],
+                ] as [$icon, $label, $value, $href])
+                    @if (filled($value))
+                        <div class="card flex items-start gap-4 p-5">
+                            <span class="icon-tile h-10 w-10"><x-site.icon :name="$icon" class="h-4.5 w-4.5" /></span>
                             <div class="min-w-0">
-                                <p class="text-xs font-bold uppercase tracking-widest text-[#43474e]">{{ $label }}</p>
-                                <p class="mt-1 text-sm font-medium text-[#0b1c30] wrap-break-word">{{ $value }}</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">{{ $label }}</p>
+                                @if ($href)
+                                    <a href="{{ $href }}" class="mt-1 block break-words font-medium text-ink-900 transition hover:text-terra-700">{{ $value }}</a>
+                                @else
+                                    <p class="mt-1 break-words font-medium text-ink-900">{{ $value }}</p>
+                                @endif
                             </div>
                         </div>
-                        @endif
-                    @endforeach
-                </div>
-
-                {{-- Contact form --}}
-                <div class="lg:col-span-3">
-                    @if (session('status'))
-                        <div class="mb-5 rounded-xl border border-[#70d8c8]/40 bg-white px-4 py-3 text-sm font-semibold text-[#005048]">
-                            {{ session('status') }}
-                        </div>
                     @endif
+                @endforeach
+                <div class="rounded-[1.25rem] border border-sand-200 bg-sand-100 p-6">
+                    <p class="font-semibold text-ink-900">Plusieurs bureaux</p>
+                    <p class="mt-1 text-sm text-ink-600">Bamako et Ouagadougou, pour toute l’Afrique de l’Ouest francophone.</p>
+                    <a href="{{ route('company.bureaux') }}" class="link-arrow mt-3 text-sm">Voir nos bureaux <x-site.icon name="arrow-right" class="h-4 w-4" /></a>
+                </div>
+            </aside>
 
-                    <form method="POST" action="{{ route('company.presentation.contact') }}"
-                        class="grid grid-cols-1 gap-5 rounded-2xl bg-white p-7 shadow-sm">
-                        @csrf
-                        <input type="hidden" name="source" value="contact">
-
-                        <div class="space-y-1">
-                            <label for="name" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Nom complet</label>
-                            <input id="name" name="name" value="{{ old('name') }}" type="text" placeholder="Jean Dupont"
-                                class="w-full rounded-xl border border-[#c4c6cf]/40 bg-[#f8f9ff] p-3.5 outline-none transition focus:border-[#002045]/30 focus:ring-2 focus:ring-[#002045]/10">
-                            @error('name')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="email" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">E-mail professionnel</label>
-                            <input id="email" name="email" value="{{ old('email') }}" type="email" placeholder="j.dupont@entreprise.com"
-                                class="w-full rounded-xl border border-[#c4c6cf]/40 bg-[#f8f9ff] p-3.5 outline-none transition focus:border-[#002045]/30 focus:ring-2 focus:ring-[#002045]/10">
-                            @error('email')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="intent" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Sujet</label>
-                            <select id="intent" name="intent"
-                                class="w-full appearance-none rounded-xl border border-[#c4c6cf]/40 bg-[#f8f9ff] p-3.5 outline-none transition focus:border-[#002045]/30 focus:ring-2 focus:ring-[#002045]/10">
-                                <option value="Consultation Digitale" @selected(old('intent') === 'Consultation Digitale')>Consultation digitale</option>
-                                <option value="Demande démo DMS" @selected(old('intent') === 'Demande démo DMS')>Demande démo DMS</option>
-                                <option value="Implémentation ERP" @selected(old('intent') === 'Implémentation ERP')>Implémentation ERP</option>
-                                <option value="Autre Enquête" @selected(old('intent', 'Autre Enquête') === 'Autre Enquête')>Autre enquête</option>
-                            </select>
-                            @error('intent')
-                                <p class="text-sm text-[#ba1a1a]">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-1">
-                            <label for="message" class="text-xs font-bold uppercase tracking-widest text-[#43474e]">Message</label>
-                            <textarea id="message" name="message" rows="4" placeholder="Décrivez brièvement votre besoin..."
-                                class="w-full rounded-xl border border-[#c4c6cf]/40 bg-[#f8f9ff] p-3.5 outline-none transition focus:border-[#002045]/30 focus:ring-2 focus:ring-[#002045]/10">{{ old('message') }}</textarea>
-                        </div>
-
-                        <button type="submit"
-                            class="rounded-xl bg-[#002045] py-4 font-bold text-white shadow-lg shadow-[#002045]/10 transition hover:opacity-90">
-                            Envoyer la demande
-                        </button>
-                    </form>
+            <div class="lg:col-span-8">
+                <div class="card p-7 sm:p-10">
+                    <h2 class="display text-3xl">Écrivez-nous</h2>
+                    <p class="mt-2 mb-8 text-sm text-ink-600">Décrivez votre besoin, nous revenons vers vous rapidement.</p>
+                    <x-site.contact-form source="contact" default="Autre Enquête" :company-field="false" />
                 </div>
             </div>
         </div>

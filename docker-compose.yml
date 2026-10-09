@@ -56,7 +56,7 @@ services:
     volumes:
       - .:/app
       # Dependencies live in Docker volumes: much faster than a Windows mount.
-      - vendor:/app/vendor
+      - ./vendor:/app/vendor
 
   assets:
     profiles: [ "app" ]
