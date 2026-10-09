@@ -262,6 +262,178 @@ class ApiExpansionTest extends TestCase
             ->assertJsonPath('data.name', 'ERP Integration');
     }
 
+    public function test_private_endpoints_enforce_tenant_isolation(): void
+    {
+        $clientA = Client::create([
+            'type' => 'company',
+            'company_name' => 'Tenant A Client',
+            'status' => 'active',
+        ]);
+
+        $invoiceA = Invoice::create([
+            'client_id' => $clientA->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 60000,
+            'balance_due' => 60000,
+            'created_by' => $this->user->id,
+        ]);
+
+        $paymentA = Payment::create([
+            'invoice_id' => $invoiceA->id,
+            'client_id' => $clientA->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 15000,
+            'payment_method' => 'cash',
+            'reference' => 'PAY-A-001',
+            'recorded_by' => $this->user->id,
+        ]);
+
+        $expenseA = Expense::create([
+            'category' => 'operations',
+            'title' => 'Expense A',
+            'amount' => 7000,
+            'expense_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'recorded_by' => $this->user->id,
+        ]);
+
+        $quoteA = Quote::create([
+            'quote_number' => 'QT-A-001',
+            'client_id' => $clientA->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'draft',
+            'created_by' => $this->user->id,
+        ]);
+
+        $projectA = Project::create([
+            'client_id' => $clientA->id,
+            'name' => 'Project A',
+            'status' => 'draft',
+            'created_by' => $this->user->id,
+        ]);
+
+        $companyB = Company::create([
+            'name' => 'Expansion Tenant B',
+            'currency' => 'FCFA',
+            'is_active' => true,
+            'advanced_options' => ['quotes' => true],
+        ]);
+        $this->setUpCompany($companyB);
+
+        $userB = User::factory()->create(['status' => 'active']);
+        $userB->companies()->attach($companyB->id, ['role' => 'admin']);
+
+        $clientB = Client::create([
+            'type' => 'company',
+            'company_name' => 'Tenant B Client',
+            'status' => 'active',
+        ]);
+
+        $invoiceB = Invoice::create([
+            'client_id' => $clientB->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'sent',
+            'total' => 90000,
+            'balance_due' => 90000,
+            'created_by' => $userB->id,
+        ]);
+
+        $paymentB = Payment::create([
+            'invoice_id' => $invoiceB->id,
+            'client_id' => $clientB->id,
+            'payment_date' => now()->toDateString(),
+            'amount' => 20000,
+            'payment_method' => 'bank_transfer',
+            'reference' => 'PAY-B-001',
+            'recorded_by' => $userB->id,
+        ]);
+
+        $expenseB = Expense::create([
+            'category' => 'travel',
+            'title' => 'Expense B',
+            'amount' => 19000,
+            'expense_date' => now()->toDateString(),
+            'payment_method' => 'card',
+            'recorded_by' => $userB->id,
+        ]);
+
+        $quoteB = Quote::create([
+            'quote_number' => 'QT-B-001',
+            'client_id' => $clientB->id,
+            'issue_date' => now()->toDateString(),
+            'status' => 'draft',
+            'created_by' => $userB->id,
+        ]);
+
+        $projectB = Project::create([
+            'client_id' => $clientB->id,
+            'name' => 'Project B',
+            'status' => 'draft',
+            'created_by' => $userB->id,
+        ]);
+
+        $this->withToken($this->privateToken)
+            ->getJson('/api/v1/private/payments')
+            ->assertOk()
+            ->assertJsonFragment(['reference' => 'PAY-A-001'])
+            ->assertJsonMissing(['reference' => 'PAY-B-001']);
+
+        $this->withToken($this->privateToken)
+            ->getJson('/api/v1/private/expenses')
+            ->assertOk()
+            ->assertJsonFragment(['title' => 'Expense A'])
+            ->assertJsonMissing(['title' => 'Expense B']);
+
+        $this->withToken($this->privateToken)
+            ->getJson('/api/v1/private/quotes')
+            ->assertOk()
+            ->assertJsonFragment(['quote_number' => 'QT-A-001'])
+            ->assertJsonMissing(['quote_number' => 'QT-B-001']);
+
+        $this->withToken($this->privateToken)
+            ->getJson('/api/v1/private/projects')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Project A'])
+            ->assertJsonMissing(['name' => 'Project B']);
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/payments/{$paymentA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.reference', 'PAY-A-001');
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/expenses/{$expenseA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Expense A');
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/quotes/{$quoteA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.quote_number', 'QT-A-001');
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/projects/{$projectA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Project A');
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/payments/{$paymentB->id}")
+            ->assertNotFound();
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/expenses/{$expenseB->id}")
+            ->assertNotFound();
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/quotes/{$quoteB->id}")
+            ->assertNotFound();
+
+        $this->withToken($this->privateToken)
+            ->getJson("/api/v1/private/projects/{$projectB->id}")
+            ->assertNotFound();
+    }
+
     // ── KPI Analytics endpoint ─────────────────────────────────────────────────
 
     public function test_kpi_endpoint_returns_cross_module_analytics(): void
