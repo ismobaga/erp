@@ -46,6 +46,39 @@ This direction prioritizes composable modules, strict tenant isolation, and SaaS
   - invoice status auto-updates (`paid`, `partially_paid`, `overdue`)
   - payment positivity and overpayment guard (unless explicitly allowed)
 
+## Proposed next issues (prioritized)
+
+The foundation and core ERP flows are in place. To align with the long-term modular SaaS vision, the following backlog is proposed for next iterations:
+
+1. **P0 — End-to-end tenant safety test coverage**
+   - Add/expand integration tests that verify tenant scoping across API, portal, and Filament resources.
+   - Rationale: strict isolation is a core architecture promise and should remain protected as modules grow.
+
+2. **P0 — Recurring billing operations hardening**
+   - Improve monitoring/retry visibility around recurring invoice generation and scheduled billing jobs.
+   - Rationale: billing reliability directly impacts revenue integrity and finance trust.
+
+3. **P1 — API consumer experience improvements**
+   - Extend OpenAPI examples and document practical client workflows for public/private endpoints.
+   - Rationale: API surface exists; better onboarding reduces integration friction and support load.
+
+4. **P1 — Client portal workflow completeness**
+   - Prioritize missing self-service actions (document lifecycle, quote/invoice follow-up, ticket UX polish).
+   - Rationale: portal maturity improves communication and service continuity outcomes.
+
+5. **P2 — Cross-module analytics and export depth**
+   - Expand KPI/export options for finance, projects, and communication modules.
+   - Rationale: decision support value grows when module data is easier to compare and operationalize.
+
+6. **P2 — Operational resilience playbooks**
+   - Define runbooks/alert thresholds for health checks, backups, failed jobs, and recovery procedures.
+   - Rationale: improves response quality as deployment scale and module count increase.
+
+Team members: please comment on this list in the issue thread with:
+- blockers or dependencies,
+- implementation estimates,
+- and any reprioritization proposals.
+
 ## Roles seeded
 
 - Super Admin
